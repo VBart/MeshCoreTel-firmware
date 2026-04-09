@@ -1,5 +1,11 @@
 # MeshCore-EastMesh
 
+MeshCore-EastMesh originates from the upstream MeshCore project:
+
+- <https://github.com/meshcore-dev/MeshCore>
+
+Credits to Scott Powell / Ripple Radios and the MeshCore contributors for the original firmware and project foundation.
+
 EastMesh firmware builds for MeshCore, with MQTT repeaters, WiFi companions, and simple release downloads for supported boards.
 
 This repository keeps the upstream MeshCore firmware intact and adds an EastMesh layer on top for packaging, release automation, WiFi-enabled companion builds, and MQTT-enabled repeater builds.
