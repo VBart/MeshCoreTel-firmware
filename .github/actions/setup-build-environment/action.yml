@@ -26,17 +26,15 @@ runs:
         uv venv --allow-existing --seed
         echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
-    # Recommended EastMesh tag format:
-    #   room-server-eastmesh-v1.0.1
+    # Active release tag formats:
+    #   companion-wifi-v1.2.3
+    #   repeater-mqtt-eastmesh-v1.0.1
     # with OFFICIAL_MESHCORE_VERSION=v1.2.3 configured as a GitHub variable.
     #
     # This exports:
-    #   FIRMWARE_VERSION=v1.2.3
-    #   EASTMESH_VERSION=v1.0.1
-    #   RELEASE_VERSION=v1.2.3-eastmesh-v1.0.1
-    #
-    # Legacy tags like "room-server-v1.2.3" and
-    # "room-server-v1.2.3-eastmesh-v1.0.1" remain supported.
+    #   companion-wifi-v1.2.3 -> FIRMWARE_VERSION=v1.2.3, RELEASE_VERSION=v1.2.3
+    #   repeater-mqtt-eastmesh-v1.0.1 -> FIRMWARE_VERSION=v1.2.3, EASTMESH_VERSION=v1.0.1,
+    #                                    RELEASE_VERSION=v1.2.3-eastmesh-v1.0.1
     - name: Extract Version Info
       shell: bash
       run: |
@@ -56,17 +54,14 @@ runs:
         EASTMESH_VERSION=""
         FIRMWARE_VERSION="$STATIC_OFFICIAL_VERSION"
 
-        if [[ "$GIT_TAG_NAME" =~ ^(companion|repeater|room-server)-eastmesh-(v[[:alnum:]._-]+)$ ]]; then
+        if [[ "$GIT_TAG_NAME" =~ ^repeater-mqtt-eastmesh-(v[[:alnum:]._-]+)$ ]]; then
           if [[ -z "$STATIC_OFFICIAL_VERSION" ]]; then
             echo "OFFICIAL_MESHCORE_VERSION must be set for EastMesh release tags" >&2
             exit 1
           fi
-          EASTMESH_VERSION="${BASH_REMATCH[2]}"
-        elif [[ "$GIT_TAG_NAME" =~ ^(companion|repeater|room-server)-(.+)-eastmesh-(v[[:alnum:]._-]+)$ ]]; then
-          FIRMWARE_VERSION="${BASH_REMATCH[2]}"
-          EASTMESH_VERSION="${BASH_REMATCH[3]}"
-        elif [[ "$GIT_TAG_NAME" =~ ^(companion|repeater|room-server)-(.+)$ ]]; then
-          FIRMWARE_VERSION="${BASH_REMATCH[2]}"
+          EASTMESH_VERSION="${BASH_REMATCH[1]}"
+        elif [[ "$GIT_TAG_NAME" =~ ^companion-wifi-(v[[:alnum:]._-]+)$ ]]; then
+          FIRMWARE_VERSION="${BASH_REMATCH[1]}"
         else
           echo "Unsupported release tag format: $GIT_TAG_NAME" >&2
           exit 1

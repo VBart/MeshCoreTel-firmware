@@ -331,7 +331,7 @@ wheels = [
 ]
 
 [[package]]
-name = "meshcore-tooling"
+name = "meshcore-eastmesh"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

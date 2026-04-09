@@ -763,6 +763,10 @@ void MyMesh::formatPacketStatsReply(char *reply) {
                                        getNumRecvFlood(), getNumRecvDirect());
 }
 
+void MyMesh::formatMemoryReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatMemoryStats(reply, reply_size);
+}
+
 void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply) {
   while (*command == ' ')
     command++; // skip leading spaces

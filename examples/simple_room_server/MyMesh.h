@@ -196,6 +196,7 @@ public:
   void formatStatsReply(char *reply) override;
   void formatRadioStatsReply(char *reply) override;
   void formatPacketStatsReply(char *reply) override;
+  void formatMemoryReply(char *reply, size_t reply_size) override;
 
   mesh::LocalIdentity& getSelfId() override { return self_id; }
 

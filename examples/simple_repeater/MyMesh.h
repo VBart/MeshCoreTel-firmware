@@ -23,6 +23,10 @@
 #define WITH_BRIDGE
 #endif
 
+#ifdef WITH_MQTT_UPLINK
+#include <helpers/mqtt/MQTTUplink.h>
+#endif
+
 #include <helpers/AdvertDataHelpers.h>
 #include <helpers/ArduinoHelpers.h>
 #include <helpers/ClientACL.h>
@@ -80,7 +84,7 @@ struct NeighbourInfo {
 
 #define PACKET_LOG_FILE  "/packet_log"
 
-class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
+class MyMesh : public mesh::Mesh, public CommonCLICallbacks, public MQTTWebCommandRunner {
   FILESYSTEM* _fs;
   uint32_t last_millis;
   uint64_t uptime_millis;
@@ -116,6 +120,9 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks {
   RS232Bridge bridge;
 #elif defined(WITH_ESPNOW_BRIDGE)
   ESPNowBridge bridge;
+#endif
+#ifdef WITH_MQTT_UPLINK
+  MQTTUplink mqtt;
 #endif
 
   void putNeighbour(const mesh::Identity& id, uint32_t timestamp, float snr);
@@ -208,12 +215,15 @@ public:
   void formatStatsReply(char *reply) override;
   void formatRadioStatsReply(char *reply) override;
   void formatPacketStatsReply(char *reply) override;
+  void formatMemoryReply(char *reply, size_t reply_size) override;
 
   mesh::LocalIdentity& getSelfId() override { return self_id; }
 
   void saveIdentity(const mesh::LocalIdentity& new_id) override;
   void clearStats() override;
   void handleCommand(uint32_t sender_timestamp, char* command, char* reply);
+  void runWebCommand(const char* command, char* reply, size_t reply_size) override;
+  const char* getWebAdminPassword() const override { return _prefs.password; }
   void loop();
 
 #if defined(WITH_BRIDGE)

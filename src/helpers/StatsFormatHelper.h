@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mesh.h"
+#include <Arduino.h>
 
 class StatsFormatHelper {
 public:
@@ -51,5 +52,24 @@ public:
       n_recv_direct,
       driver.getPacketsRecvErrors()
     );
+  }
+
+  static void formatMemoryStats(char* reply, size_t reply_size) {
+    if (reply == nullptr || reply_size == 0) {
+      return;
+    }
+#if defined(ESP32)
+    snprintf(reply, reply_size,
+      "{\"heap_free\":%u,\"heap_min\":%u,\"heap_max\":%u,\"psram_free\":%u,\"psram_min\":%u,\"psram_max\":%u}",
+      ESP.getFreeHeap(),
+      ESP.getMinFreeHeap(),
+      ESP.getMaxAllocHeap(),
+      ESP.getFreePsram(),
+      ESP.getMinFreePsram(),
+      ESP.getMaxAllocPsram()
+    );
+#else
+    snprintf(reply, reply_size, "{\"supported\":false}");
+#endif
   }
 };

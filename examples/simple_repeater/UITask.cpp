@@ -1,5 +1,6 @@
 #include "UITask.h"
 #include <Arduino.h>
+#include <WiFi.h>
 #include <helpers/CommonCLI.h>
 
 #define AUTO_OFF_MILLIS      20000  // 20 seconds
@@ -76,6 +77,16 @@ void UITask::renderCurrScreen() {
     // bw / cr
     _display->setCursor(0, 30);
     sprintf(tmp, "BW: %03.2f CR: %d", _node_prefs->bw, _node_prefs->cr);
+    _display->print(tmp);
+
+    // WiFi IP
+    _display->setCursor(0, 40);
+    if (WiFi.status() == WL_CONNECTED) {
+      IPAddress ip = WiFi.localIP();
+      snprintf(tmp, sizeof(tmp), "IP: %u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+    } else {
+      snprintf(tmp, sizeof(tmp), "IP: -");
+    }
     _display->print(tmp);
   }
 }

@@ -1,7 +1,7 @@
 [project]
-name = "meshcore-tooling"
+name = "meshcore-eastmesh"
 version = "0.1.0"
-description = "Python tooling for MeshCore development workflows"
+description = "Python tooling for EastMesh workflows on top of MeshCore"
 requires-python = ">=3.11"
 dependencies = [
     "platformio>=6.1.18,<7",

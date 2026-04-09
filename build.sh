@@ -32,7 +32,9 @@ Commands:
   build-firmwares: Build all firmwares for all targets.
   build-matching-firmwares <build-match-spec>: Build all firmwares for build targets containing the string given for <build-match-spec>.
   build-companion-firmwares: Build all companion firmwares for all build targets.
+  build-companion-wifi-firmwares: Build all companion WiFi firmwares for all build targets.
   build-repeater-firmwares: Build all repeater firmwares for all build targets.
+  build-repeater-mqtt-firmwares: Build all repeater MQTT firmwares for all build targets.
   build-room-server-firmwares: Build all chat room server firmwares for all build targets.
 
 Examples:
@@ -45,8 +47,14 @@ $ sh build.sh build-matching-firmwares <build-match-spec>
 Build all companion firmwares
 $ sh build.sh build-companion-firmwares
 
+Build all companion WiFi firmwares
+$ sh build.sh build-companion-wifi-firmwares
+
 Build all repeater firmwares
 $ sh build.sh build-repeater-firmwares
+
+Build all repeater MQTT firmwares
+$ sh build.sh build-repeater-mqtt-firmwares
 
 Build all chat room server firmwares
 $ sh build.sh build-room-server-firmwares
@@ -155,20 +163,24 @@ build_firmware() {
     exit 1
   fi
 
-  # set firmware version string
+  # set artifact version string
   # e.g: v1.2.3-eastmesh-v1.0.1-abcdef
   FIRMWARE_VERSION_BASE="${FIRMWARE_VERSION}"
   if [ -n "$EASTMESH_VERSION" ]; then
     FIRMWARE_VERSION_BASE="${FIRMWARE_VERSION_BASE}-eastmesh-${EASTMESH_VERSION}"
   fi
   FIRMWARE_VERSION_STRING="${FIRMWARE_VERSION_BASE}-${COMMIT_HASH}"
+  CLIENT_VERSION_STRING="eastmesh-${COMMIT_HASH}"
+  if [ -n "$EASTMESH_VERSION" ]; then
+    CLIENT_VERSION_STRING="eastmesh-${EASTMESH_VERSION}-${COMMIT_HASH}"
+  fi
 
   # craft filename
   # e.g: RAK_4631_Repeater-v1.0.0-SHA
   FIRMWARE_FILENAME="$1-${FIRMWARE_VERSION_STRING}"
 
-  # add firmware version info to end of existing platformio build flags in environment vars
-  export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -DFIRMWARE_BUILD_DATE='\"${FIRMWARE_BUILD_DATE}\"' -DFIRMWARE_VERSION='\"${FIRMWARE_VERSION_STRING}\"'"
+  # add build metadata to end of existing platformio build flags in environment vars
+  export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -DFIRMWARE_BUILD_DATE='\"${FIRMWARE_BUILD_DATE}\"' -DFIRMWARE_VERSION='\"${FIRMWARE_VERSION}\"' -DCLIENT_VERSION='\"${CLIENT_VERSION_STRING}\"'"
 
   # disable debug flags if requested
   disable_debug_flags
@@ -255,6 +267,18 @@ build_companion_firmwares() {
 
 }
 
+build_companion_wifi_firmwares() {
+
+  build_all_firmwares_by_suffix "_companion_radio_wifi"
+
+}
+
+build_repeater_mqtt_firmwares() {
+
+  build_all_firmwares_by_suffix "_repeater_mqtt"
+
+}
+
 build_room_server_firmwares() {
 
 #  # build specific room server firmwares
@@ -298,8 +322,12 @@ elif [[ $1 == "build-firmwares" ]]; then
   build_firmwares
 elif [[ $1 == "build-companion-firmwares" ]]; then
   build_companion_firmwares
+elif [[ $1 == "build-companion-wifi-firmwares" ]]; then
+  build_companion_wifi_firmwares
 elif [[ $1 == "build-repeater-firmwares" ]]; then
   build_repeater_firmwares
+elif [[ $1 == "build-repeater-mqtt-firmwares" ]]; then
+  build_repeater_mqtt_firmwares
 elif [[ $1 == "build-room-server-firmwares" ]]; then
   build_room_server_firmwares
 fi
