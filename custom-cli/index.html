@@ -742,7 +742,7 @@
 <h3 id="mqtt-status-and-routing">MQTT Status And Routing<a class="headerlink" href="#mqtt-status-and-routing" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get mqtt.status</code></li>
-<li>shows WiFi, NTP, IATA, endpoint status, and TX state</li>
+<li>shows WiFi, NTP, IATA, endpoint status, status publishing state, and TX state</li>
 <li><code>get mqtt.statuscfg</code></li>
 <li>shows whether periodic status messages are enabled</li>
 <li><code>get mqtt.iata</code></li>
@@ -836,6 +836,7 @@
 <p>When the repeater web panel is enabled, it only allows a limited command set.</p>
 <p>That allowlist currently includes:</p>
 <ul>
+<li><code>clock</code></li>
 <li><code>get mqtt.status</code></li>
 <li><code>get web</code></li>
 <li><code>get web.status</code></li>
