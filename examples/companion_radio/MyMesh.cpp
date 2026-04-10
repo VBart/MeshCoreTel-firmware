@@ -185,6 +185,29 @@ static const char* getWifiStateLabel(wl_status_t status) {
       return "unknown";
   }
 }
+
+static int getWifiQualityPercent(int rssi_dbm) {
+  if (rssi_dbm <= -100) {
+    return 0;
+  }
+  if (rssi_dbm >= -50) {
+    return 100;
+  }
+  return 2 * (rssi_dbm + 100);
+}
+
+static const char* getWifiQualityLabel(int rssi_dbm) {
+  if (rssi_dbm >= -60) {
+    return "excellent";
+  }
+  if (rssi_dbm >= -67) {
+    return "good";
+  }
+  if (rssi_dbm >= -75) {
+    return "fair";
+  }
+  return "poor";
+}
 #endif
 
 void MyMesh::writeOKFrame() {
@@ -2049,8 +2072,11 @@ void MyMesh::checkCLIRescueCmd() {
       if (_prefs.wifi_ssid[0] == 0) {
         Serial.println("  > ssid:- status:off code:255 state:unconfigured");
       } else if (status == WL_CONNECTED) {
-        Serial.printf("  > ssid:%s status:connected code:%d state:%s ip:%s\n", _prefs.wifi_ssid,
-                      static_cast<int>(status), getWifiStateLabel(status), WiFi.localIP().toString().c_str());
+        const int rssi_dbm = WiFi.RSSI();
+        Serial.printf("  > ssid:%s status:connected code:%d state:%s ip:%s rssi:%d quality:%d%% signal:%s\n",
+                      _prefs.wifi_ssid, static_cast<int>(status), getWifiStateLabel(status),
+                      WiFi.localIP().toString().c_str(), rssi_dbm, getWifiQualityPercent(rssi_dbm),
+                      getWifiQualityLabel(rssi_dbm));
       } else {
         const char* overall = (status == WL_IDLE_STATUS) ? "connecting" : "disconnected";
         Serial.printf("  > ssid:%s status:%s code:%d state:%s\n", _prefs.wifi_ssid, overall,

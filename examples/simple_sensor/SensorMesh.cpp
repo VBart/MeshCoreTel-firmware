@@ -820,16 +820,16 @@ void SensorMesh::setTxPower(int8_t power_dbm) {
   radio_set_tx_power(power_dbm);
 }
 
-void SensorMesh::formatStatsReply(char *reply) {
-  StatsFormatHelper::formatCoreStats(reply, board, *_ms, _err_flags, _mgr);
+void SensorMesh::formatStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatCoreStats(reply, reply_size, board, *_ms, _err_flags, _mgr);
 }
 
-void SensorMesh::formatRadioStatsReply(char *reply) {
-  StatsFormatHelper::formatRadioStats(reply, _radio, radio_driver, getTotalAirTime(), getReceiveAirTime());
+void SensorMesh::formatRadioStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatRadioStats(reply, reply_size, _radio, radio_driver, getTotalAirTime(), getReceiveAirTime());
 }
 
-void SensorMesh::formatPacketStatsReply(char *reply) {
-  StatsFormatHelper::formatPacketStats(reply, radio_driver, getNumSentFlood(), getNumSentDirect(), 
+void SensorMesh::formatPacketStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatPacketStats(reply, reply_size, radio_driver, getNumSentFlood(), getNumSentDirect(),
                                        getNumRecvFlood(), getNumRecvDirect());
 }
 

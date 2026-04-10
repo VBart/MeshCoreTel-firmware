@@ -876,13 +876,13 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, const char* command, ch
     } else if (sender_timestamp == 0 && memcmp(command, "log", 3) == 0) {
       _callbacks->dumpLogFile();
       strcpy(reply, "   EOF");
-    } else if (sender_timestamp == 0 && memcmp(command, "stats-packets", 13) == 0 && (command[13] == 0 || command[13] == ' ')) {
-      _callbacks->formatPacketStatsReply(reply);
-    } else if (sender_timestamp == 0 && memcmp(command, "stats-radio", 11) == 0 && (command[11] == 0 || command[11] == ' ')) {
-      _callbacks->formatRadioStatsReply(reply);
-    } else if (sender_timestamp == 0 && memcmp(command, "stats-core", 10) == 0 && (command[10] == 0 || command[10] == ' ')) {
-      _callbacks->formatStatsReply(reply);
-    } else if (sender_timestamp == 0 && memcmp(command, "memory", 6) == 0 && (command[6] == 0 || command[6] == ' ')) {
+    } else if (memcmp(command, "stats-packets", 13) == 0 && (command[13] == 0 || command[13] == ' ')) {
+      _callbacks->formatPacketStatsReply(reply, 160);
+    } else if (memcmp(command, "stats-radio", 11) == 0 && (command[11] == 0 || command[11] == ' ')) {
+      _callbacks->formatRadioStatsReply(reply, 160);
+    } else if (memcmp(command, "stats-core", 10) == 0 && (command[10] == 0 || command[10] == ' ')) {
+      _callbacks->formatStatsReply(reply, 160);
+    } else if (memcmp(command, "memory", 6) == 0 && (command[6] == 0 || command[6] == ' ')) {
       _callbacks->formatMemoryReply(reply, 160);
     } else {
       strcpy(reply, "Unknown command");

@@ -65,7 +65,9 @@ bool MQTTPrefsStore::save(FILESYSTEM* fs, const MQTTPrefs& prefs) {
   if (fs == nullptr) {
     return false;
   }
-  fs->remove(kFilename);
+  if (fs->exists(kFilename) && !fs->remove(kFilename)) {
+    return false;
+  }
 #if defined(RP2040_PLATFORM)
   File file = fs->open(kFilename, "w");
 #else

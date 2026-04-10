@@ -750,16 +750,16 @@ void MyMesh::clearStats() {
   ((SimpleMeshTables *)getTables())->resetStats();
 }
 
-void MyMesh::formatStatsReply(char *reply) {
-  StatsFormatHelper::formatCoreStats(reply, board, *_ms, _err_flags, _mgr);
+void MyMesh::formatStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatCoreStats(reply, reply_size, board, *_ms, _err_flags, _mgr);
 }
 
-void MyMesh::formatRadioStatsReply(char *reply) {
-  StatsFormatHelper::formatRadioStats(reply, _radio, radio_driver, getTotalAirTime(), getReceiveAirTime());
+void MyMesh::formatRadioStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatRadioStats(reply, reply_size, _radio, radio_driver, getTotalAirTime(), getReceiveAirTime());
 }
 
-void MyMesh::formatPacketStatsReply(char *reply) {
-  StatsFormatHelper::formatPacketStats(reply, radio_driver, getNumSentFlood(), getNumSentDirect(), 
+void MyMesh::formatPacketStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatPacketStats(reply, reply_size, radio_driver, getNumSentFlood(), getNumSentDirect(),
                                        getNumRecvFlood(), getNumRecvDirect());
 }
 

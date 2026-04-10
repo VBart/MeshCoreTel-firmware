@@ -5,12 +5,13 @@
 
 class StatsFormatHelper {
 public:
-  static void formatCoreStats(char* reply, 
-                             mesh::MainBoard& board, 
-                             mesh::MillisecondClock& ms, 
+  static void formatCoreStats(char* reply,
+                             size_t reply_size,
+                             mesh::MainBoard& board,
+                             mesh::MillisecondClock& ms,
                              uint16_t err_flags,
                              mesh::PacketManager* mgr) {
-    sprintf(reply, 
+    snprintf(reply, reply_size,
       "{\"battery_mv\":%u,\"uptime_secs\":%u,\"errors\":%u,\"queue_len\":%u}",
       board.getBattMilliVolts(),
       ms.getMillis() / 1000,
@@ -21,11 +22,12 @@ public:
 
   template<typename RadioDriverType>
   static void formatRadioStats(char* reply,
+                              size_t reply_size,
                               mesh::Radio* radio,
                               RadioDriverType& driver,
                               uint32_t total_air_time_ms,
                               uint32_t total_rx_air_time_ms) {
-    sprintf(reply, 
+    snprintf(reply, reply_size,
       "{\"noise_floor\":%d,\"last_rssi\":%d,\"last_snr\":%.2f,\"tx_air_secs\":%u,\"rx_air_secs\":%u}",
       (int16_t)radio->getNoiseFloor(),
       (int16_t)driver.getLastRSSI(),
@@ -37,12 +39,13 @@ public:
 
   template<typename RadioDriverType>
   static void formatPacketStats(char* reply,
+                               size_t reply_size,
                                RadioDriverType& driver,
                                uint32_t n_sent_flood,
                                uint32_t n_sent_direct,
                                uint32_t n_recv_flood,
                                uint32_t n_recv_direct) {
-    sprintf(reply, 
+    snprintf(reply, reply_size,
       "{\"recv\":%u,\"sent\":%u,\"flood_tx\":%u,\"direct_tx\":%u,\"flood_rx\":%u,\"direct_rx\":%u,\"recv_errors\":%u}",
       driver.getPacketsRecv(),
       driver.getPacketsSent(),

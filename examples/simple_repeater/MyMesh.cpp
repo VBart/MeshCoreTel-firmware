@@ -1081,16 +1081,16 @@ void MyMesh::removeNeighbor(const uint8_t *pubkey, int key_len) {
 #endif
 }
 
-void MyMesh::formatStatsReply(char *reply) {
-  StatsFormatHelper::formatCoreStats(reply, board, *_ms, _err_flags, _mgr);
+void MyMesh::formatStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatCoreStats(reply, reply_size, board, *_ms, _err_flags, _mgr);
 }
 
-void MyMesh::formatRadioStatsReply(char *reply) {
-  StatsFormatHelper::formatRadioStats(reply, _radio, radio_driver, getTotalAirTime(), getReceiveAirTime());
+void MyMesh::formatRadioStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatRadioStats(reply, reply_size, _radio, radio_driver, getTotalAirTime(), getReceiveAirTime());
 }
 
-void MyMesh::formatPacketStatsReply(char *reply) {
-  StatsFormatHelper::formatPacketStats(reply, radio_driver, getNumSentFlood(), getNumSentDirect(), 
+void MyMesh::formatPacketStatsReply(char *reply, size_t reply_size) {
+  StatsFormatHelper::formatPacketStats(reply, reply_size, radio_driver, getNumSentFlood(), getNumSentDirect(),
                                        getNumRecvFlood(), getNumRecvDirect());
 }
 
@@ -1439,6 +1439,9 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_exact("start ota") ||
       matches_exact("get wifi.status") ||
       matches_exact("get wifi.powersaving") ||
+      matches_exact("stats-core") ||
+      matches_exact("stats-radio") ||
+      matches_exact("stats-packets") ||
       matches_exact("memory") ||
       matches_exact("get mqtt.iata") ||
       matches_exact("get mqtt.owner") ||

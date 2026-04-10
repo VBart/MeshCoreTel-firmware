@@ -70,9 +70,9 @@ public:
   void formatNeighborsReply(char *reply) override {
     strcpy(reply, "not supported");
   }
-  void formatStatsReply(char *reply) override;
-  void formatRadioStatsReply(char *reply) override;
-  void formatPacketStatsReply(char *reply) override;
+  void formatStatsReply(char *reply, size_t reply_size) override;
+  void formatRadioStatsReply(char *reply, size_t reply_size) override;
+  void formatPacketStatsReply(char *reply, size_t reply_size) override;
   void formatMemoryReply(char *reply, size_t reply_size) override;
   mesh::LocalIdentity& getSelfId() override { return self_id; }
   void saveIdentity(const mesh::LocalIdentity& new_id) override;

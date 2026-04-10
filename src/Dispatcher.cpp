@@ -88,6 +88,9 @@ void Dispatcher::loop() {
       total_air_time += t;
       //Serial.print("  airtime="); Serial.println(t);
 
+      // A completed transmit means the radio recovered from any prior CAD stall.
+      _err_flags &= ~ERR_EVENT_CAD_TIMEOUT;
+
       updateTxBudget();
 
       if (t > tx_budget_ms) {

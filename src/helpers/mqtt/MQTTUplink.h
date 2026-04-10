@@ -4,6 +4,7 @@
 
 #include <Mesh.h>
 #include <helpers/CommonCLI.h>
+#include <helpers/web/WebPanelServer.h>
 #include <target.h>
 
 #include "JWTHelper.h"
@@ -14,18 +15,10 @@
 #if !defined(WITH_WEB_PANEL)
   #define WITH_WEB_PANEL 1
 #endif
-#if WITH_WEB_PANEL
-  #include <esp_https_server.h>
-#endif
 #include <mqtt_client.h>
 #endif
 
-class MQTTWebCommandRunner {
-public:
-  virtual ~MQTTWebCommandRunner() = default;
-  virtual void runWebCommand(const char* command, char* reply, size_t reply_size) = 0;
-  virtual const char* getWebAdminPassword() const = 0;
-};
+using MQTTWebCommandRunner = WebPanelCommandRunner;
 
 struct MQTTStatusSnapshot {
   int battery_mv;
@@ -72,7 +65,7 @@ public:
   bool setIata(const char* iata);
   const char* getIata() const { return _prefs.iata; }
   void setNodeNameSource(const char* node_name) { _node_name = node_name; }
-  void setWebCommandRunner(MQTTWebCommandRunner* runner) { _web_runner = runner; }
+  void setWebCommandRunner(MQTTWebCommandRunner* runner);
   bool setWifiSSID(const char* ssid);
   bool setWifiPassword(const char* pwd);
   const char* getWifiSSID() const { return _prefs.wifi_ssid; }
@@ -109,12 +102,6 @@ private:
     char raw_topic[128];
     char offline_payload[256];
   };
-
-#if WITH_WEB_PANEL
-  struct WebRouteContext {
-    MQTTUplink* self;
-  };
-#endif
 #endif
 
   FILESYSTEM* _fs;
@@ -125,13 +112,13 @@ private:
   bool _wifi_started;
   bool _sntp_started;
   bool _have_time_sync;
-  unsigned long _wifi_sta_started_at;
   unsigned long _last_wifi_attempt;
   unsigned long _last_status_publish;
   MQTTStatusSnapshot _last_status;
   char _device_id[65];
   const char* _node_name;
   MQTTWebCommandRunner* _web_runner;
+  WebPanelServer _web_panel;
 
 #if defined(ESP_PLATFORM)
   static constexpr uint8_t kEastmeshBit = 0x01;
@@ -140,26 +127,10 @@ private:
   static const BrokerSpec kBrokerSpecs[3];
 
   BrokerState _brokers[3];
-#if WITH_WEB_PANEL
-  httpd_handle_t _web_server;
-  char _web_token[33];
-  WebRouteContext _web_route_context;
-#endif
 
   static void handleMqttEvent(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
-#if WITH_WEB_PANEL
-  static esp_err_t handleWebIndex(httpd_req_t* req);
-  static esp_err_t handleWebLogin(httpd_req_t* req);
-  static esp_err_t handleWebCommand(httpd_req_t* req);
-#endif
   void ensureWebServer();
   void stopWebServer();
-  bool startWebServer();
-#if WITH_WEB_PANEL
-  bool isWebAuthorized(httpd_req_t* req) const;
-  bool readRequestBody(httpd_req_t* req, char* buffer, size_t buffer_size) const;
-  void refreshWebToken();
-#endif
   void ensureWifi();
   void updateTimeSync();
   bool hasEnabledBroker() const;

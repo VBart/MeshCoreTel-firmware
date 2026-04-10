@@ -1,8 +1,5 @@
 #include "MQTTUplink.h"
 #include "MQTTCaCerts.h"
-#if defined(WITH_WEB_PANEL) && WITH_WEB_PANEL
-  #include "generated/WebPanelCert.h"
-#endif
 
 #ifdef WITH_MQTT_UPLINK
 
@@ -51,17 +48,35 @@
 #endif
 
 namespace {
-constexpr unsigned long kWifiStartupDelayMillis = 750;
 constexpr unsigned long kWifiRetryMillis = 15000;
 constexpr unsigned long kWifiConnectTimeoutMillis = 45000;
 constexpr unsigned long kBrokerRetryMillis = 10000;
 constexpr time_t kTokenLifetimeSecs = 3600;
 constexpr time_t kTokenRefreshSlackSecs = 300;
 constexpr time_t kMinSaneEpoch = 1735689600;  // 2025-01-01T00:00:00Z
-constexpr size_t kWebServerStackSize = 8192;
-constexpr size_t kWebPasswordBufferSize = 80;
-constexpr size_t kWebCommandBufferSize = 192;
-constexpr size_t kWebReplyBufferSize = 256;
+
+int getWifiQualityPercent(int rssi_dbm) {
+  if (rssi_dbm <= -100) {
+    return 0;
+  }
+  if (rssi_dbm >= -50) {
+    return 100;
+  }
+  return 2 * (rssi_dbm + 100);
+}
+
+const char* getWifiQualityLabel(int rssi_dbm) {
+  if (rssi_dbm >= -60) {
+    return "excellent";
+  }
+  if (rssi_dbm >= -67) {
+    return "good";
+  }
+  if (rssi_dbm >= -75) {
+    return "fair";
+  }
+  return "poor";
+}
 
 char* allocScratchBuffer(size_t size) {
   void* ptr = heap_caps_malloc(size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -76,352 +91,6 @@ void freeScratchBuffer(void* ptr) {
     heap_caps_free(ptr);
   }
 }
-
-#if WITH_WEB_PANEL
-const char kWebPanelHtml[] PROGMEM = R"HTML(
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Repeater Config</title>
-  <style>
-    :root {
-      color-scheme: light;
-      --accent:#2f8f4e;
-      --accent-hover:#3fae61;
-      --background:#f4f6f9;
-      --text:#1f2937;
-      --text-muted:#4b5563;
-      --border:rgba(0, 0, 0, 0.08);
-      --surface1:#ffffff;
-      --surface2:#f0f3f7;
-      --card-bg:#ffffff;
-      --input-bg:#ffffff;
-      --terminal-bg:#f0f3f7;
-      --terminal-border:rgba(0, 0, 0, 0.08);
-      --terminal-cmd:#2f8f4e;
-      --status-red:#c94a4a;
-      --button-text:#ffffff;
-      --button-secondary-text:#1f2937;
-    }
-    :root[data-theme="dark"] {
-      color-scheme: dark;
-      --accent:#36a167;
-      --accent-hover:#49c27d;
-      --background:#222222;
-      --text:#e6eaf0;
-      --text-muted:#9aa4b2;
-      --border:rgba(255, 255, 255, 0.08);
-      --surface1:#303030;
-      --surface2:#343434;
-      --card-bg:#303030;
-      --input-bg:#343434;
-      --terminal-bg:#222222;
-      --terminal-border:rgba(255, 255, 255, 0.08);
-      --terminal-cmd:#8fd3ff;
-      --status-red:#d45a5a;
-      --button-text:#ffffff;
-      --button-secondary-text:#e6eaf0;
-    }
-    html { min-height:100%; background:linear-gradient(180deg,var(--background),var(--surface2)); background-repeat:no-repeat; background-attachment:fixed; }
-    body { min-height:100vh; margin:0; font:16px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; background:transparent; color:var(--text); transition:background .2s ease,color .2s ease; }
-    main { max-width:920px; margin:0 auto; padding:24px; }
-    .theme-fab { position:fixed; top:18px; right:18px; width:48px; height:48px; border-radius:999px; display:flex; align-items:center; justify-content:center; z-index:20; box-shadow:0 12px 28px rgba(0,0,0,.18); font-size:22px; line-height:1; }
-    .card { background:var(--card-bg); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:18px; }
-    h1,h2,h3 { margin:0 0 12px; font-size:18px; }
-    p { color:var(--text-muted); margin:8px 0 0; }
-    input, textarea, button, select { width:100%; box-sizing:border-box; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); padding:12px; font:inherit; }
-    textarea { min-height:100px; resize:vertical; }
-    button { width:auto; cursor:pointer; background:var(--accent); color:var(--button-text); border:none; font-weight:700; transition:background .2s ease,color .2s ease,border-color .2s ease; }
-    button:hover { background:var(--accent-hover); }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
-    .quick { display:flex; flex-wrap:wrap; gap:10px; }
-    .quick button, .iconbtn, .themebtn { background:var(--surface2); color:var(--button-secondary-text); border:1px solid var(--border); }
-    .quick button:hover, .iconbtn:hover, .themebtn:hover { background:var(--surface1); }
-    .stack { display:grid; gap:12px; }
-    .label { font-size:12px; color:var(--text-muted); margin-bottom:6px; display:block; }
-    .fieldline { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; }
-    .iconbtn { width:44px; padding:12px 0; }
-    .themebtn { padding:10px 14px; }
-    #app { display:none; }
-    #status { white-space:pre-wrap; color:var(--text-muted); min-height:1.4em; }
-    .terminal { background:var(--terminal-bg); border:1px solid var(--terminal-border); border-radius:12px; padding:14px; min-height:180px; max-height:320px; overflow:auto; font:14px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace; }
-    .term-entry { margin:0 0 12px; }
-    .term-cmd { color:var(--terminal-cmd); }
-    .term-out { white-space:pre-wrap; color:var(--text); }
-    .term-out.err { color:var(--status-red); }
-  </style>
-</head>
-<body>
-  <main>
-    <button id="themeToggle" class="themebtn theme-fab" aria-label="Toggle theme" title="Toggle theme">☾</button>
-    <section class="card" id="login">
-      <h1>Repeater Config</h1>
-      <p>Use the repeater admin password to unlock the command console. Accept the self-signed certificate warning in your browser first.</p>
-      <div class="row" style="margin-top:14px">
-        <input id="password" type="password" placeholder="Admin password">
-        <button id="loginBtn">Unlock</button>
-      </div>
-      <div id="status"></div>
-    </section>
-
-    <section class="card" id="app">
-      <h2>Run CLI Command</h2>
-      <div class="row">
-        <input id="command" placeholder="get mqtt.status">
-        <button id="runBtn">Run</button>
-      </div>
-      <p>Only the allowlisted commands exposed by this panel will run here.</p>
-      <div id="reply" class="terminal"></div>
-    </section>
-
-    <section class="card" id="app2" style="display:none">
-      <h2>Quick Commands</h2>
-      <div class="stack">
-        <div>
-          <span class="label">WiFi</span>
-          <div class="quick">
-            <button data-cmd="get wifi.status">wifi.status</button>
-            <button data-cmd="get wifi.powersaving">wifi.powersaving</button>
-          </div>
-        </div>
-        <div>
-          <span class="label">MQTT</span>
-          <div class="quick">
-            <button data-cmd="get mqtt.status">mqtt.status</button>
-            <button data-cmd="get mqtt.iata">mqtt.iata</button>
-            <button data-cmd="get mqtt.owner">mqtt.owner</button>
-            <button data-cmd="get mqtt.email">mqtt.email</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card" id="app3" style="display:none">
-      <h2>Web Forms</h2>
-      <div class="stack">
-        <div class="row">
-          <div>
-            <label class="label" for="nodeName">Device Name</label>
-            <div class="fieldline">
-              <input id="nodeName" placeholder="MeshCore-HOWL">
-              <button class="iconbtn" data-load-cmd="get name" data-load-input="nodeName" title="Refresh device name">&#8635;</button>
-            </div>
-          </div>
-          <div style="align-self:end">
-            <button data-prefix="set name " data-input="nodeName">Save name</button>
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label class="label" for="nodeLat">Latitude</label>
-            <div class="fieldline">
-              <input id="nodeLat" placeholder="-37.8136">
-              <button class="iconbtn" data-load-cmd="get lat" data-load-input="nodeLat" title="Refresh latitude">&#8635;</button>
-            </div>
-          </div>
-          <div>
-            <label class="label" for="nodeLon">Longitude</label>
-            <div class="fieldline">
-              <input id="nodeLon" placeholder="144.9631">
-              <button class="iconbtn" data-load-cmd="get lon" data-load-input="nodeLon" title="Refresh longitude">&#8635;</button>
-            </div>
-          </div>
-        </div>
-        <div class="quick">
-          <button data-prefix="set lat " data-input="nodeLat">Save latitude</button>
-          <button data-prefix="set lon " data-input="nodeLon">Save longitude</button>
-        </div>
-        <div class="row">
-          <div>
-            <label class="label" for="guestPassword">Guest Password</label>
-            <input id="guestPassword" type="password" placeholder="new guest password">
-          </div>
-        </div>
-        <div class="quick">
-          <button data-prefix="set guest.password " data-input="guestPassword">Save guest password</button>
-        </div>
-        <div>
-          <label class="label" for="privateKey">Private Key</label>
-          <input id="privateKey" placeholder="64-hex-char private key">
-          <p>Changing the private key requires a reboot to apply.</p>
-          <button data-prefix="set prv.key " data-input="privateKey">Save private key</button>
-        </div>
-        <div class="row3">
-          <div>
-            <label class="label" for="advertInterval">Advert Interval (minutes)</label>
-            <div class="fieldline">
-              <input id="advertInterval" placeholder="2">
-              <button class="iconbtn" data-load-cmd="get advert.interval" data-load-input="advertInterval" title="Refresh advert interval">&#8635;</button>
-            </div>
-          </div>
-          <div>
-            <label class="label" for="floodInterval">Flood Interval (hours)</label>
-            <div class="fieldline">
-              <input id="floodInterval" placeholder="12">
-              <button class="iconbtn" data-load-cmd="get flood.advert.interval" data-load-input="floodInterval" title="Refresh flood interval">&#8635;</button>
-            </div>
-          </div>
-          <div>
-            <label class="label" for="floodMax">Flood Max</label>
-            <div class="fieldline">
-              <input id="floodMax" placeholder="64">
-              <button class="iconbtn" data-load-cmd="get flood.max" data-load-input="floodMax" title="Refresh flood max">&#8635;</button>
-            </div>
-          </div>
-        </div>
-        <div class="quick">
-          <button data-prefix="set advert.interval " data-input="advertInterval">Save advert interval</button>
-          <button data-prefix="set flood.advert.interval " data-input="floodInterval">Save flood interval</button>
-          <button data-prefix="set flood.max " data-input="floodMax">Save flood max</button>
-        </div>
-        <div>
-          <label class="label" for="ownerInfo">Owner Info</label>
-          <div class="fieldline">
-            <textarea id="ownerInfo" placeholder="Free text shown in owner info"></textarea>
-            <button class="iconbtn" data-load-cmd="get owner.info" data-load-input="ownerInfo" data-load-format="multiline" title="Refresh owner info">&#8635;</button>
-          </div>
-          <button id="saveOwnerInfo">Save owner info</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="card" id="app4" style="display:none">
-      <h2>Actions</h2>
-      <div class="quick">
-        <button id="advertBtn">Advert</button>
-        <button id="rebootBtn">Reboot</button>
-        <button id="otaBtn">Start OTA</button>
-        <button id="logoutBtn" class="themebtn">Logout</button>
-      </div>
-    </section>
-  </main>
-  <script>
-    let token = "";
-    const statusEl = document.getElementById("status");
-    const replyEl = document.getElementById("reply");
-    const themeToggleEl = document.getElementById("themeToggle");
-    const rootEl = document.documentElement;
-    function getPreferredTheme() {
-      const saved = localStorage.getItem("repeater-theme");
-      if (saved === "light" || saved === "dark") return saved;
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }
-    function applyTheme(theme) {
-      rootEl.dataset.theme = theme;
-      themeToggleEl.textContent = theme === "dark" ? "☀" : "☾";
-      themeToggleEl.title = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
-      themeToggleEl.setAttribute("aria-label", themeToggleEl.title);
-    }
-    function toggleTheme() {
-      const next = rootEl.dataset.theme === "dark" ? "light" : "dark";
-      localStorage.setItem("repeater-theme", next);
-      applyTheme(next);
-    }
-    applyTheme(getPreferredTheme());
-    themeToggleEl.onclick = toggleTheme;
-    function appendHistory(cmd, text, ok) {
-      const entry = document.createElement("div");
-      entry.className = "term-entry";
-      const cmdLine = document.createElement("div");
-      cmdLine.className = "term-cmd";
-      cmdLine.textContent = "> " + cmd;
-      const outLine = document.createElement("div");
-      outLine.className = "term-out" + (ok ? "" : " err");
-      outLine.textContent = text && text.length ? text : "OK";
-      entry.appendChild(cmdLine);
-      entry.appendChild(outLine);
-      replyEl.appendChild(entry);
-      replyEl.scrollTop = replyEl.scrollHeight;
-    }
-    function parseReplyValue(text) {
-      return (text || "").replace(/^>\s*/, "").trim();
-    }
-    function showAuthedUi(show) {
-      document.getElementById("login").style.display = show ? "none" : "block";
-      document.getElementById("app").style.display = show ? "block" : "none";
-      document.getElementById("app2").style.display = show ? "block" : "none";
-      document.getElementById("app3").style.display = show ? "block" : "none";
-      document.getElementById("app4").style.display = show ? "block" : "none";
-      if (!show) {
-        document.getElementById("password").value = "";
-        statusEl.textContent = "";
-      }
-    }
-    async function runCommand(cmd) {
-      if (!token) return { ok:false, text:"" };
-      document.getElementById("command").value = cmd;
-      const res = await fetch("/api/command", { method:"POST", headers:{ "X-Auth-Token": token }, body: cmd });
-      const text = await res.text();
-      appendHistory(cmd, text, res.ok);
-      return { ok:res.ok, text };
-    }
-    function runPrefixed(prefix, inputId) {
-      const value = document.getElementById(inputId).value;
-      runCommand(prefix + value);
-    }
-    async function loadField(cmd, inputId, format) {
-      const result = await runCommand(cmd);
-      if (!result.ok) return;
-      let value = parseReplyValue(result.text);
-      if (format === "multiline") {
-        value = value.replace(/\|/g, "\n");
-      }
-      document.getElementById(inputId).value = value;
-    }
-    document.getElementById("loginBtn").onclick = async () => {
-      const pwd = document.getElementById("password").value;
-      const res = await fetch("/login", { method:"POST", body: pwd });
-      const text = await res.text();
-      if (!res.ok) {
-        statusEl.textContent = text || "Access denied";
-        return;
-      }
-      token = text.trim();
-      showAuthedUi(true);
-      await loadField("get name", "nodeName");
-    };
-    document.getElementById("password").addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        document.getElementById("loginBtn").click();
-      }
-    });
-    document.getElementById("runBtn").onclick = () => runCommand(document.getElementById("command").value);
-    document.querySelectorAll("[data-cmd]").forEach((btn) => btn.onclick = () => runCommand(btn.dataset.cmd));
-    document.querySelectorAll("[data-prefix]").forEach((btn) => btn.onclick = () => runPrefixed(btn.dataset.prefix, btn.dataset.input));
-    document.querySelectorAll("[data-load-cmd]").forEach((btn) => btn.onclick = () => loadField(btn.dataset.loadCmd, btn.dataset.loadInput, btn.dataset.loadFormat));
-    document.getElementById("saveOwnerInfo").onclick = () => {
-      const value = document.getElementById("ownerInfo").value.replace(/\n/g, "|");
-      runCommand("set owner.info " + value);
-    };
-    document.getElementById("rebootBtn").onclick = async () => {
-      if (confirm("Reboot the repeater now?")) {
-        await runCommand("reboot");
-      }
-    };
-    document.getElementById("advertBtn").onclick = async () => {
-      if (confirm("Send an advert now?")) {
-        await runCommand("advert");
-      }
-    };
-    document.getElementById("otaBtn").onclick = async () => {
-      if (confirm("Start OTA mode now?")) {
-        await runCommand("start ota");
-      }
-    };
-    document.getElementById("logoutBtn").onclick = () => {
-      token = "";
-      showAuthedUi(false);
-    };
-    showAuthedUi(false);
-  </script>
-</body>
-</html>
-)HTML";
-#endif
 
 const char* getWifiStateLabel(const MQTTPrefs& prefs, bool wifi_started) {
   if (prefs.wifi_ssid[0] == 0) {
@@ -449,24 +118,22 @@ const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[3] = {
 
 MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
     : _fs(nullptr), _rtc(&rtc), _identity(&identity), _running(false), _wifi_started(false), _sntp_started(false),
-      _have_time_sync(false), _wifi_sta_started_at(0), _last_wifi_attempt(0), _last_status_publish(0), _last_status{},
+      _have_time_sync(false), _last_wifi_attempt(0), _last_status_publish(0), _last_status{},
       _node_name(nullptr),
       _web_runner(nullptr)
-#if WITH_WEB_PANEL
-      , _web_server(nullptr)
-#endif
        {
   memset(_device_id, 0, sizeof(_device_id));
-#if WITH_WEB_PANEL
-  memset(_web_token, 0, sizeof(_web_token));
-  _web_route_context.self = this;
-#endif
   MQTTPrefsStore::setDefaults(_prefs);
   for (size_t i = 0; i < 3; ++i) {
     memset(&_brokers[i], 0, sizeof(_brokers[i]));
     _brokers[i].spec = &kBrokerSpecs[i];
   }
   MQTT_LOG("uplink init");
+}
+
+void MQTTUplink::setWebCommandRunner(MQTTWebCommandRunner* runner) {
+  _web_runner = runner;
+  _web_panel.setCommandRunner(runner);
 }
 
 bool MQTTUplink::savePrefs() {
@@ -494,7 +161,6 @@ void MQTTUplink::reconnectWifi() {
   _wifi_started = false;
   _sntp_started = false;
   _have_time_sync = false;
-  _wifi_sta_started_at = 0;
   _last_wifi_attempt = 0;
 }
 
@@ -847,165 +513,8 @@ void MQTTUplink::handleMqttEvent(void* handler_args, esp_event_base_t, int32_t e
   }
 }
 
-#if WITH_WEB_PANEL
-esp_err_t MQTTUplink::handleWebIndex(httpd_req_t* req) {
-  auto* ctx = static_cast<WebRouteContext*>(req->user_ctx);
-  if (ctx == nullptr || ctx->self == nullptr) {
-    return httpd_resp_send_500(req);
-  }
-  httpd_resp_set_type(req, "text/html; charset=utf-8");
-  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  return httpd_resp_send(req, kWebPanelHtml, HTTPD_RESP_USE_STRLEN);
-}
-#endif
-
-#if WITH_WEB_PANEL
-esp_err_t MQTTUplink::handleWebLogin(httpd_req_t* req) {
-  auto* ctx = static_cast<WebRouteContext*>(req->user_ctx);
-  if (ctx == nullptr || ctx->self == nullptr || ctx->self->_web_runner == nullptr) {
-    return httpd_resp_send_500(req);
-  }
-
-  char* password = allocScratchBuffer(kWebPasswordBufferSize);
-  if (password == nullptr) {
-    return httpd_resp_send_500(req);
-  }
-
-  if (!ctx->self->readRequestBody(req, password, kWebPasswordBufferSize)) {
-    freeScratchBuffer(password);
-    return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad request");
-  }
-
-  if (strcmp(password, ctx->self->_web_runner->getWebAdminPassword()) != 0) {
-    freeScratchBuffer(password);
-    WEB_LOG("login denied");
-    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Bad password");
-  }
-
-  freeScratchBuffer(password);
-  ctx->self->refreshWebToken();
-  WEB_LOG("login accepted");
-  httpd_resp_set_type(req, "text/plain; charset=utf-8");
-  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  return httpd_resp_sendstr(req, ctx->self->_web_token);
-}
-#endif
-
-#if WITH_WEB_PANEL
-esp_err_t MQTTUplink::handleWebCommand(httpd_req_t* req) {
-  auto* ctx = static_cast<WebRouteContext*>(req->user_ctx);
-  if (ctx == nullptr || ctx->self == nullptr || ctx->self->_web_runner == nullptr) {
-    return httpd_resp_send_500(req);
-  }
-  if (!ctx->self->isWebAuthorized(req)) {
-    return httpd_resp_send_err(req, HTTPD_401_UNAUTHORIZED, "Unauthorized");
-  }
-
-  char* command = allocScratchBuffer(kWebCommandBufferSize);
-  char* reply = allocScratchBuffer(kWebReplyBufferSize);
-  if (command == nullptr || reply == nullptr) {
-    freeScratchBuffer(command);
-    freeScratchBuffer(reply);
-    return httpd_resp_send_500(req);
-  }
-
-  if (!ctx->self->readRequestBody(req, command, kWebCommandBufferSize)) {
-    freeScratchBuffer(command);
-    freeScratchBuffer(reply);
-    return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad request");
-  }
-
-  memset(reply, 0, kWebReplyBufferSize);
-  ctx->self->_web_runner->runWebCommand(command, reply, kWebReplyBufferSize);
-  httpd_resp_set_type(req, "text/plain; charset=utf-8");
-  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  esp_err_t rc = httpd_resp_send(req, reply[0] ? reply : "OK", HTTPD_RESP_USE_STRLEN);
-  freeScratchBuffer(command);
-  freeScratchBuffer(reply);
-  return rc;
-}
-#endif
-
-#if WITH_WEB_PANEL
-bool MQTTUplink::readRequestBody(httpd_req_t* req, char* buffer, size_t buffer_size) const {
-  if (req == nullptr || buffer == nullptr || buffer_size == 0 || req->content_len <= 0 ||
-      req->content_len >= static_cast<int>(buffer_size)) {
-    return false;
-  }
-
-  int remaining = req->content_len;
-  int offset = 0;
-  while (remaining > 0) {
-    int read = httpd_req_recv(req, &buffer[offset], remaining);
-    if (read <= 0) {
-      return false;
-    }
-    offset += read;
-    remaining -= read;
-  }
-  buffer[offset] = 0;
-  return true;
-}
-
-void MQTTUplink::refreshWebToken() {
-  uint8_t token[16];
-  esp_fill_random(token, sizeof(token));
-  bytesToHexUpper(token, sizeof(token), _web_token, sizeof(_web_token));
-}
-
-bool MQTTUplink::isWebAuthorized(httpd_req_t* req) const {
-  if (_web_token[0] == 0) {
-    return false;
-  }
-  char token[40];
-  if (httpd_req_get_hdr_value_str(req, "X-Auth-Token", token, sizeof(token)) != ESP_OK) {
-    return false;
-  }
-  return strcmp(token, _web_token) == 0;
-}
-
-bool MQTTUplink::startWebServer() {
-  if (_web_server != nullptr || _web_runner == nullptr || _prefs.web_enabled == 0) {
-    return _web_server != nullptr;
-  }
-
-  httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
-  config.httpd.max_open_sockets = 2;
-  config.httpd.max_uri_handlers = 3;
-  config.httpd.max_resp_headers = 4;
-  config.httpd.backlog_conn = 2;
-  config.httpd.recv_wait_timeout = 2;
-  config.httpd.send_wait_timeout = 2;
-  config.httpd.stack_size = kWebServerStackSize;
-  config.cacert_pem = reinterpret_cast<const uint8_t*>(mqtt_web_panel_cert::kServerCertPem);
-  config.cacert_len = sizeof(mqtt_web_panel_cert::kServerCertPem);
-  config.prvtkey_pem = reinterpret_cast<const uint8_t*>(mqtt_web_panel_cert::kServerKeyPem);
-  config.prvtkey_len = sizeof(mqtt_web_panel_cert::kServerKeyPem);
-
-  esp_err_t rc = httpd_ssl_start(&_web_server, &config);
-  if (rc != ESP_OK) {
-    _web_server = nullptr;
-    WEB_LOG("server start failed rc=0x%x", static_cast<unsigned>(rc));
-    return false;
-  }
-
-  httpd_uri_t index_uri = {.uri = "/", .method = HTTP_GET, .handler = &MQTTUplink::handleWebIndex, .user_ctx = &_web_route_context};
-  httpd_uri_t login_uri = {.uri = "/login", .method = HTTP_POST, .handler = &MQTTUplink::handleWebLogin, .user_ctx = &_web_route_context};
-  httpd_uri_t command_uri = {.uri = "/api/command", .method = HTTP_POST, .handler = &MQTTUplink::handleWebCommand, .user_ctx = &_web_route_context};
-  httpd_register_uri_handler(_web_server, &index_uri);
-  httpd_register_uri_handler(_web_server, &login_uri);
-  httpd_register_uri_handler(_web_server, &command_uri);
-  WEB_LOG("server started on https://%s/", WiFi.localIP().toString().c_str());
-  return true;
-}
-
 void MQTTUplink::stopWebServer() {
-  if (_web_server != nullptr) {
-    WEB_LOG("server stopped");
-    httpd_ssl_stop(_web_server);
-    _web_server = nullptr;
-  }
-  _web_token[0] = 0;
+  _web_panel.stop();
 }
 
 void MQTTUplink::ensureWebServer() {
@@ -1013,12 +522,8 @@ void MQTTUplink::ensureWebServer() {
     stopWebServer();
     return;
   }
-  startWebServer();
+  _web_panel.start();
 }
-#else
-void MQTTUplink::ensureWebServer() { }
-void MQTTUplink::stopWebServer() { }
-#endif
 
 void MQTTUplink::ensureWifi() {
   if (_prefs.wifi_ssid[0] == 0) {
@@ -1037,7 +542,6 @@ void MQTTUplink::ensureWifi() {
       _wifi_started = false;
       _sntp_started = false;
       _have_time_sync = false;
-      _wifi_sta_started_at = 0;
     }
     return;
   }
@@ -1049,12 +553,7 @@ void MQTTUplink::ensureWifi() {
   unsigned long now_ms = millis();
   wl_status_t status = WiFi.status();
   if (_wifi_started) {
-    if (_last_wifi_attempt == 0) {
-      if (now_ms - _wifi_sta_started_at < kWifiStartupDelayMillis) {
-        return;
-      }
-    } else if (status == WL_IDLE_STATUS && now_ms - _last_wifi_attempt < kWifiConnectTimeoutMillis) {
-      return;
+    if (_last_wifi_attempt != 0 && status == WL_IDLE_STATUS && now_ms - _last_wifi_attempt < kWifiConnectTimeoutMillis) {
       return;
     }
     if (now_ms - _last_wifi_attempt < kWifiRetryMillis) {
@@ -1066,11 +565,7 @@ void MQTTUplink::ensureWifi() {
     WiFi.mode(WIFI_STA);
     WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave));
     _wifi_started = true;
-    _wifi_sta_started_at = now_ms;
-    _last_wifi_attempt = 0;
-    WIFI_LOG("sta start powersaving=%s settle_ms=%lu", getPowerSaveLabel(_prefs.wifi_powersave),
-             static_cast<unsigned long>(kWifiStartupDelayMillis));
-    return;
+    WIFI_LOG("sta start powersaving=%s", getPowerSaveLabel(_prefs.wifi_powersave));
   } else {
     WIFI_LOG("retry status=%d", static_cast<int>(status));
   }
@@ -1199,9 +694,6 @@ void MQTTUplink::begin(FILESYSTEM* fs) {
   _fs = fs;
   MQTTPrefsStore::load(_fs, _prefs);
   refreshIdentityStrings();
-#if WITH_WEB_PANEL
-  refreshWebToken();
-#endif
   _running = true;
   _last_status_publish = millis();
   MQTT_LOG("begin iata=%s enabled_mask=0x%02X wifi_ssid=%s", _prefs.iata, _prefs.enabled_mask, _prefs.wifi_ssid);
@@ -1221,7 +713,6 @@ void MQTTUplink::end() {
   _wifi_started = false;
   _sntp_started = false;
   _have_time_sync = false;
-  _wifi_sta_started_at = 0;
   _last_wifi_attempt = 0;
   _running = false;
 }
@@ -1335,13 +826,13 @@ void MQTTUplink::formatWebStatusReply(char* reply, size_t reply_size) const {
     return;
   }
 
-  if (_web_server == nullptr || !_wifi_started || WiFi.status() != WL_CONNECTED) {
+  if (!_web_panel.isRunning() || !_wifi_started || WiFi.status() != WL_CONNECTED) {
     snprintf(reply, reply_size, "> web:down");
     return;
   }
 
   snprintf(reply, reply_size, "> web:up url:https://%s/ auth:%s", WiFi.localIP().toString().c_str(),
-           _web_token[0] ? "unlocked" : "locked");
+           _web_panel.hasSessionToken() ? "unlocked" : "locked");
 #else
   (void)reply_size;
   snprintf(reply, reply_size, "> web:unsupported");
@@ -1542,8 +1033,11 @@ void MQTTUplink::formatWifiStatusReply(char* reply, size_t reply_size) const {
   }
 
   if (wifi_status == WL_CONNECTED) {
-    snprintf(reply, reply_size, "> ssid:%s status:%s code:%d state:%s ip:%s", _prefs.wifi_ssid, status,
-             static_cast<int>(wifi_status), state, WiFi.localIP().toString().c_str());
+    const int rssi_dbm = WiFi.RSSI();
+    snprintf(reply, reply_size,
+             "> ssid:%s status:%s code:%d state:%s ip:%s rssi:%d quality:%d%% signal:%s",
+             _prefs.wifi_ssid, status, static_cast<int>(wifi_status), state, WiFi.localIP().toString().c_str(),
+             rssi_dbm, getWifiQualityPercent(rssi_dbm), getWifiQualityLabel(rssi_dbm));
   } else {
     snprintf(reply, reply_size, "> ssid:%s status:%s code:%d state:%s", _prefs.wifi_ssid[0] ? _prefs.wifi_ssid : "-",
              status, static_cast<int>(wifi_status), state);
@@ -1554,7 +1048,7 @@ void MQTTUplink::formatWifiStatusReply(char* reply, size_t reply_size) const {
 
 MQTTUplink::MQTTUplink(mesh::RTCClock&, mesh::LocalIdentity&)
     : _fs(nullptr), _rtc(nullptr), _identity(nullptr), _running(false), _wifi_started(false), _sntp_started(false),
-      _have_time_sync(false), _wifi_sta_started_at(0), _last_wifi_attempt(0), _last_status_publish(0), _last_status{},
+      _have_time_sync(false), _last_wifi_attempt(0), _last_status_publish(0), _last_status{},
       _node_name(nullptr),
       _web_runner(nullptr) {
 }
