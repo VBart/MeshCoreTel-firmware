@@ -27,6 +27,7 @@ Once the new firmware is flashed, set:
 - `set wifi.ssid <your-ssid>`
 - `set wifi.pwd <your-password>`
 - `set mqtt.iata <code>`
+- `set mqtt.status on`
 
 ## Optional Settings
 
@@ -53,6 +54,7 @@ Confirm the repeater is up and connected with:
 
 - `get wifi.status`
 - `get mqtt.status`
+- `get mqtt.statuscfg`
 
 ## Validate In The Web Console
 
@@ -94,11 +96,11 @@ If you flash without erase first, older legacy values may still remain in flash 
 
 1. Flash the new EastMesh firmware without erasing.
 2. Open the serial CLI or companion app.
-3. Set `wifi.ssid`, `wifi.pwd`, and `mqtt.iata`.
+3. Set `wifi.ssid`, `wifi.pwd`, `mqtt.iata`, and `mqtt.status on`.
 4. Optionally set `mqtt.owner` and `mqtt.email`.
 5. If you previously had TX publishing disabled, set `mqtt.tx off`.
 6. Reboot the repeater.
-7. Verify with `get wifi.status` and `get mqtt.status`.
+7. Verify with `get wifi.status`, `get mqtt.status`, and `get mqtt.statuscfg`.
 8. Optionally confirm local web access with `set web on`, `get web.status`, and `https://<IP_ADDRESS>/`.
 
 ## Related Docs

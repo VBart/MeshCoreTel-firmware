@@ -1337,6 +1337,8 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     sprintf(reply, "> %s", mqtt.isPacketsEnabled() ? "on" : "off");
   } else if (memcmp(command, "get mqtt.raw", 12) == 0) {
     sprintf(reply, "> %s", mqtt.isRawEnabled() ? "on" : "off");
+  } else if (memcmp(command, "get mqtt.statuscfg", 18) == 0) {
+    sprintf(reply, "> %s", mqtt.isStatusEnabled() ? "on" : "off");
   } else if (memcmp(command, "get mqtt.tx", 11) == 0) {
     sprintf(reply, "> %s", mqtt.isTxEnabled() ? "on" : "off");
   } else if (memcmp(command, "get mqtt.eastmesh-au", 20) == 0 || memcmp(command, "get mqtt.eastmesh.au", 20) == 0) {
@@ -1396,6 +1398,9 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
   } else if (memcmp(command, "set mqtt.raw ", 13) == 0) {
     mqtt.setRawEnabled(memcmp(&command[13], "on", 2) == 0);
     strcpy(reply, "OK");
+  } else if (memcmp(command, "set mqtt.status ", 16) == 0) {
+    mqtt.setStatusEnabled(memcmp(&command[16], "on", 2) == 0);
+    strcpy(reply, "OK");
   } else if (memcmp(command, "set mqtt.eastmesh-au ", 21) == 0 || memcmp(command, "set mqtt.eastmesh.au ", 21) == 0) {
     mqtt.setEndpointEnabled(0x01, memcmp(&command[21], "on", 2) == 0);
     strcpy(reply, "OK");
@@ -1448,6 +1453,7 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_exact("get mqtt.email") ||
       matches_exact("get mqtt.packets") ||
       matches_exact("get mqtt.raw") ||
+      matches_exact("get mqtt.statuscfg") ||
       matches_exact("get mqtt.tx") ||
       matches_exact("get mqtt.eastmesh-au") ||
       matches_exact("get mqtt.eastmesh.au") ||
@@ -1471,6 +1477,7 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_prefix("set mqtt.email ") ||
       matches_prefix("set mqtt.packets ") ||
       matches_prefix("set mqtt.raw ") ||
+      matches_prefix("set mqtt.status ") ||
       matches_prefix("set mqtt.tx ") ||
       matches_prefix("set web ") ||
       matches_prefix("set.web ") ||

@@ -12,6 +12,8 @@ These commands are available on `*_repeater_mqtt` firmware targets.
 
 - `get mqtt.status`
   - shows WiFi, NTP, IATA, endpoint status, and TX state
+- `get mqtt.statuscfg`
+  - shows whether periodic status messages are enabled
 - `get mqtt.iata`
   - shows the IATA/location code used in MQTT topics
 - `set mqtt.iata <code>`
@@ -42,6 +44,8 @@ These commands are available on `*_repeater_mqtt` firmware targets.
   - shows whether raw packet payloads are published
 - `set mqtt.raw on|off`
   - enables or disables the separate `raw` MQTT topic
+- `set mqtt.status on|off`
+  - enables or disables periodic MQTT status publishing
 - `get mqtt.tx`
   - shows whether TX packets are included
 - `set mqtt.tx on|off`
@@ -125,6 +129,8 @@ That allowlist currently includes:
 - `set mqtt.packets on|off`
 - `get mqtt.raw`
 - `set mqtt.raw on|off`
+- `get mqtt.statuscfg`
+- `set mqtt.status on|off`
 - `get mqtt.tx`
 - `set mqtt.tx on|off`
 - `get mqtt.eastmesh-au`
