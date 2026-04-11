@@ -95,8 +95,11 @@ private:
     esp_mqtt_client_handle_t client;
     bool connected;
     bool connect_announced;
+    bool reconnect_pending;
     unsigned long last_connect_attempt;
+    unsigned long next_connect_attempt;
     time_t token_expires_at;
+    uint8_t reconnect_failures;
     char username[70];
     char* token;
     char client_id[48];
@@ -142,7 +145,7 @@ private:
   void refreshBrokerIdentity(BrokerState& broker);
   void refreshBrokerState(BrokerState& broker);
   void ensureBroker(BrokerState& broker);
-  void destroyBroker(BrokerState& broker);
+  void destroyBroker(BrokerState& broker, bool reset_retry_state = true);
   bool refreshToken(BrokerState& broker);
   void publishStatus(bool online);
   void publishOnlineStatus(BrokerState& broker);
