@@ -194,7 +194,7 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
   <main>
     <section class="card">
       <h1>Repeater Config</h1>
-      <p>Use the repeater admin password to unlock the panel. Accept the self-signed certificate warning in your browser first.</p>
+      <p>Use the repeater admin password to unlock the panel.</p>
       <input id="password" type="password" placeholder="Admin password" autocomplete="current-password">
       <button id="loginBtn">Unlock</button>
       <div id="status"></div>
@@ -296,6 +296,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     button.action-dreamy:hover { background:linear-gradient(135deg,#5c89d4,#9a8cff); }
     .stack { display:grid; gap:12px; }
     .field-card { display:grid; gap:10px; }
+    .section-group { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px; display:grid; gap:12px; }
+    .section-group h3 { margin:0; font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; }
     .inline-actions { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; align-items:center; }
     .label { font-size:12px; color:var(--text-muted); margin-bottom:6px; display:block; }
     .fieldline { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; }
@@ -332,6 +334,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
     .panel-warning { min-height:1.4em; font-size:13px; color:var(--status-red); }
     .panel-note { font-size:13px; color:var(--text-muted); }
+    .panel-status { min-height:1.4em; font-size:13px; color:var(--text-muted); }
     .themebtn { padding:10px 14px; }
     #status { white-space:pre-wrap; color:var(--text-muted); min-height:1.4em; }
     .terminal { background:var(--terminal-bg); border:1px solid var(--terminal-border); border-radius:12px; padding:14px; min-height:180px; max-height:320px; overflow:auto; font-family:inherit; font-size:14px; line-height:1.45; }
@@ -399,7 +402,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
   <main>
     <section class="card" id="login" style="display:none">
       <h1>Repeater Config</h1>
-      <p>Use the repeater admin password to unlock the command console. Accept the self-signed certificate warning in your browser first.</p>
+      <p>Use the repeater admin password to unlock the command console.</p>
       <div class="row" style="margin-top:14px">
         <input id="password" type="password" placeholder="Admin password">
         <button id="loginBtn">Unlock</button>
@@ -456,94 +459,183 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       <div id="reply" class="terminal"></div>
     </section>
 
+    <section class="card" id="infoPanel" style="display:none">
+      <h2>Info</h2>
+      <div class="stack">
+        <div class="row">
+          <div class="field-card">
+            <label class="label" for="roleValue">Role</label>
+            <div class="fieldline">
+              <input id="roleValue" readonly disabled>
+              <span class="placeholder-slot" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="field-card">
+            <label class="label" for="clockUtc">Clock UTC</label>
+            <div class="inline-actions">
+              <input id="clockUtc" readonly disabled>
+              <button class="iconbtn" data-load-cmd="clock" data-load-input="clockUtc" title="Refresh clock UTC">&#8635;</button>
+              <button id="syncClockBtn" class="savebtn">Sync</button>
+            </div>
+          </div>
+        </div>
+        <div class="field-card">
+          <label class="label" for="publicKey">Public Key</label>
+          <div class="fieldline">
+            <input id="publicKey" readonly disabled>
+            <button id="copyPublicKeyBtn" class="iconbtn" title="Copy public key">&#x2398;</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="card" id="repeaterSettingsPanel" style="display:none">
       <h2>Repeater Settings</h2>
       <div class="stack">
-        <div class="field-card">
-          <label class="label" for="nodeName">Device Name</label>
-          <div class="inline-actions">
-            <input id="nodeName" placeholder="MeshCore-HOWL">
-            <button class="iconbtn" data-load-cmd="get name" data-load-input="nodeName" title="Refresh device name">&#8635;</button>
-            <button class="savebtn" data-prefix="set name " data-input="nodeName">Save</button>
+        <div class="section-group">
+          <h3>Repeater Settings</h3>
+          <div class="field-card">
+            <label class="label" for="nodeName">Device Name</label>
+            <div class="inline-actions">
+              <input id="nodeName" placeholder="MeshCore-HOWL">
+              <button class="iconbtn" data-load-cmd="get name" data-load-input="nodeName" title="Refresh device name">&#8635;</button>
+              <button class="savebtn" data-prefix="set name " data-input="nodeName">Save</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field-card">
+              <div>
+              <label class="label" for="nodeLat">Latitude</label>
+              <div class="fieldline">
+                <input id="nodeLat" placeholder="0.0">
+                <button class="iconbtn" data-load-cmd="get lat" data-load-input="nodeLat" title="Refresh latitude">&#8635;</button>
+              </div>
+              </div>
+              <button class="savebtn" data-prefix="set lat " data-input="nodeLat">Save latitude</button>
+            </div>
+            <div class="field-card">
+              <div>
+              <label class="label" for="nodeLon">Longitude</label>
+              <div class="fieldline">
+                <input id="nodeLon" placeholder="0.0">
+                <button class="iconbtn" data-load-cmd="get lon" data-load-input="nodeLon" title="Refresh longitude">&#8635;</button>
+              </div>
+              </div>
+              <button class="savebtn" data-prefix="set lon " data-input="nodeLon">Save longitude</button>
+            </div>
+          </div>
+          <div class="field-card">
+            <label class="label" for="privateKey">Private Key</label>
+            <div class="inline-actions">
+              <input id="privateKey" type="password" placeholder="64-hex-char private key">
+              <button id="copyPrivateKeyBtn" class="iconbtn" title="Copy private key">&#x2398;</button>
+              <button class="savebtn" data-prefix="set prv.key " data-input="privateKey">Save</button>
+            </div>
+            <p>Changing the private key requires a reboot to apply.</p>
+          </div>
+          <div class="field-card">
+            <label class="label" for="ownerInfo">Owner Info</label>
+            <div class="inline-actions">
+              <textarea id="ownerInfo" placeholder="Free text shown in owner info"></textarea>
+              <button class="iconbtn" data-load-cmd="get owner.info" data-load-input="ownerInfo" data-load-format="multiline" title="Refresh owner info">&#8635;</button>
+              <button id="saveOwnerInfo" class="savebtn">Save</button>
+            </div>
           </div>
         </div>
-        <div class="row">
+        <div class="section-group">
+          <h3>Access</h3>
           <div class="field-card">
-            <div>
-            <label class="label" for="nodeLat">Latitude</label>
-            <div class="fieldline">
-              <input id="nodeLat" placeholder="0.0">
-              <button class="iconbtn" data-load-cmd="get lat" data-load-input="nodeLat" title="Refresh latitude">&#8635;</button>
-            </div>
-            </div>
-            <button class="savebtn" data-prefix="set lat " data-input="nodeLat">Save latitude</button>
-          </div>
-          <div class="field-card">
-            <div>
-            <label class="label" for="nodeLon">Longitude</label>
-            <div class="fieldline">
-              <input id="nodeLon" placeholder="0.0">
-              <button class="iconbtn" data-load-cmd="get lon" data-load-input="nodeLon" title="Refresh longitude">&#8635;</button>
-            </div>
-            </div>
-            <button class="savebtn" data-prefix="set lon " data-input="nodeLon">Save longitude</button>
-          </div>
-        </div>
-        <div class="field-card">
-          <label class="label" for="guestPassword">Guest Password</label>
-          <div class="inline-actions">
-            <input id="guestPassword" type="password" placeholder="new guest password">
+            <label class="label" for="adminPassword">Admin Password</label>
+            <div class="inline-actions">
+              <input id="adminPassword" type="password" placeholder="new admin password">
 	            <span class="placeholder-slot" aria-hidden="true"></span>
-            <button class="savebtn" data-prefix="set guest.password " data-input="guestPassword">Save</button>
+              <button class="savebtn" data-prefix="password " data-input="adminPassword">Save</button>
+            </div>
           </div>
-        </div>
-        <div class="field-card">
-          <label class="label" for="privateKey">Private Key</label>
-          <div class="inline-actions">
-            <input id="privateKey" placeholder="64-hex-char private key">
+          <div class="field-card">
+            <label class="label" for="guestPassword">Guest Password</label>
+            <div class="inline-actions">
+              <input id="guestPassword" type="password" placeholder="new guest password">
 	            <span class="placeholder-slot" aria-hidden="true"></span>
-            <button class="savebtn" data-prefix="set prv.key " data-input="privateKey">Save</button>
-          </div>
-          <p>Changing the private key requires a reboot to apply.</p>
-        </div>
-        <div class="row3">
-          <div class="field-card">
-            <div>
-            <label class="label" for="advertInterval">Advert Interval (minutes)</label>
-            <div class="fieldline">
-              <input id="advertInterval" placeholder="2">
-              <button class="iconbtn" data-load-cmd="get advert.interval" data-load-input="advertInterval" title="Refresh advert interval">&#8635;</button>
+              <button class="savebtn" data-prefix="set guest.password " data-input="guestPassword">Save</button>
             </div>
-            </div>
-            <button class="savebtn" data-prefix="set advert.interval " data-input="advertInterval">Save advert interval</button>
-          </div>
-          <div class="field-card">
-            <div>
-            <label class="label" for="floodInterval">Flood Interval (hours)</label>
-            <div class="fieldline">
-              <input id="floodInterval" placeholder="12">
-              <button class="iconbtn" data-load-cmd="get flood.advert.interval" data-load-input="floodInterval" title="Refresh flood interval">&#8635;</button>
-            </div>
-            </div>
-            <button class="savebtn" data-prefix="set flood.advert.interval " data-input="floodInterval">Save flood interval</button>
-          </div>
-          <div class="field-card">
-            <div>
-            <label class="label" for="floodMax">Flood Max</label>
-            <div class="fieldline">
-              <input id="floodMax" placeholder="64">
-              <button class="iconbtn" data-load-cmd="get flood.max" data-load-input="floodMax" title="Refresh flood max">&#8635;</button>
-            </div>
-            </div>
-            <button class="savebtn" data-prefix="set flood.max " data-input="floodMax">Save flood max</button>
           </div>
         </div>
-        <div class="field-card">
-          <label class="label" for="ownerInfo">Owner Info</label>
-          <div class="inline-actions">
-            <textarea id="ownerInfo" placeholder="Free text shown in owner info"></textarea>
-            <button class="iconbtn" data-load-cmd="get owner.info" data-load-input="ownerInfo" data-load-format="multiline" title="Refresh owner info">&#8635;</button>
-            <button id="saveOwnerInfo" class="savebtn">Save</button>
+        <div class="section-group">
+          <h3>Radio Settings</h3>
+          <div class="field-card">
+            <label class="label" for="radioPreset">Preset</label>
+            <div class="row">
+              <div class="field-card">
+                <div>
+                  <label class="label" for="radioCurrent">Current Radio</label>
+                  <div class="fieldline">
+                    <input id="radioCurrent" placeholder="915.800 / BW250 / SF10 / CR5" readonly disabled>
+                    <button id="refreshRadioBtn" class="iconbtn" title="Refresh current radio">&#8635;</button>
+                  </div>
+                </div>
+              </div>
+              <div class="field-card">
+                <div>
+                  <label class="label" for="radioPreset">Preset</label>
+                  <div class="inline-actions">
+                    <select id="radioPreset">
+                      <option value="">Loading presets...</option>
+                    </select>
+                    <button id="reloadRadioPresetsBtn" class="iconbtn" title="Reload presets">&#8635;</button>
+                    <button id="applyRadioPresetBtn" class="savebtn">Save</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="radioPresetStatus" class="panel-status"></div>
+          </div>
+          <div class="field-card">
+            <label class="label" for="pathHashMode">Path Hash Mode</label>
+            <div class="inline-actions">
+              <select id="pathHashMode">
+                <option value="0">1-byte</option>
+                <option value="1">2-byte</option>
+                <option value="2">3-byte</option>
+              </select>
+              <button class="iconbtn" data-load-cmd="get path.hash.mode" data-load-input="pathHashMode" title="Refresh path hash mode">&#8635;</button>
+              <button class="savebtn" data-prefix="set path.hash.mode " data-input="pathHashMode">Save</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-group">
+          <h3>Advertising</h3>
+          <div class="row3">
+            <div class="field-card">
+              <div>
+              <label class="label" for="advertInterval">Advert Interval (minutes)</label>
+              <div class="fieldline">
+                <input id="advertInterval" placeholder="2">
+                <button class="iconbtn" data-load-cmd="get advert.interval" data-load-input="advertInterval" title="Refresh advert interval">&#8635;</button>
+              </div>
+              </div>
+              <button class="savebtn" data-prefix="set advert.interval " data-input="advertInterval">Save advert interval</button>
+            </div>
+            <div class="field-card">
+              <div>
+              <label class="label" for="floodInterval">Flood Interval (hours)</label>
+              <div class="fieldline">
+                <input id="floodInterval" placeholder="12">
+                <button class="iconbtn" data-load-cmd="get flood.advert.interval" data-load-input="floodInterval" title="Refresh flood interval">&#8635;</button>
+              </div>
+              </div>
+              <button class="savebtn" data-prefix="set flood.advert.interval " data-input="floodInterval">Save flood interval</button>
+            </div>
+            <div class="field-card">
+              <div>
+              <label class="label" for="floodMax">Flood Max</label>
+                <div class="fieldline">
+                  <input id="floodMax" placeholder="64">
+                  <button class="iconbtn" data-load-cmd="get flood.max" data-load-input="floodMax" title="Refresh flood max">&#8635;</button>
+                </div>
+              </div>
+              <button class="savebtn" data-prefix="set flood.max " data-input="floodMax">Save flood max</button>
+            </div>
           </div>
         </div>
       </div>
@@ -710,8 +802,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 
   </main>
   <script>
+    const RADIO_PRESETS_URL = "https://api.meshcore.nz/api/v1/config";
     let token = sessionStorage.getItem("repeater-token") || "";
     let commandQueue = Promise.resolve();
+    let radioPresetEntries = [];
+    let currentRadioConfig = null;
     const statusEl = document.getElementById("status");
     const replyEl = document.getElementById("reply");
     const themeToggleEl = document.getElementById("themeToggle");
@@ -756,6 +851,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function parseReplyValue(text) {
       return (text || "").replace(/^>\s*/, "").trim();
     }
+    function isCommandError(text) {
+      const value = parseReplyValue(text).toLowerCase();
+      return value.startsWith("err") || value.startsWith("(err") || value.startsWith("error");
+    }
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
     }
@@ -792,6 +891,86 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (abs >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(2) + " MB";
       if (abs >= 1024) return (value / 1024).toFixed(1) + " KB";
       return Math.round(value) + " B";
+    }
+    function formatDecimal(value, digits) {
+      const num = Number.parseFloat(value);
+      if (!Number.isFinite(num)) return "";
+      return num.toFixed(digits);
+    }
+    function normalizeRadioConfig(config) {
+      if (!config) return null;
+      const frequency = Number.parseFloat(config.frequency);
+      const bandwidth = Number.parseFloat(config.bandwidth);
+      const spreadingFactor = Number.parseInt(config.spreadingFactor, 10);
+      const codingRate = Number.parseInt(config.codingRate, 10);
+      if (!Number.isFinite(frequency) || !Number.isFinite(bandwidth) || !Number.isFinite(spreadingFactor) || !Number.isFinite(codingRate)) {
+        return null;
+      }
+      return {
+        frequency,
+        bandwidth,
+        spreadingFactor,
+        codingRate
+      };
+    }
+    function radioSignature(config) {
+      const normalized = normalizeRadioConfig(config);
+      if (!normalized) return "";
+      return [
+        normalized.frequency.toFixed(3),
+        normalized.bandwidth.toFixed(3),
+        normalized.spreadingFactor,
+        normalized.codingRate
+      ].join("|");
+    }
+    function formatRadioConfig(config) {
+      const normalized = normalizeRadioConfig(config);
+      if (!normalized) return "";
+      return `${normalized.frequency.toFixed(3)} / BW${normalized.bandwidth.toFixed(3)} / SF${normalized.spreadingFactor} / CR${normalized.codingRate}`;
+    }
+    function parseRadioValue(value) {
+      const parts = String(value || "").split(",");
+      if (parts.length !== 4) return null;
+      return normalizeRadioConfig({
+        frequency: parts[0],
+        bandwidth: parts[1],
+        spreadingFactor: parts[2],
+        codingRate: parts[3]
+      });
+    }
+    function setRadioPresetStatus(message, isError) {
+      const el = document.getElementById("radioPresetStatus");
+      if (!el) return;
+      el.textContent = message || "";
+      el.style.color = isError ? "var(--status-red)" : "var(--text-muted)";
+    }
+    function syncRadioPresetUi() {
+      const currentEl = document.getElementById("radioCurrent");
+      if (currentEl) {
+        currentEl.value = currentRadioConfig ? formatRadioConfig(currentRadioConfig) : "";
+      }
+      const selectEl = document.getElementById("radioPreset");
+      const applyBtn = document.getElementById("applyRadioPresetBtn");
+      if (!selectEl || !applyBtn) return;
+      const currentSig = radioSignature(currentRadioConfig);
+      let matchedIndex = -1;
+      for (let i = 0; i < radioPresetEntries.length; i++) {
+        if (radioSignature(radioPresetEntries[i]) === currentSig) {
+          matchedIndex = i;
+          break;
+        }
+      }
+      if (!radioPresetEntries.length) {
+        applyBtn.disabled = true;
+        return;
+      }
+      if (matchedIndex >= 0) {
+        selectEl.value = String(matchedIndex);
+        applyBtn.disabled = false;
+        return;
+      }
+      selectEl.value = "";
+      applyBtn.disabled = true;
     }
     function toneForPercent(percent, invert) {
       if (invert) {
@@ -995,6 +1174,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       document.getElementById("cliPanel").style.display = show ? "block" : "none";
       document.getElementById("quickCommandsPanel").style.display = show ? "block" : "none";
       document.getElementById("mqttSettingsPanel").style.display = show ? "block" : "none";
+      document.getElementById("infoPanel").style.display = show ? "block" : "none";
       document.getElementById("statsPanel").style.display = show ? "block" : "none";
       document.getElementById("actionsPanel").style.display = show ? "block" : "none";
       document.getElementById("repeaterSettingsPanel").style.display = show ? "block" : "none";
@@ -1028,10 +1208,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           redirectToLogin();
           return { ok:false, text };
         }
+        const ok = res.ok && !isCommandError(text);
         if (recordHistory) {
-          appendHistory(cmd, text, res.ok);
+          appendHistory(cmd, text, ok);
         }
-        return { ok:res.ok, text };
+        return { ok, text };
       });
     }
     function runPrefixed(prefix, inputId) {
@@ -1044,8 +1225,48 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       let value = parseReplyValue(result.text);
       if (format === "multiline") {
         value = value.replace(/\|/g, "\n");
+      } else if (format === "uppercase") {
+        value = value.toUpperCase();
       }
       document.getElementById(inputId).value = value;
+    }
+    async function copyToClipboard(value, successMessage) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(value);
+        } else {
+          throw new Error("Clipboard unavailable");
+        }
+        statusEl.textContent = successMessage;
+      } catch (_) {
+        statusEl.textContent = "Copy failed";
+      }
+    }
+    async function syncClock() {
+      let epoch = Math.floor(Date.now() / 1000);
+      let result = await runCommand("time " + String(epoch));
+      if (result.ok) {
+        await loadField("clock", "clockUtc");
+        statusEl.textContent = "Clock synced";
+        return;
+      }
+      const message = parseReplyValue(result.text).toLowerCase();
+      if (!message.includes("cannot go backwards")) {
+        statusEl.textContent = parseReplyValue(result.text) || "Clock sync failed";
+        return;
+      }
+      if (!confirm("Device clock appears ahead of browser time. Force clock sync backwards?")) {
+        statusEl.textContent = "Clock sync cancelled";
+        return;
+      }
+      epoch = Math.floor(Date.now() / 1000);
+      result = await runCommand("time.force " + String(epoch));
+      if (result.ok) {
+        await loadField("clock", "clockUtc");
+        statusEl.textContent = "Clock force-synced";
+        return;
+      }
+      statusEl.textContent = parseReplyValue(result.text) || "Clock force sync failed";
     }
     async function fetchJson(path) {
       if (!token) {
@@ -1065,8 +1286,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         return JSON.parse(text);
       });
     }
-	    function applyBootstrapData(data) {
-	      if (!data) return;
+    function applyBootstrapData(data) {
+      if (!data) return;
 	      if (typeof data.name === "string") document.getElementById("nodeName").value = data.name;
 	      if (typeof data.mqtt_iata === "string" && data.mqtt_iata.length) document.getElementById("mqttIata").value = data.mqtt_iata;
 	      if (typeof data.mqtt_owner === "string") document.getElementById("mqttOwner").value = data.mqtt_owner;
@@ -1074,11 +1295,18 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (typeof data.advert_interval === "string") document.getElementById("advertInterval").value = data.advert_interval;
 	      if (typeof data.flood_interval === "string") document.getElementById("floodInterval").value = data.flood_interval;
 	      if (typeof data.flood_max === "string") document.getElementById("floodMax").value = data.flood_max;
-	      if (typeof data.mqtt_eastmesh_au === "string") setBrokerToggle("mqttEastmeshAu", data.mqtt_eastmesh_au);
-	      if (typeof data.mqtt_letsmesh_eu === "string") setBrokerToggle("mqttLetsmeshEu", data.mqtt_letsmesh_eu);
-	      if (typeof data.mqtt_letsmesh_us === "string") setBrokerToggle("mqttLetsmeshUs", data.mqtt_letsmesh_us);
-	      updateBrokerWarning();
-	    }
+	      if (typeof data.path_hash_mode === "string") document.getElementById("pathHashMode").value = data.path_hash_mode;
+	      if (typeof data.private_key === "string") document.getElementById("privateKey").value = data.private_key.toUpperCase();
+	      if (typeof data.radio === "string") currentRadioConfig = parseRadioValue(data.radio);
+	      if (typeof data.role === "string") document.getElementById("roleValue").value = data.role;
+	      if (typeof data.clock === "string") document.getElementById("clockUtc").value = data.clock;
+	      if (typeof data.public_key === "string") document.getElementById("publicKey").value = data.public_key.toUpperCase();
+      if (typeof data.mqtt_eastmesh_au === "string") setBrokerToggle("mqttEastmeshAu", data.mqtt_eastmesh_au);
+      if (typeof data.mqtt_letsmesh_eu === "string") setBrokerToggle("mqttLetsmeshEu", data.mqtt_letsmesh_eu);
+      if (typeof data.mqtt_letsmesh_us === "string") setBrokerToggle("mqttLetsmeshUs", data.mqtt_letsmesh_us);
+      syncRadioPresetUi();
+      updateBrokerWarning();
+    }
 	    function getLetsmeshMode() {
 	      const eu = document.getElementById("mqttLetsmeshEu");
 	      const us = document.getElementById("mqttLetsmeshUs");
@@ -1151,12 +1379,69 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    function updateBrokerWarning() {
 	      document.getElementById("mqttBrokerWarning").textContent = "";
 	    }
-	    async function loadBrokerState(cmd, inputId) {
-	      const result = await runCommand(cmd);
-	      if (!result.ok) return;
-	      setBrokerToggle(inputId, parseReplyValue(result.text));
-	      updateBrokerWarning();
-	    }
+    async function loadBrokerState(cmd, inputId) {
+      const result = await runCommand(cmd);
+      if (!result.ok) return;
+      setBrokerToggle(inputId, parseReplyValue(result.text));
+      updateBrokerWarning();
+    }
+    async function loadRadioConfig() {
+      const result = await runCommand("get radio");
+      if (!result.ok) {
+        setRadioPresetStatus("Unable to load current radio config.", true);
+        return;
+      }
+      const parsed = parseRadioValue(parseReplyValue(result.text));
+      if (!parsed) {
+        setRadioPresetStatus("Current radio config was not recognised.", true);
+        return;
+      }
+      currentRadioConfig = parsed;
+      setRadioPresetStatus("");
+      syncRadioPresetUi();
+    }
+    async function loadRadioPresets() {
+      const selectEl = document.getElementById("radioPreset");
+      const applyBtn = document.getElementById("applyRadioPresetBtn");
+      if (selectEl) {
+        selectEl.innerHTML = '<option value="">Loading presets...</option>';
+      }
+      if (applyBtn) applyBtn.disabled = true;
+      setRadioPresetStatus("");
+      try {
+        const res = await fetch(RADIO_PRESETS_URL, { cache:"no-store" });
+        if (!res.ok) {
+          throw new Error("Preset service returned " + res.status);
+        }
+        const payload = await res.json();
+        const config = payload && payload.config ? payload.config : {};
+        const suggested = config && config.suggested_radio_settings ? config.suggested_radio_settings : {};
+        const entries = Array.isArray(suggested.entries) ? suggested.entries : [];
+        radioPresetEntries = entries.map((entry) => ({
+          title: String(entry.title || "Unnamed preset"),
+          description: String(entry.description || ""),
+          frequency: formatDecimal(entry.frequency, 3),
+          bandwidth: formatDecimal(entry.bandwidth, 3),
+          spreadingFactor: Number.parseInt(entry.spreading_factor, 10),
+          codingRate: Number.parseInt(entry.coding_rate, 10)
+        })).filter((entry) => radioSignature(entry));
+        if (!selectEl) return;
+        const options = ['<option value="">Custom / current</option>'];
+        for (let i = 0; i < radioPresetEntries.length; i++) {
+          const preset = radioPresetEntries[i];
+          options.push(`<option value="${i}">${escapeHtml(preset.title)}</option>`);
+        }
+        selectEl.innerHTML = options.join("");
+        syncRadioPresetUi();
+      } catch (error) {
+        radioPresetEntries = [];
+        if (selectEl) {
+          selectEl.innerHTML = '<option value="">Community presets unavailable</option>';
+        }
+        if (applyBtn) applyBtn.disabled = true;
+        setRadioPresetStatus(error && error.message ? error.message : "Unable to load community presets.", true);
+      }
+    }
     async function refreshStats() {
       const getStatsBtn = document.getElementById("getStatsBtn");
       getStatsBtn.disabled = true;
@@ -1270,6 +1555,42 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      const value = document.getElementById("ownerInfo").value.replace(/\n/g, "|");
 	      runCommand("set owner.info " + value);
 	    };
+    document.getElementById("refreshRadioBtn").onclick = () => loadRadioConfig();
+    document.getElementById("reloadRadioPresetsBtn").onclick = () => loadRadioPresets();
+    document.getElementById("copyPublicKeyBtn").onclick = () => copyToClipboard(document.getElementById("publicKey").value, "Public key copied");
+    document.getElementById("copyPrivateKeyBtn").onclick = () => copyToClipboard(document.getElementById("privateKey").value.toUpperCase(), "Private key copied");
+    document.getElementById("syncClockBtn").onclick = () => syncClock();
+    document.getElementById("radioPreset").addEventListener("change", (event) => {
+      const value = event.target.value;
+      if (value === "") {
+        syncRadioPresetUi();
+        return;
+      }
+      const preset = radioPresetEntries[Number.parseInt(value, 10)];
+      if (!preset) {
+        syncRadioPresetUi();
+        return;
+      }
+      document.getElementById("applyRadioPresetBtn").disabled = false;
+    });
+    document.getElementById("applyRadioPresetBtn").onclick = async () => {
+      const selectEl = document.getElementById("radioPreset");
+      const index = Number.parseInt(selectEl.value, 10);
+      const preset = radioPresetEntries[index];
+      if (!preset) {
+        setRadioPresetStatus("Select a community preset first.", true);
+        return;
+      }
+      const command = `set radio ${preset.frequency} ${preset.bandwidth} ${preset.spreadingFactor} ${preset.codingRate}`;
+      const result = await runCommand(command);
+      if (!result.ok) {
+        setRadioPresetStatus(parseReplyValue(result.text) || "Unable to apply radio preset.", true);
+        return;
+      }
+      currentRadioConfig = normalizeRadioConfig(preset);
+      syncRadioPresetUi();
+      setRadioPresetStatus("Preset saved. Reboot to apply the new radio settings.", false);
+    };
     document.getElementById("rebootBtn").onclick = async () => {
       if (confirm("Reboot the repeater now?")) {
         await runCommand("reboot");
@@ -1310,9 +1631,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs"),
           loadField("get advert.interval", "advertInterval"),
           loadField("get flood.advert.interval", "floodInterval"),
-          loadField("get flood.max", "floodMax")
+          loadField("get flood.max", "floodMax"),
+          loadField("get path.hash.mode", "pathHashMode"),
+          loadField("get prv.key", "privateKey", "uppercase"),
+          loadField("get role", "roleValue"),
+          loadField("clock", "clockUtc"),
+          loadField("get public.key", "publicKey", "uppercase"),
+          loadRadioConfig()
         ]);
       }
+      loadRadioPresets();
 	    }
 	    refreshEastmeshModeUi();
 	    refreshLetsmeshModeUi();
@@ -1528,6 +1856,12 @@ esp_err_t WebPanelServer::handleBootstrap(httpd_req_t* req) {
 	      {"advert_interval", "get advert.interval"},
 	      {"flood_interval", "get flood.advert.interval"},
 	      {"flood_max", "get flood.max"},
+        {"path_hash_mode", "get path.hash.mode"},
+        {"private_key", "get prv.key"},
+        {"role", "get role"},
+        {"clock", "clock"},
+        {"public_key", "get public.key"},
+        {"radio", "get radio"},
 	  };
 
   httpd_resp_set_type(req, "application/json; charset=utf-8");

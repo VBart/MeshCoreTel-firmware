@@ -32,7 +32,7 @@ For flashing guidance, including when to use `.bin` vs `-merged.bin`, see:
 
 The custom firmware flasher site is:
 
-- <https://flasher.meshcore.io/>
+- <https://flasher.eastmesh.au/>
 
 ## Install uv
 

@@ -249,6 +249,12 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, const char* command, ch
       uint32_t now = getRTCClock()->getCurrentTime();
       DateTime dt = DateTime(now);
       sprintf(reply, "%02d:%02d - %d/%d/%d UTC", dt.hour(), dt.minute(), dt.day(), dt.month(), dt.year());
+    } else if (memcmp(command, "time.force ", 11) == 0) {  // force set time (to epoch seconds)
+      uint32_t secs = _atoi(&command[11]);
+      getRTCClock()->setCurrentTime(secs);
+      uint32_t now = getRTCClock()->getCurrentTime();
+      DateTime dt = DateTime(now);
+      sprintf(reply, "OK - clock force-set: %02d:%02d - %d/%d/%d UTC", dt.hour(), dt.minute(), dt.day(), dt.month(), dt.year());
     } else if (memcmp(command, "time ", 5) == 0) {  // set time (to epoch seconds)
       uint32_t secs = _atoi(&command[5]);
       uint32_t curr = getRTCClock()->getCurrentTime();

@@ -46,14 +46,68 @@ Practical rule:
 
 ## Recommended Flasher
 
-For custom firmware files, use:
+The recommended flasher is:
 
-- <https://flasher.meshcore.io/>
+- <https://flasher.eastmesh.au/>
+
+It includes native support for:
+
+- `companion_radio_wifi` firmware
+- `repeater_mqtt` firmware
+- custom firmware files
 
 Recommended usage:
 
 - use the normal `.bin` there when you are updating an existing device
 - use the `-merged.bin` there after an erase when you want a clean flash
+
+## Beginner Setup
+
+If this is your first time flashing EastMesh firmware, the easiest path is:
+
+1. Open <https://flasher.eastmesh.au/>.
+2. Select the firmware type you want:
+   - `Companion WiFi`
+   - `Repeater MQTT`
+   - or `Custom`
+3. Flash the correct firmware for your board.
+4. Use the built-in setup tools in the flasher site to finish first-time configuration.
+
+The flasher site includes two especially useful actions after flashing:
+
+- `Repeater Setup`
+- `Console`
+
+### Repeater Setup
+
+`Repeater Setup` is the guided first-time repeater flow.
+
+It is the traditional way to configure a repeater after flashing, including:
+
+- device name
+- latitude and longitude
+- admin and guest passwords
+- radio settings, including preset selection
+- advert interval
+- flood advert interval
+- flood max
+- some advanced repeater settings
+
+As of `v1.2.1`, the local repeater web panel also includes the same common repeater settings, so many users can continue day-to-day configuration there after initial setup.
+
+### Console
+
+`Console` is the raw CLI interface.
+
+It is especially useful, and often required, for the initial Wi-Fi setup on both firmware tracks:
+
+- `set wifi.ssid <your-ssid>`
+- `set wifi.pwd <your-password>`
+
+This applies to:
+
+- `companion_radio_wifi`
+- `repeater_mqtt`
 
 ## Repeater MQTT Notes
 

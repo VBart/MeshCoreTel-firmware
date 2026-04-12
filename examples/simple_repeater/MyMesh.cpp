@@ -1483,9 +1483,14 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_exact("get name") ||
       matches_exact("get lat") ||
       matches_exact("get lon") ||
+      matches_exact("get radio") ||
+      matches_exact("get prv.key") ||
+      matches_exact("get role") ||
+      matches_exact("get public.key") ||
       matches_exact("get advert.interval") ||
       matches_exact("get flood.advert.interval") ||
       matches_exact("get flood.max") ||
+      matches_exact("get path.hash.mode") ||
       matches_exact("get owner.info") ||
       matches_exact("get guest.password") ||
       matches_prefix("set wifi.ssid ") ||
@@ -1509,11 +1514,16 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_prefix("set name ") ||
       matches_prefix("set lat ") ||
       matches_prefix("set lon ") ||
+      matches_prefix("set radio ") ||
+      matches_prefix("password ") ||
       matches_prefix("set guest.password ") ||
       matches_prefix("set prv.key ") ||
       matches_prefix("set advert.interval ") ||
       matches_prefix("set flood.advert.interval ") ||
       matches_prefix("set flood.max ") ||
+      matches_prefix("set path.hash.mode ") ||
+      matches_prefix("time ") ||
+      matches_prefix("time.force ") ||
       matches_prefix("set owner.info ");
 
   if (!allowed) {
