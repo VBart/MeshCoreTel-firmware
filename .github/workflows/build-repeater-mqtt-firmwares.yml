@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OFFICIAL_MESHCORE_VERSION: ${{ vars.OFFICIAL_MESHCORE_VERSION }}
+      PLATFORMIO_BUILD_FLAGS: -UMQTT_DEBUG
     steps:
 
       - name: Clone Repo
