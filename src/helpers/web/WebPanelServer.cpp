@@ -1418,7 +1418,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function renderRadioCard(radio) {
       const rssiPct = pctRange(radio.last_rssi, -20, -120);
       const snrPct = pctRange(radio.last_snr, -20, 20);
-      const noisePct = pctRange(radio.noise_floor, -60, -130);
+      const noisePct = pctRange(radio.noise_floor, -60, -113);
       const totalAir = (radio.tx_air_secs || 0) + (radio.rx_air_secs || 0);
       const txShare = pctRatio(radio.tx_air_secs || 0, totalAir);
       return `<section class="hud-card">
