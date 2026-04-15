@@ -16,14 +16,16 @@ struct MQTTPrefs {
   uint8_t raw_enabled;
   uint8_t status_enabled;
   uint8_t tx_enabled;
-  uint8_t web_enabled;
-  uint8_t wifi_powersave;
+  uint8_t deprecated_web_enabled;
+  uint8_t legacy_wifi_powersave;
   uint32_t status_interval_ms;
   char iata[8];
-  char wifi_ssid[33];
-  char wifi_pwd[65];
+  char legacy_wifi_ssid[33];
+  char legacy_wifi_pwd[65];
   char owner_public_key[65];
   char owner_email[96];
+  uint8_t deprecated_web_stats_enabled;
+  uint8_t reserved[3];
 };
 
 class MQTTPrefsStore {

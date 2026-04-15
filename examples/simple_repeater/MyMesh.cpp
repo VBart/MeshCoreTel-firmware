@@ -1,6 +1,129 @@
 #include "MyMesh.h"
 #include <algorithm>
 
+#if defined(ESP32) && WITH_WEB_PANEL
+  #include <WiFi.h>
+#endif
+
+#ifndef ARCHIVE_DEBUG
+  #if defined(MQTT_DEBUG) && MQTT_DEBUG
+    #define ARCHIVE_DEBUG 1
+  #else
+    #define ARCHIVE_DEBUG 0
+  #endif
+#endif
+
+#if ARCHIVE_DEBUG
+  #define ARCHIVE_LOG(fmt, ...) Serial.printf("[ARCHIVE] " fmt "\n", ##__VA_ARGS__)
+#else
+  #define ARCHIVE_LOG(...) do { } while (0)
+#endif
+
+namespace {
+
+constexpr unsigned long kArchiveNeighboursFlushIntervalMs = 60UL * 1000UL;
+constexpr const char* kArchiveNeighboursSnapshotPath = "/stats/neighbours.snapshot";
+
+File openArchiveWrite(FILESYSTEM* fs, const char* filename) {
+#if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM)
+  fs->remove(filename);
+  return fs->open(filename, FILE_O_WRITE);
+#elif defined(RP2040_PLATFORM)
+  return fs->open(filename, "w");
+#else
+  fs->remove(filename);
+  return fs->open(filename, FILE_WRITE);
+#endif
+}
+
+File openArchiveRead(FILESYSTEM* fs, const char* filename) {
+#if defined(NRF52_PLATFORM) || defined(STM32_PLATFORM) || defined(RP2040_PLATFORM)
+  return fs->open(filename, "r");
+#else
+  return fs->open(filename, FILE_READ);
+#endif
+}
+
+File openArchiveWriteWithRecovery(ArchiveStorage* archive, const char* filename) {
+  if (archive == nullptr) {
+    return File();
+  }
+  FILESYSTEM* fs = archive->getFS();
+  if (fs == nullptr) {
+    return File();
+  }
+  File file = openArchiveWrite(fs, filename);
+  if (file) {
+    return file;
+  }
+  if (!archive->recover()) {
+    return File();
+  }
+  fs = archive->getFS();
+  return fs != nullptr ? openArchiveWrite(fs, filename) : File();
+}
+
+File openArchiveReadWithRecovery(ArchiveStorage* archive, const char* filename) {
+  if (archive == nullptr) {
+    return File();
+  }
+  FILESYSTEM* fs = archive->getFS();
+  if (fs == nullptr) {
+    return File();
+  }
+  File file = openArchiveRead(fs, filename);
+  if (file) {
+    return file;
+  }
+  if (!archive->recover()) {
+    return File();
+  }
+  fs = archive->getFS();
+  return fs != nullptr ? openArchiveRead(fs, filename) : File();
+}
+
+void escapeJsonString(const char* input, char* output, size_t output_size) {
+  if (output == nullptr || output_size == 0) {
+    return;
+  }
+
+  size_t oi = 0;
+  for (size_t i = 0; input != nullptr && input[i] != 0 && oi + 1 < output_size; ++i) {
+    const char c = input[i];
+    const char* escape = nullptr;
+    switch (c) {
+      case '\\':
+        escape = "\\\\";
+        break;
+      case '"':
+        escape = "\\\"";
+        break;
+      case '\n':
+        escape = "\\n";
+        break;
+      case '\r':
+        escape = "\\r";
+        break;
+      case '\t':
+        escape = "\\t";
+        break;
+      default:
+        break;
+    }
+
+    if (escape != nullptr) {
+      while (*escape != 0 && oi + 1 < output_size) {
+        output[oi++] = *escape++;
+      }
+    } else {
+      output[oi++] = c;
+    }
+  }
+  output[oi] = 0;
+}
+
+}  // namespace
+
 /* ------------------------------ Config -------------------------------- */
 
 #ifndef LORA_FREQ
@@ -84,6 +207,7 @@ void MyMesh::putNeighbour(const mesh::Identity &id, uint32_t timestamp, float sn
   neighbour->advert_timestamp = timestamp;
   neighbour->heard_timestamp = getRTCClock()->getCurrentTime();
   neighbour->snr = (int8_t)(snr * 4);
+  _archive_neighbours_dirty = true;
 #endif
 }
 
@@ -852,12 +976,17 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
 #endif
 {
   last_millis = 0;
+  _archive = nullptr;
   uptime_millis = 0;
+  next_archive_neighbours_flush_ms = 0;
+  next_history_sample_ms = 0;
   next_local_advert = next_flood_advert = 0;
   dirty_contacts_expiry = 0;
   set_radio_at = revert_radio_at = 0;
   _logging = false;
+  _archive_neighbours_dirty = false;
   region_load_active = false;
+  memset(&_stats_state, 0, sizeof(_stats_state));
 
 #if MAX_NEIGHBOURS
   memset(neighbours, 0, sizeof(neighbours));
@@ -912,9 +1041,11 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   pending_discover_until = 0;
 }
 
-void MyMesh::begin(FILESYSTEM *fs) {
+void MyMesh::begin(FILESYSTEM *fs, ArchiveStorage* archive) {
   mesh::Mesh::begin();
   _fs = fs;
+  _archive = archive;
+  last_millis = millis();
   // load persisted prefs
   _cli.loadPrefs(_fs);
   acl.load(_fs, self_id);
@@ -926,10 +1057,45 @@ void MyMesh::begin(FILESYSTEM *fs) {
     bridge.begin();
   }
 #endif
-#if defined(WITH_MQTT_UPLINK)
+#if defined(ESP_PLATFORM)
+  uint8_t legacy_wifi_powersave = 0;
+  const char* legacy_wifi_ssid = nullptr;
+  const char* legacy_wifi_pwd = nullptr;
+#ifdef WITH_MQTT_UPLINK
+  MQTTPrefs legacy_mqtt_prefs{};
+  MQTTPrefsStore::setDefaults(legacy_mqtt_prefs);
+  MQTTPrefsStore::load(_fs, legacy_mqtt_prefs);
+  legacy_wifi_powersave = legacy_mqtt_prefs.legacy_wifi_powersave;
+  legacy_wifi_ssid = legacy_mqtt_prefs.legacy_wifi_ssid;
+  legacy_wifi_pwd = legacy_mqtt_prefs.legacy_wifi_pwd;
+#endif
+  network.begin(_fs, legacy_wifi_powersave, legacy_wifi_ssid, legacy_wifi_pwd);
+#endif
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
   board.setInhibitSleep(true);
+  web.setCommandRunner(this);
+  web.setNetworkStateProvider(&network);
+  web.begin(_fs);
+  _stats_history.begin(web.isWebStatsEnabled(), _archive);
+  if (web.isWebStatsEnabled() && _archive != nullptr && _archive->isMounted()) {
+    restoreArchiveNeighbours();
+    next_archive_neighbours_flush_ms = millis() + kArchiveNeighboursFlushIntervalMs;
+  }
+  if (web.isWebStatsEnabled()) {
+    recordStatsEvent(HISTORY_EVENT_BOOT);
+    if (_archive != nullptr) {
+      recordStatsEvent(_archive->isMounted() ? HISTORY_EVENT_ARCHIVE_MOUNTED : HISTORY_EVENT_ARCHIVE_UNAVAILABLE);
+    }
+  }
+#endif
+#if defined(WITH_MQTT_UPLINK) && !(defined(ESP_PLATFORM) && WITH_WEB_PANEL)
+  board.setInhibitSleep(true);
+#endif
+#ifdef WITH_MQTT_UPLINK
   mqtt.setNodeNameSource(_prefs.node_name);
-  mqtt.setWebCommandRunner(this);
+#if defined(ESP_PLATFORM)
+  mqtt.setNetworkStateProvider(&network);
+#endif
   mqtt.begin(_fs);
 #endif
 
@@ -949,6 +1115,8 @@ void MyMesh::begin(FILESYSTEM *fs) {
 #if ENV_INCLUDE_GPS == 1
   applyGpsPrefs();
 #endif
+
+  next_history_sample_ms = futureMillis(1000);
 }
 
 void MyMesh::applyTempRadioParams(float freq, float bw, uint8_t sf, uint8_t cr, int timeout_mins) {
@@ -1079,6 +1247,7 @@ void MyMesh::removeNeighbor(const uint8_t *pubkey, int key_len) {
     NeighbourInfo *neighbour = &neighbours[i];
     if (memcmp(neighbour->id.pub_key, pubkey, key_len) == 0) {
       neighbours[i] = NeighbourInfo(); // clear neighbour entry
+      _archive_neighbours_dirty = true;
     }
   }
 #endif
@@ -1099,6 +1268,370 @@ void MyMesh::formatPacketStatsReply(char *reply, size_t reply_size) {
 
 void MyMesh::formatMemoryReply(char *reply, size_t reply_size) {
   StatsFormatHelper::formatMemoryStats(reply, reply_size);
+}
+
+size_t MyMesh::getNeighbourCount() const {
+#if MAX_NEIGHBOURS
+  size_t count = 0;
+  for (int i = 0; i < MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].heard_timestamp > 0) {
+      count++;
+    }
+  }
+  return count;
+#else
+  return 0;
+#endif
+}
+
+bool MyMesh::restoreArchiveNeighbours() {
+#if MAX_NEIGHBOURS
+  if (_archive == nullptr || !_archive->isMounted()) {
+    return false;
+  }
+
+  FILESYSTEM* fs = _archive->getFS();
+  if (fs == nullptr || !fs->exists(kArchiveNeighboursSnapshotPath)) {
+    return false;
+  }
+
+  File file = openArchiveReadWithRecovery(_archive, kArchiveNeighboursSnapshotPath);
+  if (!file) {
+    ARCHIVE_LOG("neighbours restore open failed path=%s", kArchiveNeighboursSnapshotPath);
+    return false;
+  }
+
+  memset(neighbours, 0, sizeof(neighbours));
+  char line[128];
+  size_t line_len = 0;
+  size_t restored = 0;
+  while (file.available()) {
+    const int raw = file.read();
+    if (raw < 0) {
+      break;
+    }
+
+    const char ch = static_cast<char>(raw);
+    if (ch == '\r') {
+      continue;
+    }
+    if (ch == '\n') {
+      line[line_len] = 0;
+      if (line_len > 0 && restored < MAX_NEIGHBOURS) {
+        char full_hex[65];
+        unsigned long advert_timestamp = 0;
+        unsigned long heard_timestamp = 0;
+        int snr = 0;
+        memset(full_hex, 0, sizeof(full_hex));
+        if (sscanf(line, "%64[^,],%lu,%lu,%d", full_hex, &advert_timestamp, &heard_timestamp, &snr) == 4) {
+          uint8_t pub_key[PUB_KEY_SIZE];
+          if (mesh::Utils::fromHex(pub_key, PUB_KEY_SIZE, full_hex)) {
+            neighbours[restored].id = mesh::Identity(pub_key);
+            neighbours[restored].advert_timestamp = static_cast<uint32_t>(advert_timestamp);
+            neighbours[restored].heard_timestamp = static_cast<uint32_t>(heard_timestamp);
+            neighbours[restored].snr = static_cast<int8_t>(constrain(snr, -128, 127));
+            restored++;
+          }
+        }
+      }
+      line_len = 0;
+      continue;
+    }
+
+    if (line_len + 1 < sizeof(line)) {
+      line[line_len++] = ch;
+    }
+  }
+
+  if (line_len > 0 && restored < MAX_NEIGHBOURS) {
+    line[line_len] = 0;
+    char full_hex[65];
+    unsigned long advert_timestamp = 0;
+    unsigned long heard_timestamp = 0;
+    int snr = 0;
+    memset(full_hex, 0, sizeof(full_hex));
+    if (sscanf(line, "%64[^,],%lu,%lu,%d", full_hex, &advert_timestamp, &heard_timestamp, &snr) == 4) {
+      uint8_t pub_key[PUB_KEY_SIZE];
+      if (mesh::Utils::fromHex(pub_key, PUB_KEY_SIZE, full_hex)) {
+        neighbours[restored].id = mesh::Identity(pub_key);
+        neighbours[restored].advert_timestamp = static_cast<uint32_t>(advert_timestamp);
+        neighbours[restored].heard_timestamp = static_cast<uint32_t>(heard_timestamp);
+        neighbours[restored].snr = static_cast<int8_t>(constrain(snr, -128, 127));
+        restored++;
+      }
+    }
+  }
+
+  file.close();
+  _archive_neighbours_dirty = false;
+  return restored > 0;
+#else
+  return false;
+#endif
+}
+
+void MyMesh::flushArchiveNeighbours() {
+#if MAX_NEIGHBOURS
+  if (_archive == nullptr || !_archive->isMounted()) {
+    return;
+  }
+
+  FILESYSTEM* fs = _archive->getFS();
+  if (fs == nullptr) {
+    return;
+  }
+
+  int16_t neighbours_count = 0;
+  NeighbourInfo* sorted_neighbours[MAX_NEIGHBOURS];
+  for (int i = 0; i < MAX_NEIGHBOURS; i++) {
+    if (neighbours[i].heard_timestamp > 0) {
+      sorted_neighbours[neighbours_count++] = &neighbours[i];
+    }
+  }
+
+  std::sort(sorted_neighbours, sorted_neighbours + neighbours_count, [](const NeighbourInfo* a, const NeighbourInfo* b) {
+    return a->heard_timestamp > b->heard_timestamp;
+  });
+
+  File file = openArchiveWriteWithRecovery(_archive, kArchiveNeighboursSnapshotPath);
+  if (!file) {
+    ARCHIVE_LOG("neighbours open failed path=%s", kArchiveNeighboursSnapshotPath);
+    return;
+  }
+
+  size_t total_written = 0;
+  for (int i = 0; i < neighbours_count; ++i) {
+    char full_hex[65];
+    mesh::Utils::toHex(full_hex, sorted_neighbours[i]->id.pub_key, PUB_KEY_SIZE);
+    total_written += file.printf("%s,%lu,%lu,%d\n",
+                                 full_hex,
+                                 static_cast<unsigned long>(sorted_neighbours[i]->advert_timestamp),
+                                 static_cast<unsigned long>(sorted_neighbours[i]->heard_timestamp),
+                                 static_cast<int>(sorted_neighbours[i]->snr));
+  }
+  file.flush();
+  file.close();
+  ARCHIVE_LOG("neighbours flushed path=%s bytes=%u count=%d",
+              kArchiveNeighboursSnapshotPath,
+              static_cast<unsigned>(total_written),
+              static_cast<int>(neighbours_count));
+  _archive_neighbours_dirty = false;
+#endif
+}
+
+void MyMesh::maybeFlushArchiveNeighbours(unsigned long now_ms) {
+#if MAX_NEIGHBOURS
+  if (!_archive_neighbours_dirty || _archive == nullptr || !_archive->isMounted()) {
+    return;
+  }
+  if (next_archive_neighbours_flush_ms == 0 || millisHasNowPassed(next_archive_neighbours_flush_ms)) {
+    flushArchiveNeighbours();
+    next_archive_neighbours_flush_ms = now_ms + kArchiveNeighboursFlushIntervalMs;
+  }
+#else
+  (void)now_ms;
+#endif
+}
+
+void MyMesh::recordStatsEvent(uint8_t type, int16_t value) {
+  _stats_history.recordEvent(type, getRTCClock()->getCurrentTime(), static_cast<uint32_t>(uptime_millis / 1000), value);
+}
+
+void MyMesh::updateStatsHistory(unsigned long now_ms) {
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  constexpr uint32_t kLowMemoryEnterBytes = 32UL * 1024UL;
+  constexpr uint32_t kLowMemoryClearBytes = 48UL * 1024UL;
+  constexpr uint32_t kLowMemoryEventCooldownSecs = 5UL * 60UL;
+  _stats_history.setArchive(_archive);
+  _stats_history.setEnabled(web.isWebStatsEnabled());
+  if (!_stats_history.isEnabled()) {
+    _stats_state.initialized = false;
+    _archive_neighbours_dirty = false;
+    return;
+  }
+
+  const bool wifi_connected = network.isWifiConnected();
+#ifdef WITH_MQTT_UPLINK
+  const bool mqtt_connected = mqtt.isAnyBrokerConnected();
+#else
+  const bool mqtt_connected = false;
+#endif
+  const bool web_panel_up = web.isPanelRunning();
+  const bool archive_mounted = (_archive != nullptr) && _archive->isMounted();
+#if defined(ESP32)
+  const uint32_t free_heap = ESP.getFreeHeap();
+  const uint32_t uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
+  bool low_memory = _stats_state.low_memory;
+  if (!_stats_state.initialized) {
+    low_memory = free_heap <= kLowMemoryEnterBytes;
+  } else if (low_memory) {
+    low_memory = free_heap <= kLowMemoryClearBytes;
+  } else {
+    low_memory = free_heap <= kLowMemoryEnterBytes;
+  }
+#else
+  const bool low_memory = false;
+#endif
+
+  if (!_stats_state.initialized) {
+    _stats_state.initialized = true;
+    _stats_state.wifi_connected = wifi_connected;
+    _stats_state.mqtt_connected = mqtt_connected;
+    _stats_state.web_panel_up = web_panel_up;
+    _stats_state.archive_mounted = archive_mounted;
+    _stats_state.low_memory = low_memory;
+    _stats_state.last_low_memory_event_uptime_secs = 0;
+  } else {
+    if (_stats_state.mqtt_connected != mqtt_connected) {
+      recordStatsEvent(mqtt_connected ? HISTORY_EVENT_MQTT_CONNECTED : HISTORY_EVENT_MQTT_DISCONNECTED);
+      _stats_state.mqtt_connected = mqtt_connected;
+    }
+    if (_stats_state.web_panel_up != web_panel_up) {
+      recordStatsEvent(web_panel_up ? HISTORY_EVENT_WEB_STARTED : HISTORY_EVENT_WEB_STOPPED);
+      _stats_state.web_panel_up = web_panel_up;
+    }
+    if (_stats_state.archive_mounted != archive_mounted) {
+      recordStatsEvent(archive_mounted ? HISTORY_EVENT_ARCHIVE_MOUNTED : HISTORY_EVENT_ARCHIVE_UNAVAILABLE);
+      _stats_state.archive_mounted = archive_mounted;
+      if (archive_mounted) {
+        if (getNeighbourCount() == 0) {
+          restoreArchiveNeighbours();
+        }
+        next_archive_neighbours_flush_ms = now_ms + kArchiveNeighboursFlushIntervalMs;
+      }
+    }
+    if (!_stats_state.low_memory && low_memory) {
+#if defined(ESP32)
+      if (_stats_state.last_low_memory_event_uptime_secs == 0 ||
+          (uptime_secs - _stats_state.last_low_memory_event_uptime_secs) >= kLowMemoryEventCooldownSecs) {
+        recordStatsEvent(HISTORY_EVENT_LOW_MEMORY, static_cast<int16_t>(min<uint32_t>(free_heap / 1024, 32767)));
+        _stats_state.last_low_memory_event_uptime_secs = uptime_secs;
+      }
+#endif
+    }
+    _stats_state.wifi_connected = wifi_connected;
+    _stats_state.low_memory = low_memory;
+  }
+
+  if (next_history_sample_ms == 0 || millisHasNowPassed(next_history_sample_ms)) {
+    HistorySample sample{};
+    sample.epoch_secs = getRTCClock()->getCurrentTime();
+    sample.uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
+    sample.packets_sent = radio_driver.getPacketsSent();
+    sample.packets_recv = radio_driver.getPacketsRecv();
+    sample.battery_mv = board.getBattMilliVolts();
+    sample.queue_len = static_cast<uint16_t>(_mgr->getOutboundTotal());
+    sample.error_flags = _err_flags;
+    sample.recv_errors = static_cast<uint16_t>(min<uint32_t>(radio_driver.getPacketsRecvErrors(), 0xFFFF));
+    sample.neighbour_count = static_cast<uint16_t>(min<size_t>(getNeighbourCount(), 0xFFFF));
+    sample.direct_dups = static_cast<uint16_t>(min<uint32_t>(((SimpleMeshTables *)getTables())->getNumDirectDups(), 0xFFFF));
+    sample.flood_dups = static_cast<uint16_t>(min<uint32_t>(((SimpleMeshTables *)getTables())->getNumFloodDups(), 0xFFFF));
+    sample.last_rssi_x4 = static_cast<int16_t>(radio_driver.getLastRSSI() * 4.0f);
+    sample.last_snr_x4 = static_cast<int16_t>(radio_driver.getLastSNR() * 4.0f);
+    sample.noise_floor = static_cast<int16_t>(_radio->getNoiseFloor());
+    sample.battery_pct = static_cast<int8_t>(board.getBatteryPercent());
+#if defined(ESP32)
+    sample.heap_free = ESP.getFreeHeap();
+    sample.heap_min = ESP.getMinFreeHeap();
+    sample.psram_free = ESP.getFreePsram();
+    sample.psram_min = ESP.getMinFreePsram();
+#endif
+    if (board.isExternalPowered()) sample.flags |= HISTORY_FLAG_EXTERNAL_POWER;
+    if (board.isCharging()) sample.flags |= HISTORY_FLAG_CHARGING;
+    if (board.isVbusPresent()) sample.flags |= HISTORY_FLAG_VBUS;
+    if (wifi_connected) sample.flags |= HISTORY_FLAG_WIFI_CONNECTED;
+    if (mqtt_connected) sample.flags |= HISTORY_FLAG_MQTT_CONNECTED;
+    if (web.isWebEnabled()) sample.flags |= HISTORY_FLAG_WEB_ENABLED;
+    if (web_panel_up) sample.flags |= HISTORY_FLAG_WEB_PANEL_UP;
+    if (archive_mounted) sample.flags |= HISTORY_FLAG_ARCHIVE_MOUNTED;
+    _stats_history.pushSample(sample);
+    next_history_sample_ms = now_ms + 60000UL;
+  }
+
+  _stats_history.maybeFlush(now_ms);
+  maybeFlushArchiveNeighbours(now_ms);
+#else
+  (void)now_ms;
+#endif
+}
+
+bool MyMesh::appendJsonEvents(char* reply, size_t reply_size, size_t& offset) const {
+  offset += snprintf(&reply[offset], reply_size - offset, "\"events\":[");
+  const size_t max_events = min<size_t>(_stats_history.getEventCount(), 6);
+  const uint32_t now_epoch_secs = getRTCClock()->getCurrentTime();
+  const uint32_t now_uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
+  for (size_t i = 0; i < max_events; ++i) {
+    HistoryEvent event{};
+    if (!_stats_history.getRecentEvent(i, event)) {
+      break;
+    }
+    const uint32_t age_secs = (now_epoch_secs >= event.epoch_secs && event.epoch_secs > 0)
+        ? (now_epoch_secs - event.epoch_secs)
+        : ((now_uptime_secs >= event.uptime_secs) ? (now_uptime_secs - event.uptime_secs) : event.uptime_secs);
+    offset += snprintf(&reply[offset], reply_size - offset,
+                       "%s{\"t\":%lu,\"type\":\"%s\",\"value\":%d}",
+                       i == 0 ? "" : ",",
+                       static_cast<unsigned long>(age_secs),
+                       StatsHistory::getEventTypeName(event.type),
+                       static_cast<int>(event.value));
+    if (offset >= reply_size) {
+      return false;
+    }
+  }
+  offset += snprintf(&reply[offset], reply_size - offset, "]");
+  return offset < reply_size;
+}
+
+bool MyMesh::appendJsonNeighbours(char* reply, size_t reply_size, size_t& offset) const {
+  offset += snprintf(&reply[offset], reply_size - offset, "\"neighbors_detail\":[");
+  if (offset >= reply_size) {
+    return false;
+  }
+
+#if MAX_NEIGHBOURS
+  constexpr size_t kMaxNeighboursJson = 10;
+  int16_t neighbours_count = 0;
+  NeighbourInfo* sorted_neighbours[MAX_NEIGHBOURS];
+  for (int i = 0; i < MAX_NEIGHBOURS; i++) {
+    auto neighbour = const_cast<NeighbourInfo*>(&neighbours[i]);
+    if (neighbour->heard_timestamp > 0) {
+      sorted_neighbours[neighbours_count++] = neighbour;
+    }
+  }
+
+  std::sort(sorted_neighbours, sorted_neighbours + neighbours_count, [](const NeighbourInfo* a, const NeighbourInfo* b) {
+    return a->heard_timestamp > b->heard_timestamp;
+  });
+
+  const size_t emit_count = min<size_t>(neighbours_count, kMaxNeighboursJson);
+  const uint32_t now_secs = getRTCClock()->getCurrentTime();
+  for (size_t i = 0; i < emit_count; ++i) {
+    const NeighbourInfo* neighbour = sorted_neighbours[i];
+    char hex[7];
+    char full_hex[65];
+    mesh::Utils::toHex(hex, neighbour->id.pub_key, 3);
+    mesh::Utils::toHex(full_hex, neighbour->id.pub_key, PUB_KEY_SIZE);
+    const uint32_t heard_secs_ago = now_secs - neighbour->heard_timestamp;
+    const uint32_t advert_secs_ago = now_secs - neighbour->advert_timestamp;
+    ClientInfo* client = const_cast<ClientACL&>(acl).getClient(neighbour->id.pub_key, PUB_KEY_SIZE);
+    const bool route_known = (client != nullptr && client->out_path_len != OUT_PATH_UNKNOWN);
+    offset += snprintf(&reply[offset], reply_size - offset,
+                       "%s{\"id\":\"%s\",\"full_id\":\"%s\",\"heard_secs_ago\":%lu,\"advert_secs_ago\":%lu,\"snr_db\":%.2f,\"route\":\"%s\"}",
+                       i == 0 ? "" : ",",
+                       hex,
+                       full_hex,
+                       static_cast<unsigned long>(heard_secs_ago),
+                       static_cast<unsigned long>(advert_secs_ago),
+                       static_cast<double>(neighbour->snr) / 4.0,
+                       route_known ? "known" : "unknown");
+    if (offset >= reply_size) {
+      return false;
+    }
+  }
+#endif
+
+  offset += snprintf(&reply[offset], reply_size - offset, "]");
+  return offset < reply_size;
 }
 
 void MyMesh::saveIdentity(const mesh::LocalIdentity &new_id) {
@@ -1307,6 +1840,75 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
       sendNodeDiscoverReq();
       strcpy(reply, "OK - Discover sent");
     }
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  } else if (strcmp(command, "get web.status") == 0 || strcmp(command, "get web") == 0) {
+    web.formatWebStatusReply(reply, 160);
+  } else if (strcmp(command, "get web.stats.status") == 0) {
+    snprintf(reply, 160,
+             "> enabled:%s history:%s psram:%s degraded:%s samples:%u/%u events:%u/%u archive:%s logical:%s path:%s",
+             web.isWebStatsEnabled() ? "on" : "off",
+             (_stats_history.isEnabled() && _stats_history.isRecentHistoryAvailable()) ? "active" : "inactive",
+             _stats_history.isPsramBacked() ? "yes" : "no",
+             _stats_history.isDegraded() ? "yes" : "no",
+             static_cast<unsigned>(_stats_history.getSampleCount()),
+             static_cast<unsigned>(_stats_history.getSampleCapacity()),
+             static_cast<unsigned>(_stats_history.getEventCount()),
+             static_cast<unsigned>(_stats_history.getEventCapacity()),
+             (_archive != nullptr && _archive->isMounted()) ? "mounted" : "unavailable",
+             (_archive != nullptr) ? _archive->getLogicalName() : "archive",
+             (_archive != nullptr) ? _archive->getLogicalStatsPath() : "archive:/stats");
+#endif
+#if defined(ESP_PLATFORM)
+  } else if (memcmp(command, "get wifi.status", 15) == 0) {
+    network.formatWifiStatusReply(reply, 160);
+  } else if (memcmp(command, "get wifi.ssid", 13) == 0) {
+    sprintf(reply, "> %s", network.getWifiSSID()[0] ? network.getWifiSSID() : "-");
+  } else if (memcmp(command, "get wifi.powersaving", 20) == 0) {
+    sprintf(reply, "> %s", network.getWifiPowerSave());
+#endif
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  } else if (memcmp(command, "set web ", 8) == 0) {
+    web.setWebEnabled(memcmp(&command[8], "on", 2) == 0);
+    strcpy(reply, "OK");
+  } else if (memcmp(command, "set.web ", 8) == 0) {
+    web.setWebEnabled(memcmp(&command[8], "on", 2) == 0);
+    strcpy(reply, "OK");
+  } else if (memcmp(command, "set web.stats ", 14) == 0 || memcmp(command, "set.web.stats ", 15) == 0) {
+    const char* value = (memcmp(command, "set web.stats ", 14) == 0) ? &command[14] : &command[15];
+    const bool enabled = memcmp(value, "on", 2) == 0;
+    if (web.setWebStatsEnabled(enabled)) {
+      _stats_history.setEnabled(enabled);
+      recordStatsEvent(enabled ? HISTORY_EVENT_STATS_ENABLED : HISTORY_EVENT_STATS_DISABLED);
+      if (enabled) {
+        next_history_sample_ms = millis();
+      } else {
+        _stats_state.initialized = false;
+      }
+      strcpy(reply, enabled ? "OK - web.stats on" : "OK - web.stats off");
+    } else {
+      strcpy(reply, "Err - unable to update web.stats");
+    }
+#endif
+#if defined(ESP_PLATFORM)
+  } else if (memcmp(command, "set wifi.ssid ", 14) == 0) {
+    if (network.setWifiSSID(&command[14])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad wifi.ssid");
+    }
+  } else if (memcmp(command, "set wifi.pwd ", 13) == 0) {
+    if (network.setWifiPassword(&command[13])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - bad wifi.pwd");
+    }
+  } else if (memcmp(command, "set wifi.powersaving ", 21) == 0) {
+    if (network.setWifiPowerSave(&command[21])) {
+      strcpy(reply, "OK");
+    } else {
+      strcpy(reply, "Err - use none|min|max");
+    }
+#endif
 #ifdef WITH_MQTT_UPLINK
   } else if (memcmp(command, "mqtt.owner ", 11) == 0) {
     if (mqtt.setOwnerPublicKey(&command[11])) {
@@ -1330,14 +1932,6 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     sprintf(reply, "> %s", mqtt.isStatusEnabled() ? "on" : "off");
   } else if (strcmp(command, "get mqtt.status") == 0) {
     mqtt.formatStatusReply(reply, 160);
-  } else if (strcmp(command, "get web.status") == 0 || strcmp(command, "get web") == 0) {
-    mqtt.formatWebStatusReply(reply, 160);
-  } else if (memcmp(command, "get wifi.status", 15) == 0) {
-    mqtt.formatWifiStatusReply(reply, 160);
-  } else if (memcmp(command, "get wifi.ssid", 13) == 0) {
-    sprintf(reply, "> %s", mqtt.getWifiSSID()[0] ? mqtt.getWifiSSID() : "-");
-  } else if (memcmp(command, "get wifi.powersaving", 20) == 0) {
-    sprintf(reply, "> %s", mqtt.getWifiPowerSave());
   } else if (memcmp(command, "get mqtt.iata", 13) == 0) {
     sprintf(reply, "> %s", mqtt.getIata());
   } else if (memcmp(command, "get mqtt.owner", 14) == 0) {
@@ -1359,30 +1953,6 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
   } else if (memcmp(command, "set mqtt.tx ", 12) == 0) {
     mqtt.setTxEnabled(memcmp(&command[12], "on", 2) == 0);
     strcpy(reply, "OK");
-  } else if (memcmp(command, "set web ", 8) == 0) {
-    mqtt.setWebEnabled(memcmp(&command[8], "on", 2) == 0);
-    strcpy(reply, "OK");
-  } else if (memcmp(command, "set.web ", 8) == 0) {
-    mqtt.setWebEnabled(memcmp(&command[8], "on", 2) == 0);
-    strcpy(reply, "OK");
-  } else if (memcmp(command, "set wifi.ssid ", 14) == 0) {
-    if (mqtt.setWifiSSID(&command[14])) {
-      strcpy(reply, "OK");
-    } else {
-      strcpy(reply, "Err - bad wifi.ssid");
-    }
-  } else if (memcmp(command, "set wifi.pwd ", 13) == 0) {
-    if (mqtt.setWifiPassword(&command[13])) {
-      strcpy(reply, "OK");
-    } else {
-      strcpy(reply, "Err - bad wifi.pwd");
-    }
-  } else if (memcmp(command, "set wifi.powersaving ", 21) == 0) {
-    if (mqtt.setWifiPowerSave(&command[21])) {
-      strcpy(reply, "OK");
-    } else {
-      strcpy(reply, "Err - use none|min|max");
-    }
   } else if (memcmp(command, "set mqtt.iata ", 14) == 0) {
     if (mqtt.setIata(&command[14])) {
       strcpy(reply, "OK");
@@ -1457,6 +2027,7 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_exact("clock") ||
       matches_exact("get mqtt.status") ||
       matches_exact("get web.status") ||
+      matches_exact("get web.stats.status") ||
       matches_exact("get web") ||
       matches_exact("advert") ||
       matches_exact("reboot") ||
@@ -1489,6 +2060,7 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_exact("get public.key") ||
       matches_exact("get advert.interval") ||
       matches_exact("get flood.advert.interval") ||
+      matches_exact("get repeat") ||
       matches_exact("get flood.max") ||
       matches_exact("get path.hash.mode") ||
       matches_exact("get owner.info") ||
@@ -1505,6 +2077,8 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_prefix("set mqtt.tx ") ||
       matches_prefix("set web ") ||
       matches_prefix("set.web ") ||
+      matches_prefix("set web.stats ") ||
+      matches_prefix("set.web.stats ") ||
       matches_prefix("set mqtt.eastmesh-au ") ||
       matches_prefix("set mqtt.eastmesh.au ") ||
       matches_prefix("set mqtt.letsmesh-eu ") ||
@@ -1520,6 +2094,7 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_prefix("set prv.key ") ||
       matches_prefix("set advert.interval ") ||
       matches_prefix("set flood.advert.interval ") ||
+      matches_prefix("set repeat ") ||
       matches_prefix("set flood.max ") ||
       matches_prefix("set path.hash.mode ") ||
       matches_prefix("time ") ||
@@ -1538,10 +2113,190 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
   reply[reply_size - 1] = 0;
 }
 
+bool MyMesh::isWebStatsEnabled() const {
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  return web.isWebStatsEnabled();
+#else
+  return false;
+#endif
+}
+
+bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
+  if (reply == nullptr || reply_size == 0) {
+    return false;
+  }
+  reply[0] = 0;
+
+#if !defined(ESP_PLATFORM) || !WITH_WEB_PANEL
+  return false;
+#else
+  char wifi_ssid[48];
+  char wifi_status[20];
+  char wifi_ip[20];
+  char wifi_powersave[12];
+  escapeJsonString(network.getWifiSSID()[0] ? network.getWifiSSID() : "-", wifi_ssid, sizeof(wifi_ssid));
+  escapeJsonString(network.getWifiPowerSave(), wifi_powersave, sizeof(wifi_powersave));
+  int wifi_rssi = 0;
+
+#if defined(ESP32)
+  if (network.getWifiSSID()[0] == 0) {
+    strncpy(wifi_status, "unconfigured", sizeof(wifi_status) - 1);
+    wifi_status[sizeof(wifi_status) - 1] = 0;
+    strncpy(wifi_ip, "--", sizeof(wifi_ip) - 1);
+    wifi_ip[sizeof(wifi_ip) - 1] = 0;
+  } else if (network.isWifiConnected()) {
+    strncpy(wifi_status, "connected", sizeof(wifi_status) - 1);
+    wifi_status[sizeof(wifi_status) - 1] = 0;
+    String ip = WiFi.localIP().toString();
+    escapeJsonString(ip.c_str(), wifi_ip, sizeof(wifi_ip));
+    wifi_rssi = WiFi.RSSI();
+  } else {
+    strncpy(wifi_status, "connecting", sizeof(wifi_status) - 1);
+    wifi_status[sizeof(wifi_status) - 1] = 0;
+    strncpy(wifi_ip, "--", sizeof(wifi_ip) - 1);
+    wifi_ip[sizeof(wifi_ip) - 1] = 0;
+  }
+#else
+  strncpy(wifi_status, "unsupported", sizeof(wifi_status) - 1);
+  wifi_status[sizeof(wifi_status) - 1] = 0;
+  strncpy(wifi_ip, "--", sizeof(wifi_ip) - 1);
+  wifi_ip[sizeof(wifi_ip) - 1] = 0;
+#endif
+
+  const int battery_pct = board.getBatteryPercent();
+  const bool archive_available = (_archive != nullptr) && _archive->isMounted();
+#ifdef WITH_MQTT_UPLINK
+  const bool mqtt_connected = mqtt.isAnyBrokerConnected();
+#else
+  const bool mqtt_connected = false;
+#endif
+  const bool web_panel_up = web.isPanelRunning();
+  const char* archive_name = (_archive != nullptr) ? _archive->getLogicalName() : "archive";
+  const char* archive_path = (_archive != nullptr) ? _archive->getLogicalStatsPath() : "archive:/stats";
+  const char* archive_type = (_archive != nullptr) ? _archive->getCardTypeName() : "unavailable";
+
+  size_t offset = 0;
+  offset += snprintf(&reply[offset], reply_size - offset,
+                     "{\"enabled\":true,"
+                     "\"history\":{\"active\":%s,\"psram\":%s,\"degraded\":%s,\"samples\":%u,\"sample_capacity\":%u,\"sample_interval_secs\":%lu,"
+                     "\"archive_restored\":%s,\"archive_restored_samples\":%u,\"archive_summary_interval_secs\":%lu,"
+                     "\"events\":%u,\"event_capacity\":%u},"
+                     "\"archive\":{\"logical\":\"%s\",\"available\":%s,\"path\":\"%s\",\"type\":\"%s\","
+                     "\"total_bytes\":%llu,\"used_bytes\":%llu},"
+                     "\"core\":{\"battery_mv\":%u,\"battery_pct\":%d,\"uptime_secs\":%lu,\"errors\":%u,\"queue_len\":%u,"
+                     "\"external_power\":%s,\"charging\":%s,\"vbus\":%s},"
+                     "\"radio\":{\"noise_floor\":%d,\"last_rssi\":%.2f,\"last_snr\":%.2f,\"tx_air_secs\":%lu,\"rx_air_secs\":%lu},"
+                     "\"packets\":{\"recv\":%u,\"sent\":%u,\"flood_tx\":%u,\"direct_tx\":%u,\"flood_rx\":%u,\"direct_rx\":%u,"
+                     "\"recv_errors\":%u,\"direct_dups\":%u,\"flood_dups\":%u,\"neighbors\":%u},"
+                     "\"memory\":{\"heap_free\":%u,\"heap_min\":%u,\"heap_max\":%u,\"psram_free\":%u,\"psram_min\":%u,\"psram_max\":%u},"
+                     "\"wifi\":{\"ssid\":\"%s\",\"status\":\"%s\",\"connected\":%s,\"ip\":\"%s\",\"rssi\":%d,\"powersave\":\"%s\"},"
+                     "\"services\":{\"mqtt_connected\":%s,\"web_enabled\":%s,\"web_panel_up\":%s,\"web_auth\":\"%s\","
+                     "\"archive_available\":%s}",
+                     (_stats_history.isEnabled() && _stats_history.isRecentHistoryAvailable()) ? "true" : "false",
+                     _stats_history.isPsramBacked() ? "true" : "false",
+                     _stats_history.isDegraded() ? "true" : "false",
+                     static_cast<unsigned>(_stats_history.getSampleCount()),
+                     static_cast<unsigned>(_stats_history.getSampleCapacity()),
+                     static_cast<unsigned long>(StatsHistory::getSampleIntervalSecs()),
+                     _stats_history.hasArchiveRestore() ? "true" : "false",
+                     static_cast<unsigned>(_stats_history.getRestoredSampleCount()),
+                     static_cast<unsigned long>(StatsHistory::getArchiveSummaryIntervalSecs()),
+                     static_cast<unsigned>(_stats_history.getEventCount()),
+                     static_cast<unsigned>(_stats_history.getEventCapacity()),
+                     archive_name,
+                     archive_available ? "true" : "false",
+                     archive_path,
+                     archive_type,
+                     static_cast<unsigned long long>(_archive != nullptr ? _archive->getTotalBytes() : 0),
+                     static_cast<unsigned long long>(_archive != nullptr ? _archive->getUsedBytes() : 0),
+                     board.getBattMilliVolts(),
+                     battery_pct,
+                     static_cast<unsigned long>(uptime_millis / 1000),
+                     _err_flags,
+                     static_cast<unsigned>(_mgr->getOutboundTotal()),
+                     board.isExternalPowered() ? "true" : "false",
+                     board.isCharging() ? "true" : "false",
+                     board.isVbusPresent() ? "true" : "false",
+                     static_cast<int>(_radio->getNoiseFloor()),
+                     radio_driver.getLastRSSI(),
+                     radio_driver.getLastSNR(),
+                     static_cast<unsigned long>(getTotalAirTime() / 1000),
+                     static_cast<unsigned long>(getReceiveAirTime() / 1000),
+                     static_cast<unsigned>(radio_driver.getPacketsRecv()),
+                     static_cast<unsigned>(radio_driver.getPacketsSent()),
+                     static_cast<unsigned>(getNumSentFlood()),
+                     static_cast<unsigned>(getNumSentDirect()),
+                     static_cast<unsigned>(getNumRecvFlood()),
+                     static_cast<unsigned>(getNumRecvDirect()),
+                     static_cast<unsigned>(radio_driver.getPacketsRecvErrors()),
+                     static_cast<unsigned>(((SimpleMeshTables *)getTables())->getNumDirectDups()),
+                     static_cast<unsigned>(((SimpleMeshTables *)getTables())->getNumFloodDups()),
+                     static_cast<unsigned>(getNeighbourCount()),
+                     ESP.getFreeHeap(),
+                     ESP.getMinFreeHeap(),
+                     ESP.getMaxAllocHeap(),
+                     ESP.getFreePsram(),
+                     ESP.getMinFreePsram(),
+                     ESP.getMaxAllocPsram(),
+                     wifi_ssid,
+                     wifi_status,
+                     network.isWifiConnected() ? "true" : "false",
+                     wifi_ip,
+                     wifi_rssi,
+                     wifi_powersave,
+                     mqtt_connected ? "true" : "false",
+                     web.isWebEnabled() ? "true" : "false",
+                     web_panel_up ? "true" : "false",
+                     web.isPanelUnlocked() ? "unlocked" : "locked",
+                     archive_available ? "true" : "false");
+  if (offset >= reply_size) {
+    return false;
+  }
+
+  offset += snprintf(&reply[offset], reply_size - offset, ",");
+  if (!appendJsonEvents(reply, reply_size, offset)) {
+    return false;
+  }
+  offset += snprintf(&reply[offset], reply_size - offset, ",");
+  if (!appendJsonNeighbours(reply, reply_size, offset)) {
+    return false;
+  }
+  offset += snprintf(&reply[offset], reply_size - offset, "}");
+  return offset < reply_size;
+#endif
+}
+
+bool MyMesh::formatWebStatsSeriesJson(const char* series, char* reply, size_t reply_size) {
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  if (!web.isWebStatsEnabled()) {
+    if (reply != nullptr && reply_size > 0) {
+      reply[0] = 0;
+    }
+    return false;
+  }
+  return _stats_history.buildSeriesJson(
+      series,
+      reply,
+      reply_size,
+      getRTCClock()->getCurrentTime(),
+      static_cast<uint32_t>(uptime_millis / 1000));
+#else
+  (void)series;
+  if (reply != nullptr && reply_size > 0) {
+    reply[0] = 0;
+  }
+  return false;
+#endif
+}
+
 void MyMesh::loop() {
 #ifdef WITH_BRIDGE
   bridge.loop();
 #endif
+
+  const uint32_t now = millis();
+  uptime_millis += now - last_millis;
+  last_millis = now;
 
   mesh::Mesh::loop();
 
@@ -1577,6 +2332,19 @@ void MyMesh::loop() {
     dirty_contacts_expiry = 0;
   }
 
+#if defined(ESP_PLATFORM)
+  bool network_required = false;
+#if WITH_WEB_PANEL
+  network_required = web.isWebEnabled();
+#endif
+#ifdef WITH_MQTT_UPLINK
+  network_required = network_required || mqtt.isActive();
+#endif
+  network.loop(network_required);
+#if WITH_WEB_PANEL
+  web.loop();
+#endif
+#endif
 #ifdef WITH_MQTT_UPLINK
   MQTTStatusSnapshot mqtt_status{};
   mqtt_status.battery_mv = static_cast<int>(board.getBattMilliVolts());
@@ -1593,11 +2361,9 @@ void MyMesh::loop() {
   mqtt_status.radio_cr = _prefs.cr;
   mqtt.loop(mqtt_status);
 #endif
-
-  // update uptime
-  uint32_t now = millis();
-  uptime_millis += now - last_millis;
-  last_millis = now;
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  updateStatsHistory(now);
+#endif
 }
 
 // To check if there is pending work
@@ -1607,6 +2373,9 @@ bool MyMesh::hasPendingWork() const {
 #endif
 #if defined(WITH_MQTT_UPLINK)
   if (mqtt.isActive()) return true;
+#endif
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  if (web.isWebEnabled()) return true;
 #endif
   return _mgr->getOutboundTotal() > 0;
 }

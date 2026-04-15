@@ -2,6 +2,7 @@
 
 #ifdef WITH_MQTT_UPLINK
 
+#include <stddef.h>
 #include <helpers/TxtDataHelpers.h>
 #include <string.h>
 
@@ -17,15 +18,16 @@ void MQTTPrefsStore::setDefaults(MQTTPrefs& prefs) {
   prefs.raw_enabled = 0;
   prefs.status_enabled = 1;
   prefs.tx_enabled = 0;
-  prefs.web_enabled = 1;
-  prefs.wifi_powersave = 0;
+  prefs.deprecated_web_enabled = 0;
+  prefs.deprecated_web_stats_enabled = 0;
+  prefs.legacy_wifi_powersave = 0;
   prefs.status_interval_ms = kFixedStatusIntervalMs;
   StrHelper::strncpy(prefs.iata, MQTT_DEFAULT_IATA, sizeof(prefs.iata));
 #ifdef WIFI_SSID
-  StrHelper::strncpy(prefs.wifi_ssid, WIFI_SSID, sizeof(prefs.wifi_ssid));
+  StrHelper::strncpy(prefs.legacy_wifi_ssid, WIFI_SSID, sizeof(prefs.legacy_wifi_ssid));
 #endif
 #ifdef WIFI_PWD
-  StrHelper::strncpy(prefs.wifi_pwd, WIFI_PWD, sizeof(prefs.wifi_pwd));
+  StrHelper::strncpy(prefs.legacy_wifi_pwd, WIFI_PWD, sizeof(prefs.legacy_wifi_pwd));
 #endif
 }
 
@@ -58,10 +60,9 @@ bool MQTTPrefsStore::load(FILESYSTEM* fs, MQTTPrefs& prefs) {
     return false;
   }
   prefs = persisted;
-  if (prefs.wifi_powersave > 2) {
-    prefs.wifi_powersave = 0;
+  if (prefs.legacy_wifi_powersave > 2) {
+    prefs.legacy_wifi_powersave = 0;
   }
-  prefs.web_enabled = prefs.web_enabled ? 1 : 0;
   prefs.status_interval_ms = kFixedStatusIntervalMs;
   prefs.enabled_mask &= 0x07;
   return true;

@@ -10,12 +10,13 @@ The repeater web panel is a local HTTPS configuration page served directly by th
 
 It gives you:
 
-- a password-gated local admin page
+- a password-gated local admin page at `/app`
+- a dedicated stats and trends page at `/stats`
 - quick `get` commands for common repeater and MQTT checks
 - a terminal-style CLI panel for allowlisted commands
 - editable repeater settings
 - editable MQTT settings
-- a stats dashboard with Wi-Fi, core, radio, memory, and packet views
+- a historical stats view with trends, neighbours, and recent events
 
 Operational guidance:
 
@@ -78,17 +79,41 @@ Recommended practice for repeater deployments:
 - use it again for occasional checks or troubleshooting
 - disable it with `set web off` when finished so MQTT has the most headroom available
 
-## Actions
+## Navigation And Actions
 
-The Actions panel gives you the most common operational controls:
+The web console now has two main pages:
 
+- `/app`: lighter-weight control and configuration view
+- `/stats`: current status, trends, neighbours, and recent events
+
+Both pages share the same top navigation and utility actions.
+
+### `/app`
+
+The `/app` page is the main admin and configuration surface.
+
+It includes:
+
+- navigation to `App` and `Stats`
 - `Advert`
 - `Start OTA`
 - `Reboot`
-- `Logout`
 - theme toggle
+- `Logout`
 
 Use `Start OTA` only when you intend to update firmware.
+
+### `/stats`
+
+The `/stats` page is the home for current status and historical visibility.
+
+It includes:
+
+- navigation to `App` and `Stats`
+- `Refresh`
+- `Reboot`
+- theme toggle
+- `Logout`
 
 ## Quick "get" Commands
 
@@ -148,19 +173,34 @@ Notes:
 - you can toggle each MQTT server on or off from this panel
 - if all three servers are enabled at once, the panel shows a warning recommending two at most
 
-## Stats
+## `/stats` Overview
 
-Press `Get Stats` to load the dashboard.
+The stats page is loaded separately from `/app` and is intended to keep the main admin page lighter.
 
-The stats page currently shows:
+The `/stats` page currently shows:
 
-- Core
-- Radio
-- Memory
-- Wi-Fi
-- Packets
+- `Services`: MQTT, web, archive, card, neighbour count, and archive capacity
+- `Trends`: battery, heap free, packet activity, and signal
+- `Neighbours`: current neighbour table
+- `Events`: current boot/session events
 
-The dashboard is designed to work well on phones as well as desktop browsers.
+The trend graphs load sequentially rather than as one large payload:
+
+1. summary/status
+2. battery
+3. memory
+4. packet activity
+5. signal
+
+This keeps browser-side and device-side memory use lower than the previous in-page stats view.
+
+If `web.stats` is enabled and an SD archive is mounted, trends can restore archived summary points after reboot. Recent live points are still added from in-memory history.
+
+Useful CLI commands:
+
+- `set web.stats on`
+- `set web.stats off`
+- `get web.stats.status`
 
 ## Mobile Use
 
@@ -169,9 +209,9 @@ The page is responsive and should work cleanly on a phone.
 On mobile:
 
 - quick command buttons collapse into a two-column layout
-- action buttons stack more cleanly
+- top navigation and action groups stay compact and touch-friendly
 - input rows stay usable for touch interaction
-- stats cards reorganize into single-column sections where needed
+- trend cards reorganize into single-column sections where needed
 
 ## Common Tasks
 
@@ -180,7 +220,7 @@ On mobile:
 1. Open the panel.
 2. Press `wifi.status` in Quick `get` Commands.
 3. Press `mqtt.status` in Quick `get` Commands.
-4. Press `Get Stats` for the dashboard view.
+4. Open `/stats` from the top navigation for the historical stats view.
 
 ### Change Device Name
 
@@ -200,6 +240,14 @@ On mobile:
 1. Press `Start OTA`.
 2. Confirm the action.
 3. Continue with your normal OTA workflow.
+
+### Use Historical Stats
+
+1. Enable stats if needed with `set web.stats on`.
+2. Open `/stats` from the top navigation.
+3. Review `Services` for archive and runtime state.
+4. Review `Trends` for recent graph history.
+5. Use `Refresh` to reload the stats page.
 
 ## Troubleshooting
 
@@ -241,8 +289,19 @@ The panel intentionally limits what can be run from the browser. Use the serial 
 Try:
 
 - refreshing the browser tab
+- using `Refresh` on `/stats`
 - logging out and back in
 - checking WiFi stability with `get wifi.status`
+
+### `/stats` is unavailable
+
+Check:
+
+- `get web.status`
+- `get web.stats.status`
+- whether `set web.stats on` has been applied
+
+If `web.stats` is off, `/stats` will stay disabled and the historical graph requests will not run.
 
 ## Related Docs
 

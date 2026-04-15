@@ -26,13 +26,17 @@
 #ifdef WITH_MQTT_UPLINK
 #include <helpers/mqtt/MQTTUplink.h>
 #endif
+#include <helpers/NetworkService.h>
+#include <helpers/web/WebService.h>
 
 #include <helpers/AdvertDataHelpers.h>
+#include <helpers/ArchiveStorage.h>
 #include <helpers/ArduinoHelpers.h>
 #include <helpers/ClientACL.h>
 #include <helpers/CommonCLI.h>
 #include <helpers/IdentityStore.h>
 #include <helpers/SimpleMeshTables.h>
+#include <helpers/StatsHistory.h>
 #include <helpers/StaticPoolPacketManager.h>
 #include <helpers/StatsFormatHelper.h>
 #include <helpers/TxtDataHelpers.h>
@@ -84,12 +88,16 @@ struct NeighbourInfo {
 
 #define PACKET_LOG_FILE  "/packet_log"
 
-class MyMesh : public mesh::Mesh, public CommonCLICallbacks, public MQTTWebCommandRunner {
+class MyMesh : public mesh::Mesh, public CommonCLICallbacks, public WebPanelCommandRunner {
   FILESYSTEM* _fs;
+  ArchiveStorage* _archive;
   uint32_t last_millis;
   uint64_t uptime_millis;
+  unsigned long next_archive_neighbours_flush_ms;
+  unsigned long next_history_sample_ms;
   unsigned long next_local_advert, next_flood_advert;
   bool _logging;
+  bool _archive_neighbours_dirty;
   NodePrefs _prefs;
   ClientACL  acl;
   CommonCLI _cli;
@@ -124,8 +132,32 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks, public MQTTWebComma
 #ifdef WITH_MQTT_UPLINK
   MQTTUplink mqtt;
 #endif
+#if defined(ESP_PLATFORM)
+  NetworkService network;
+#endif
+#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
+  WebService web;
+#endif
+  StatsHistory _stats_history;
+  struct {
+    bool initialized;
+    bool wifi_connected;
+    bool mqtt_connected;
+    bool web_panel_up;
+    bool archive_mounted;
+    bool low_memory;
+    uint32_t last_low_memory_event_uptime_secs;
+  } _stats_state;
 
   void putNeighbour(const mesh::Identity& id, uint32_t timestamp, float snr);
+  size_t getNeighbourCount() const;
+  void updateStatsHistory(unsigned long now_ms);
+  bool restoreArchiveNeighbours();
+  void flushArchiveNeighbours();
+  void maybeFlushArchiveNeighbours(unsigned long now_ms);
+  void recordStatsEvent(uint8_t type, int16_t value = 0);
+  bool appendJsonEvents(char* reply, size_t reply_size, size_t& offset) const;
+  bool appendJsonNeighbours(char* reply, size_t reply_size, size_t& offset) const;
   uint8_t handleLoginReq(const mesh::Identity& sender, const uint8_t* secret, uint32_t sender_timestamp, const uint8_t* data, bool is_flood);
   uint8_t handleAnonRegionsReq(const mesh::Identity& sender, uint32_t sender_timestamp, const uint8_t* data);
   uint8_t handleAnonOwnerReq(const mesh::Identity& sender, uint32_t sender_timestamp, const uint8_t* data);
@@ -182,7 +214,7 @@ protected:
 public:
   MyMesh(mesh::MainBoard& board, mesh::Radio& radio, mesh::MillisecondClock& ms, mesh::RNG& rng, mesh::RTCClock& rtc, mesh::MeshTables& tables);
 
-  void begin(FILESYSTEM* fs);
+  void begin(FILESYSTEM* fs, ArchiveStorage* archive = nullptr);
   void sendNodeDiscoverReq();
   const char* getFirmwareVer() override { return FIRMWARE_VERSION; }
   const char* getBuildDate() override { return FIRMWARE_BUILD_DATE; }
@@ -224,6 +256,9 @@ public:
   void handleCommand(uint32_t sender_timestamp, char* command, char* reply);
   void runWebCommand(const char* command, char* reply, size_t reply_size) override;
   const char* getWebAdminPassword() const override { return _prefs.password; }
+  bool isWebStatsEnabled() const override;
+  bool formatWebStatsSummaryJson(char* reply, size_t reply_size) override;
+  bool formatWebStatsSeriesJson(const char* series, char* reply, size_t reply_size) override;
   void loop();
 
 #if defined(WITH_BRIDGE)
