@@ -2,6 +2,7 @@
 #include <Mesh.h>
 
 #include "MyMesh.h"
+#include <helpers/ArchiveStorage.h>
 
 #ifdef DISPLAY_CLASS
   #include "UITask.h"
@@ -10,6 +11,7 @@
 
 StdRNG fast_rng;
 SimpleMeshTables tables;
+ArchiveStorage archive;
 
 MyMesh the_mesh(board, radio_driver, *new ArduinoMillis(), fast_rng, rtc_clock, tables);
 
@@ -33,6 +35,7 @@ void setup() {
   delay(1000);
 
   board.begin();
+  archive.begin();
 
 #if defined(MESH_DEBUG) && defined(NRF52_PLATFORM)
   // give some extra time for serial to settle so
@@ -93,7 +96,7 @@ void setup() {
 
   sensors.begin();
 
-  the_mesh.begin(fs);
+  the_mesh.begin(fs, &archive);
 
 #ifdef DISPLAY_CLASS
   ui_task.begin(the_mesh.getNodePrefs(), FIRMWARE_BUILD_DATE, FIRMWARE_VERSION);

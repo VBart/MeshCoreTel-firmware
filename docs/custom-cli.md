@@ -62,8 +62,11 @@ Legacy dotted aliases are also accepted:
 
 - `get web`
 - `get web.status`: shows whether the local HTTPS panel is available.
+- `get web.stats.status`: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted.
 - `set web on|off`
 - `set.web on|off`: enables or disables the local HTTPS panel.
+- `set web.stats on|off`
+- `set.web.stats on|off`: enables or disables the dedicated `/stats` page and historical stats collection.
 
 ### Runtime Diagnostics
 
@@ -87,9 +90,11 @@ That allowlist currently includes:
 - `get mqtt.status`
 - `get web`
 - `get web.status`
+- `get web.stats.status`
 - `advert`
 - `reboot`
 - `start ota`
+- `set repeat on|off`
 - `memory`
 - `stats-core`
 - `stats-radio`
@@ -117,6 +122,7 @@ That allowlist currently includes:
 - `get mqtt.letsmesh-us`
 - `set mqtt.letsmesh-us on|off`
 - `set web on|off`
+- `set web.stats on|off`
 - `get name`
 - `set name <device-name>`
 - `get lat`

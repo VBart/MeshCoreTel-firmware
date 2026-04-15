@@ -24,6 +24,8 @@ constexpr size_t kWebServerStackSize = WEB_PANEL_STACK_SIZE;
 constexpr size_t kWebPasswordBufferSize = 80;
 constexpr size_t kWebCommandBufferSize = 192;
 constexpr size_t kWebReplyBufferSize = 256;
+constexpr size_t kWebStatsQueryBufferSize = 96;
+constexpr size_t kWebStatsReplyBufferSize = 4608;
 constexpr size_t kWebPageChunkSize = 768;
 constexpr unsigned long kWebIdleTimeoutMs = WEB_PANEL_IDLE_TIMEOUT_MS;
 
@@ -147,6 +149,58 @@ esp_err_t sendJsonFieldChunk(httpd_req_t* req, const char* key, const char* valu
   return sendChunk(req, "\"");
 }
 
+bool getQueryValue(httpd_req_t* req, const char* key, char* value, size_t value_size) {
+  if (req == nullptr || key == nullptr || value == nullptr || value_size == 0) {
+    return false;
+  }
+  const size_t query_len = httpd_req_get_url_query_len(req);
+  if (query_len == 0 || query_len + 1 > kWebStatsQueryBufferSize) {
+    return false;
+  }
+
+  char query[kWebStatsQueryBufferSize];
+  if (httpd_req_get_url_query_str(req, query, sizeof(query)) != ESP_OK) {
+    return false;
+  }
+  return httpd_query_key_value(query, key, value, value_size) == ESP_OK;
+}
+
+esp_err_t sendLegacyStatsBundle(httpd_req_t* req, WebPanelCommandRunner* runner, char* reply) {
+  const struct {
+    const char* key;
+    const char* command;
+  } fields[] = {
+      {"wifi", "get wifi.status"},
+      {"wifi_powersave", "get wifi.powersaving"},
+      {"core", "stats-core"},
+      {"radio", "stats-radio"},
+      {"packets", "stats-packets"},
+      {"memory", "memory"},
+  };
+
+  httpd_resp_set_type(req, "application/json; charset=utf-8");
+  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  if (sendChunk(req, "{") != ESP_OK) {
+    httpd_resp_sendstr_chunk(req, nullptr);
+    return ESP_FAIL;
+  }
+  for (size_t i = 0; i < (sizeof(fields) / sizeof(fields[0])); ++i) {
+    memset(reply, 0, kWebReplyBufferSize);
+    runner->runWebCommand(fields[i].command, reply, kWebReplyBufferSize);
+    if (sendJsonFieldChunk(req, fields[i].key, reply, i != 0) != ESP_OK) {
+      httpd_resp_sendstr_chunk(req, nullptr);
+      return ESP_FAIL;
+    }
+  }
+  esp_err_t rc = sendChunk(req, "}");
+  if (rc == ESP_OK) {
+    rc = httpd_resp_sendstr_chunk(req, nullptr);
+  } else {
+    httpd_resp_sendstr_chunk(req, nullptr);
+  }
+  return rc;
+}
+
 const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
 <!doctype html>
 <html>
@@ -225,6 +279,44 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
 </html>
 )HTML";
 
+const char kWebPanelStatsDisabledHtml[] PROGMEM = R"HTML(
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Stats Disabled</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --accent:#2f8f4e;
+      --background:#f4f6f9;
+      --text:#1f2937;
+      --text-muted:#4b5563;
+      --border:rgba(0,0,0,.08);
+      --surface:#ffffff;
+    }
+    html { min-height:100%; background:linear-gradient(180deg,var(--background),var(--surface)); background-repeat:no-repeat; background-attachment:fixed; }
+    body { min-height:100vh; margin:0; display:grid; place-items:center; background:transparent; color:var(--text); font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace; }
+    main { width:min(100%,460px); padding:20px; box-sizing:border-box; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; }
+    h1 { margin:0 0 12px; font-size:22px; }
+    p { margin:0 0 14px; color:var(--text-muted); line-height:1.45; }
+    a { color:var(--accent); text-decoration:none; font-weight:700; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <h1>Stats Disabled</h1>
+      <p>The dedicated stats page is currently disabled for this node.</p>
+      <p>Enable it with <strong>`set web.stats on`</strong> from the CLI or return to <a href="/app">/app</a>.</p>
+    </section>
+  </main>
+</body>
+</html>
+)HTML";
+
 const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 <!doctype html>
 <html>
@@ -276,7 +368,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     main { max-width:920px; margin:0 auto; padding:24px; }
     .card { background:var(--card-bg); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:18px; }
     h1,h2,h3 { margin:0 0 12px; font-size:18px; }
-    p { color:var(--text-muted); margin:8px 0 0; }
+    p { color:var(--text-muted); margin:8px 0 0; line-height:1.45; }
     input:not([type="checkbox"]), textarea, button, select { width:100%; min-height:44px; box-sizing:border-box; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); padding:12px; font-family:inherit; font-size:inherit; line-height:inherit; }
     input:not([type="checkbox"]), textarea, select, button { -webkit-appearance:none; appearance:none; }
     textarea { min-height:100px; resize:vertical; }
@@ -310,6 +402,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .broker-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
     .broker-grid.single { grid-template-columns:1fr; }
     .broker-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .broker-grid.one-two { grid-template-columns:minmax(0,1fr) minmax(0,2fr); }
     .broker-card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px; display:grid; gap:10px; min-height:124px; align-content:start; }
     .broker-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .broker-copy { display:grid; gap:4px; min-width:0; }
@@ -332,9 +425,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     :root[data-theme="dark"] .mode-label.active { background:rgba(73,194,125,.24); }
     .mode-label.disabled { opacity:.4; }
     .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-    .panel-warning { min-height:1.4em; font-size:13px; color:var(--status-red); }
-    .panel-note { font-size:13px; color:var(--text-muted); }
-    .panel-status { min-height:1.4em; font-size:13px; color:var(--text-muted); }
+    .panel-copy, .panel-note, .panel-status, .panel-warning, .stats-empty, .stats-error, .events-empty, .spark-status { font-size:13px; line-height:1.45; font-weight:400; }
+    .panel-warning { min-height:1.4em; color:var(--status-red); }
+    .panel-note { color:var(--text-muted); }
+    .panel-status { min-height:1.4em; color:var(--text-muted); }
     .themebtn { padding:10px 14px; }
     #status { white-space:pre-wrap; color:var(--text-muted); min-height:1.4em; }
     .terminal { background:var(--terminal-bg); border:1px solid var(--terminal-border); border-radius:12px; padding:14px; min-height:180px; max-height:320px; overflow:auto; font-family:inherit; font-size:14px; line-height:1.45; }
@@ -345,11 +439,28 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .stats-shell { display:grid; gap:12px; }
     .stats-empty, .stats-error { background:var(--surface2); border:1px dashed var(--border); border-radius:12px; padding:16px; color:var(--text-muted); }
     .stats-error { color:var(--status-red); }
+    .trend-section-copy { display:grid; gap:6px; }
+    .trend-section-copy p { margin:0; color:var(--text-muted); }
+    .trend-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .trend-card { position:relative; background:linear-gradient(180deg,var(--surface2),var(--surface1)); border:1px solid var(--border); border-radius:14px; padding:14px; display:grid; gap:10px; }
+    .trend-head { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .trend-title { font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; }
+    .trend-value { font-size:24px; font-weight:700; color:var(--text); }
+    .spark { width:100%; height:84px; border-radius:12px; background:rgba(255,255,255,.35); border:1px solid var(--border); display:block; }
+    :root[data-theme="dark"] .spark { background:rgba(0,0,0,.16); }
+    .spark-axis { display:flex; justify-content:space-between; gap:10px; color:var(--text-muted); min-height:1.3em; }
+    .spark-axis span { font-size:12px; line-height:1.45; }
+    .spark-axis span:last-child { text-align:right; }
+    .spark-tooltip { position:absolute; right:14px; top:50px; padding:6px 8px; border-radius:8px; font-size:12px; color:var(--text); background:rgba(255,255,255,.92); border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,.12); pointer-events:none; opacity:0; transform:translateY(-4px); transition:opacity .12s ease, transform .12s ease; }
+    .spark-tooltip.visible { opacity:1; transform:translateY(0); }
+    :root[data-theme="dark"] .spark-tooltip { background:rgba(24,24,24,.92); }
     .actions-bar { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; }
     .actions-group { display:flex; gap:10px; flex-wrap:wrap; }
     .actions-group.left { justify-self:start; }
     .actions-group.center { justify-self:center; }
     .actions-group.right { justify-self:end; }
+    .actions-group .active { background:var(--accent); color:var(--button-text); border-color:transparent; }
+    .actions-group .active:hover { background:var(--accent-hover); }
     .hud-grid-1 { display:grid; grid-template-columns:1fr; gap:12px; }
     .hud-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
     .hud-grid-2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
@@ -372,11 +483,20 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     :root[data-theme="dark"] .metric { background:rgba(0,0,0,.16); }
     .metric-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
     .metric-value { margin-top:4px; font-size:16px; font-weight:700; color:var(--text); }
+    .events-table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:12px; }
+    .events-table { width:100%; border-collapse:collapse; }
+    .events-table th, .events-table td { padding:10px 12px; text-align:left; font-size:13px; }
+    .events-table th { color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; font-weight:700; background:rgba(255,255,255,.3); }
+    .events-table td { color:var(--text); border-top:1px solid var(--border); }
+    .events-table a { color:var(--accent); text-decoration:none; font-weight:700; }
+    .events-table a:hover { text-decoration:underline; }
+    :root[data-theme="dark"] .events-table th { background:rgba(0,0,0,.16); }
+    .events-empty { color:var(--text-muted); }
     @media (max-width:760px) {
       body { font-size:15px; }
       main { padding:16px; }
       .card { padding:16px; margin-bottom:14px; }
-      .row, .row3, .row-command, .metric-grid, .hud-grid-1, .hud-grid-2, .hud-grid-3, .core-grid, .core-metrics, .broker-stack, .broker-grid, .broker-grid.single, .broker-grid.two { grid-template-columns:1fr; }
+      .row, .row3, .row-command, .metric-grid, .trend-grid, .hud-grid-1, .hud-grid-2, .hud-grid-3, .core-grid, .core-metrics, .broker-stack, .broker-grid, .broker-grid.single, .broker-grid.two, .broker-grid.one-two { grid-template-columns:1fr; }
       .inline-actions { grid-template-columns:minmax(0,1fr) auto auto; }
       .fieldline { grid-template-columns:minmax(0,1fr) auto; align-items:center; }
       .row-command button { width:100%; }
@@ -389,9 +509,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       .actions-bar { display:grid; grid-template-columns:1fr; gap:10px; }
       .actions-group { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
       .actions-group.left, .actions-group.center, .actions-group.right { justify-self:stretch; }
-      .actions-group.center { grid-template-columns:1fr; justify-items:center; }
+      .actions-group.center { grid-template-columns:repeat(3,minmax(0,1fr)); justify-items:stretch; }
+      .actions-group.right { grid-template-columns:repeat(3,minmax(0,1fr)); justify-items:stretch; }
       #actionsPanel .actions-group button { width:100%; }
-      #actionsPanel .actions-group.center button { width:auto; min-width:56px; }
+      #actionsPanel .actions-group.center button { width:100%; min-width:0; }
+      #actionsPanel .actions-group.right button { width:100%; min-width:0; }
       .broker-row { gap:10px; }
       .row > div + div, .row3 > div + div { margin-top:4px; }
       .row > div[style*="align-self:end"] { padding-top:4px; }
@@ -414,14 +536,17 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       <h2>Actions</h2>
       <div class="actions-bar">
         <div class="actions-group left">
-          <button id="advertBtn" class="action-advert">Advert</button>
-          <button id="otaBtn" class="action-dreamy">Start OTA</button>
+          <button id="appPageBtn" class="themebtn">App</button>
+          <button id="statsPageBtn" class="themebtn">Stats</button>
         </div>
         <div class="actions-group center">
-          <button id="themeToggle" class="themebtn" aria-label="Toggle theme" title="Toggle theme">☾</button>
+          <button id="advertBtn" class="action-advert">Advert</button>
+          <button id="otaBtn" class="action-dreamy">Start OTA</button>
+          <button id="refreshPageBtn" class="action-dreamy">Refresh</button>
         </div>
         <div class="actions-group right">
           <button id="rebootBtn" class="action-caution">Reboot</button>
+          <button id="themeToggle" class="themebtn" aria-label="Toggle theme" title="Toggle theme">☾</button>
           <button id="logoutBtn" class="themebtn action-caution">Logout</button>
         </div>
       </div>
@@ -455,7 +580,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         <input id="command" placeholder="get mqtt.status">
         <button id="runBtn">Run</button>
       </div>
-      <p>Only the allowlisted commands exposed by this panel will run here.</p>
+      <p class="panel-copy">Only the allowlisted commands exposed by this panel will run here.</p>
       <div id="reply" class="terminal"></div>
     </section>
 
@@ -531,7 +656,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
               <button id="copyPrivateKeyBtn" class="iconbtn" title="Copy private key">&#x2398;</button>
               <button class="savebtn" data-prefix="set prv.key " data-input="privateKey">Save</button>
             </div>
-            <p>Changing the private key requires a reboot to apply.</p>
+            <p class="panel-copy">Changing the private key requires a reboot to apply.</p>
           </div>
           <div class="field-card">
             <label class="label" for="ownerInfo">Owner Info</label>
@@ -635,6 +760,40 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
                 </div>
               </div>
               <button class="savebtn" data-prefix="set flood.max " data-input="floodMax">Save flood max</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-group">
+          <h3>Modes</h3>
+          <div class="broker-grid one-two">
+            <div class="broker-card">
+              <div class="broker-mode">
+                <div class="broker-row">
+                  <div class="broker-copy">
+                    <div class="broker-title">Ghost Node Mode</div>
+                    <div class="broker-state" id="ghostNodeModeState">Off</div>
+                  </div>
+                </div>
+                <div class="mode-slider" style="margin-top:10px">
+                  <input id="ghostNodeMode" type="range" min="0" max="1" step="1" value="0" aria-label="Ghost node mode">
+                  <div class="mode-labels two" aria-hidden="true">
+                    <div class="mode-label" data-ghost-label="off">Off</div>
+                    <div class="mode-label" data-ghost-label="on">On</div>
+                  </div>
+                </div>
+                <input id="ghostNodeModeToggle" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+                <div id="ghostNodeModeStatus" class="panel-status"></div>
+              </div>
+            </div>
+            <div class="broker-card">
+              <div class="broker-mode">
+                <div class="broker-row">
+                  <div class="broker-copy">
+                    <div class="broker-title">Description</div>
+                  </div>
+                </div>
+                <div class="panel-note">Keeps web and MQTT running, but turns repeat off and disables both local and flood adverts. Turning it back off restores the prior repeat and advert settings if known, else falls back to repeat on, advert interval 60 minutes, and flood advert interval 12 hours.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -793,16 +952,41 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     <section class="card" id="statsPanel" style="display:none">
       <h2>Stats</h2>
       <div class="quick" style="margin-bottom:12px">
-        <button id="getStatsBtn">Get Stats</button>
+        <button id="openStatsPanelBtn">Open /stats</button>
       </div>
-      <div id="statsDashboard" class="stats-shell">
-        <div class="stats-empty">Press Get Stats to load the dashboard.</div>
+      <div class="stats-empty">Current status and historical trends have moved to the dedicated stats page.</div>
+    </section>
+
+    <section class="card" id="statsPagePanel" style="display:none">
+      <h2>Stats</h2>
+      <div id="statsSummary" class="stats-shell">
+        <div class="stats-empty">Loading summary...</div>
+      </div>
+      <section class="hud-card" style="margin-top:12px">
+        <h3>Trends</h3>
+        <div class="trend-section-copy">
+          <p id="statsTrendIntro" class="panel-copy">Loading recent trend guidance...</p>
+        </div>
+        <div class="trend-grid" id="statsTrends"></div>
+      </section>
+      <div id="statsNeighbours" style="margin-top:12px">
+        <section class="hud-card">
+          <h3>Neighbours</h3>
+          <div class="events-empty">Loading neighbours...</div>
+        </section>
+      </div>
+      <div id="statsEvents" style="margin-top:12px">
+        <section class="hud-card">
+          <h3>Events</h3>
+          <div class="events-empty">Loading events...</div>
+        </section>
       </div>
     </section>
 
   </main>
   <script>
     const RADIO_PRESETS_URL = "https://api.meshcore.nz/api/v1/config";
+    const isStatsPage = window.location.pathname === "/stats";
     let token = sessionStorage.getItem("repeater-token") || "";
     let commandQueue = Promise.resolve();
     let radioPresetEntries = [];
@@ -827,12 +1011,39 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       themeToggleEl.title = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
       themeToggleEl.setAttribute("aria-label", themeToggleEl.title);
     }
+    function syncNavButton() {
+      const appBtn = document.getElementById("appPageBtn");
+      const statsBtn = document.getElementById("statsPageBtn");
+      const centerGroup = document.querySelector("#actionsPanel .actions-group.center");
+      const advertBtn = document.getElementById("advertBtn");
+      const otaBtn = document.getElementById("otaBtn");
+      const refreshBtn = document.getElementById("refreshPageBtn");
+      if (appBtn) {
+        appBtn.classList.toggle("active", !isStatsPage);
+        appBtn.title = "Open app page";
+        appBtn.onclick = () => window.location.assign("/app");
+      }
+      if (statsBtn) {
+        statsBtn.classList.toggle("active", isStatsPage);
+        statsBtn.title = "Open stats page";
+        statsBtn.onclick = () => window.location.assign("/stats");
+      }
+      if (advertBtn) advertBtn.style.display = isStatsPage ? "none" : "";
+      if (otaBtn) otaBtn.style.display = isStatsPage ? "none" : "";
+      if (refreshBtn) refreshBtn.style.display = isStatsPage ? "" : "none";
+      if (centerGroup) {
+        centerGroup.style.gridTemplateColumns = isStatsPage
+          ? "1fr"
+          : "repeat(2,minmax(0,1fr))";
+      }
+    }
     function toggleTheme() {
       const next = rootEl.dataset.theme === "dark" ? "light" : "dark";
       localStorage.setItem("repeater-theme", next);
       applyTheme(next);
     }
     applyTheme(getPreferredTheme());
+    syncNavButton();
     themeToggleEl.onclick = toggleTheme;
     function appendHistory(cmd, text, ok) {
       const entry = document.createElement("div");
@@ -859,7 +1070,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       return Math.min(max, Math.max(min, value));
     }
     function pctRange(value, min, max) {
-      if (!Number.isFinite(value) || max <= min) return 0;
+      if (!Number.isFinite(value) || max === min) return 0;
       return clamp(((value - min) * 100) / (max - min), 0, 100);
     }
     function pctRatio(value, total) {
@@ -891,6 +1102,17 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (abs >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(2) + " MB";
       if (abs >= 1024) return (value / 1024).toFixed(1) + " KB";
       return Math.round(value) + " B";
+    }
+    function formatRelativeAge(seconds) {
+      if (!Number.isFinite(seconds) || seconds <= 0) return "now";
+      const secs = Math.max(0, Math.round(seconds));
+      if (secs < 3600) {
+        return Math.floor(secs / 60) + "m ago";
+      }
+      if (secs < 86400) {
+        return Math.floor(secs / 3600) + "h ago";
+      }
+      return Math.floor(secs / 86400) + "d ago";
     }
     function formatDecimal(value, digits) {
       const num = Number.parseFloat(value);
@@ -943,6 +1165,106 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (!el) return;
       el.textContent = message || "";
       el.style.color = isError ? "var(--status-red)" : "var(--text-muted)";
+    }
+    function setGhostNodeModeStatus(message, isError) {
+      const el = document.getElementById("ghostNodeModeStatus");
+      if (!el) return;
+      el.textContent = message || "";
+      el.style.color = isError ? "var(--status-red)" : "var(--text-muted)";
+    }
+    function parseIntegerValue(value) {
+      const parsed = Number.parseInt(String(value || "").trim(), 10);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    function readGhostNodeStoredState() {
+      const repeat = sessionStorage.getItem("ghost-node-repeat");
+      const advert = parseIntegerValue(sessionStorage.getItem("ghost-node-advert"));
+      const flood = parseIntegerValue(sessionStorage.getItem("ghost-node-flood"));
+      return {
+        repeat: repeat === "off" ? "off" : "on",
+        advert,
+        flood
+      };
+    }
+    function saveGhostNodeStoredState(repeatState, advertInterval, floodInterval) {
+      sessionStorage.setItem("ghost-node-repeat", repeatState === "off" ? "off" : "on");
+      sessionStorage.setItem("ghost-node-advert", String(advertInterval));
+      sessionStorage.setItem("ghost-node-flood", String(floodInterval));
+    }
+    function clearGhostNodeStoredState() {
+      sessionStorage.removeItem("ghost-node-repeat");
+      sessionStorage.removeItem("ghost-node-advert");
+      sessionStorage.removeItem("ghost-node-flood");
+    }
+    function refreshGhostNodeModeUi(enabled) {
+      const input = document.getElementById("ghostNodeModeToggle");
+      if (input) input.checked = !!enabled;
+      const slider = document.getElementById("ghostNodeMode");
+      if (slider) slider.value = enabled ? "1" : "0";
+      const state = document.getElementById("ghostNodeModeState");
+      if (state) {
+        state.textContent = enabled ? "On" : "Off";
+        state.classList.toggle("on", !!enabled);
+      }
+      document.querySelectorAll("[data-ghost-label]").forEach((label) => {
+        label.classList.toggle("active", label.dataset.ghostLabel === (enabled ? "on" : "off"));
+      });
+    }
+    async function loadGhostNodeModeState(options = {}) {
+      const repeatResult = await runCommand("get repeat", options);
+      if (!repeatResult.ok) return;
+      const repeatState = parseReplyValue(repeatResult.text).toLowerCase();
+      const advertInterval = parseIntegerValue(document.getElementById("advertInterval").value);
+      const floodInterval = parseIntegerValue(document.getElementById("floodInterval").value);
+      const enabled = repeatState === "off" && advertInterval === 0 && floodInterval === 0;
+      refreshGhostNodeModeUi(enabled);
+      if (!enabled) setGhostNodeModeStatus("", false);
+    }
+    async function setGhostNodeMode(enabled) {
+      const currentAdvert = parseIntegerValue(document.getElementById("advertInterval").value);
+      const currentFlood = parseIntegerValue(document.getElementById("floodInterval").value);
+      if (enabled) {
+        const repeatResult = await runCommand("get repeat", { recordHistory:false, updateInput:false });
+        if (!repeatResult.ok) {
+          setGhostNodeModeStatus(parseReplyValue(repeatResult.text) || "Unable to read repeat state.", true);
+          refreshGhostNodeModeUi(false);
+          return;
+        }
+        const repeatState = parseReplyValue(repeatResult.text).toLowerCase() === "off" ? "off" : "on";
+        saveGhostNodeStoredState(
+          repeatState,
+          currentAdvert !== null ? currentAdvert : 60,
+          currentFlood !== null ? currentFlood : 12
+        );
+      }
+      const restore = readGhostNodeStoredState();
+      const commands = enabled
+        ? ["set repeat off", "set advert.interval 0", "set flood.advert.interval 0"]
+        : [
+            `set repeat ${restore.repeat === "off" ? "off" : "on"}`,
+            `set advert.interval ${restore.advert !== null && restore.advert > 0 ? restore.advert : 60}`,
+            `set flood.advert.interval ${restore.flood !== null && restore.flood > 0 ? restore.flood : 12}`
+          ];
+      setGhostNodeModeStatus(enabled ? "Applying ghost node mode..." : "Restoring repeater mode...", false);
+      for (const command of commands) {
+        const result = await runCommand(command);
+        if (!result.ok) {
+          setGhostNodeModeStatus(parseReplyValue(result.text) || ("Unable to apply: " + command), true);
+          await loadGhostNodeModeState({ recordHistory:false, updateInput:false });
+          return;
+        }
+      }
+      await Promise.all([
+        loadField("get advert.interval", "advertInterval", null, { recordHistory:false, updateInput:false }),
+        loadField("get flood.advert.interval", "floodInterval", null, { recordHistory:false, updateInput:false })
+      ]);
+      if (!enabled) clearGhostNodeStoredState();
+      await loadGhostNodeModeState({ recordHistory:false, updateInput:false });
+      setGhostNodeModeStatus(
+        enabled ? "Ghost Node Mode enabled. Repeat is off and adverts are disabled."
+                : "Ghost Node Mode disabled. Repeat and advert settings restored.",
+        false
+      );
     }
     function syncRadioPresetUi() {
       const currentEl = document.getElementById("radioCurrent");
@@ -1096,14 +1418,14 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function renderRadioCard(radio) {
       const rssiPct = pctRange(radio.last_rssi, -120, -20);
       const snrPct = pctRange(radio.last_snr, -20, 20);
-      const noisePct = pctRange(radio.noise_floor, -130, -60);
+      const noisePct = pctRange(radio.noise_floor, -60, -113);
       const totalAir = (radio.tx_air_secs || 0) + (radio.rx_air_secs || 0);
       const txShare = pctRatio(radio.tx_air_secs || 0, totalAir);
       return `<section class="hud-card">
         <h3>Radio</h3>
         ${renderMeter("RSSI", (radio.last_rssi ?? "--") + " dBm", rssiPct, "signal strength", false)}
         ${renderMeter("SNR", Number.isFinite(radio.last_snr) ? radio.last_snr.toFixed(1) + " dB" : "--", snrPct, "link quality", false)}
-        ${renderMeter("Noise Floor", (radio.noise_floor ?? "--") + " dBm", noisePct, "ambient RF", true)}
+        ${renderMeter("Noise Floor", (radio.noise_floor ?? "--") + " dBm", noisePct, "ambient RF", false)}
         <div class="metric-grid">
           ${renderMetric("TX Air", String(radio.tx_air_secs ?? 0) + " s")}
           ${renderMetric("RX Air", String(radio.rx_air_secs ?? 0) + " s")}
@@ -1150,8 +1472,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         </div>
       </section>`;
     }
-    function renderStatsDashboard(results, errors) {
-      const dashboardEl = document.getElementById("statsDashboard");
+    function renderStatsDashboard(results, errors, targetId = "statsSummary") {
+      const dashboardEl = document.getElementById(targetId);
       const notices = errors.length ? `<div class="stats-error">${errors.map((item) => escapeHtml(item)).join("<br>")}</div>` : "";
       const coreCards = [
         results.core ? renderCoreCard(results.core) : renderMissingCard("Core", "stats-core unavailable")
@@ -1169,21 +1491,327 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         `<div class="hud-grid-2">${middleCards.join("")}</div>` +
         `<div class="hud-grid-2">${lowerCards.join("")}</div>`;
     }
+    function renderServicesCard(summary) {
+      const services = summary && summary.services ? summary.services : {};
+      const archive = summary && summary.archive ? summary.archive : {};
+      const packets = summary && summary.packets ? summary.packets : {};
+      const archiveTotal = archive.total_bytes || 0;
+      const archiveUsed = archive.used_bytes || 0;
+      const archiveFree = Math.max(0, archiveTotal - archiveUsed);
+      const archiveFreePct = archiveTotal > 0 ? Math.round((archiveFree / archiveTotal) * 100) : 0;
+      return `<section class="hud-card">
+        <h3>Services</h3>
+        <div class="metric-grid">
+          ${renderMetric("MQTT", services.mqtt_connected ? "up" : "down")}
+          ${renderMetric("Web", services.web_panel_up ? services.web_auth || "up" : "down")}
+          ${renderMetric("Archive", archive.available ? archive.logical || "archive" : "unavailable")}
+          ${renderMetric("Neighbours", packets.neighbors || 0)}
+          ${renderMetric("Card", archive.type || "--")}
+          ${renderMetric("Archive Total", formatArchiveGigabytes(archiveTotal))}
+          ${renderMetric("Archive Used", formatArchiveUsed(archiveUsed))}
+          ${renderMetric("Archive Free", archiveTotal > 0 ? (formatArchiveGigabytes(archiveFree) + " (" + archiveFreePct + "%)") : "--")}
+        </div>
+      </section>`;
+    }
+    function renderEventsSection(events) {
+      if (!Array.isArray(events) || !events.length) {
+        return `<section class="hud-card">
+          <h3>Events</h3>
+          <div class="events-empty">No recent events</div>
+        </section>`;
+      }
+      const rows = events.map((event) => `<tr>
+        <td>${escapeHtml(event.type || "event")}</td>
+        <td>${escapeHtml(formatDuration(event.t || 0))}</td>
+      </tr>`).join("");
+      return `<section class="hud-card">
+        <h3>Events</h3>
+        <div class="events-table-wrap">
+          <table class="events-table">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Age</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </section>`;
+    }
+    function renderNeighboursSection(neighbours) {
+      if (!Array.isArray(neighbours) || !neighbours.length) {
+        return `<section class="hud-card">
+          <h3>Neighbours</h3>
+          <div class="events-empty">No recent neighbours</div>
+        </section>`;
+      }
+      const renderNeighbourId = (neighbour) => {
+        const shortId = escapeHtml(neighbour.id || "--");
+        const fullId = typeof neighbour.full_id === "string" ? neighbour.full_id.trim() : "";
+        if (!/^[0-9A-Fa-f]{64}$/.test(fullId)) {
+          return shortId;
+        }
+        const href = "https://core.eastmesh.au/#/nodes/" + encodeURIComponent(fullId.toLowerCase());
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${shortId}</a>`;
+      };
+      const rows = neighbours.map((neighbour) => `<tr>
+        <td>${renderNeighbourId(neighbour)}</td>
+        <td>${Number.isFinite(neighbour.snr_db) ? neighbour.snr_db.toFixed(2) + " dB" : "--"}</td>
+        <td>${escapeHtml(formatDuration(neighbour.heard_secs_ago || 0))}</td>
+        <td>${escapeHtml(formatDuration(neighbour.advert_secs_ago || 0))}</td>
+        <td>${escapeHtml(neighbour.route || "unknown")}</td>
+      </tr>`).join("");
+      return `<section class="hud-card">
+        <h3>Neighbours</h3>
+        <div class="events-table-wrap">
+          <table class="events-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>SNR</th>
+                <th>Heard</th>
+                <th>Advert</th>
+                <th>Route</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </section>`;
+    }
+    function renderStatsSummary(payload) {
+      const results = {
+        core: payload && payload.core ? payload.core : null,
+        radio: payload && payload.radio ? payload.radio : null,
+        packets: payload && payload.packets ? payload.packets : null,
+        memory: payload && payload.memory ? payload.memory : null,
+        wifi: payload && payload.wifi ? payload.wifi : null,
+        wifi_powersave: payload && payload.wifi ? payload.wifi.powersave : "--"
+      };
+      renderStatsDashboard(results, [], "statsSummary");
+      const summaryEl = document.getElementById("statsSummary");
+      if (!summaryEl) return;
+      summaryEl.innerHTML += `<div class="hud-grid-1">${renderServicesCard(payload)}</div>`;
+      const introEl = document.getElementById("statsTrendIntro");
+      if (introEl) {
+        const intervalSecs = payload && payload.history && Number.isFinite(payload.history.sample_interval_secs)
+          ? payload.history.sample_interval_secs
+          : 0;
+        const restored = !!(payload && payload.history && payload.history.archive_restored);
+        const restoredSamples = payload && payload.history && Number.isFinite(payload.history.archive_restored_samples)
+          ? payload.history.archive_restored_samples
+          : 0;
+        const archiveIntervalSecs = payload && payload.history && Number.isFinite(payload.history.archive_summary_interval_secs)
+          ? payload.history.archive_summary_interval_secs
+          : 0;
+        const sampleLabel = intervalSecs >= 60 && intervalSecs % 60 === 0
+          ? ((intervalSecs / 60) === 1 ? "1 minute" : ((intervalSecs / 60) + " minutes"))
+          : (intervalSecs > 0 ? (intervalSecs + " seconds") : "regular");
+        if (restored && restoredSamples > 0) {
+          const archiveLabel = archiveIntervalSecs >= 60 && archiveIntervalSecs % 60 === 0
+            ? ((archiveIntervalSecs / 60) === 1 ? "1 minute" : ((archiveIntervalSecs / 60) + " minutes"))
+            : (archiveIntervalSecs > 0 ? (archiveIntervalSecs + " seconds") : "archive");
+          introEl.textContent = `These graphs show recent history. Restored ${restoredSamples} archived ${restoredSamples === 1 ? "point" : "points"} from SD. Archived points are sampled every ${archiveLabel}; new live points are added every ${sampleLabel}. Hover a chart to inspect point values.`;
+        } else {
+          introEl.textContent = `These graphs show recent history only. New points are added every ${sampleLabel}, and older points roll out of memory as the buffer fills. Hover a chart to inspect point values.`;
+        }
+      }
+      const trendsPanel = document.getElementById("statsNeighbours");
+      if (trendsPanel) {
+        trendsPanel.innerHTML = renderNeighboursSection(payload && Array.isArray(payload.neighbors_detail) ? payload.neighbors_detail : []);
+      }
+      const eventsPanel = document.getElementById("statsEvents");
+      if (eventsPanel) {
+        eventsPanel.innerHTML = renderEventsSection(payload && payload.events ? payload.events : []);
+      }
+    }
+    function formatTrendValue(key, value) {
+      if (!Number.isFinite(value)) return "--";
+      if (key === "battery") return Math.round(value) + " mV";
+      if (key === "memory") return formatBytes(value);
+      if (key === "packets") return Math.round(value) + " pkts";
+      if (key === "signal") return (value / 4).toFixed(1) + " dBm";
+      return String(value);
+    }
+    function formatArchiveGigabytes(value) {
+      if (!Number.isFinite(value) || value <= 0) return "--";
+      const gb = value / (1024 * 1024 * 1024);
+      return (gb >= 10 ? gb.toFixed(1) : gb.toFixed(2)) + " GB";
+    }
+    function formatArchiveUsed(value) {
+      if (!Number.isFinite(value)) return "--";
+      const abs = Math.abs(value);
+      if (abs >= 1024 * 1024 * 1024) {
+        const gb = value / (1024 * 1024 * 1024);
+        return (Math.abs(gb) >= 10 ? gb.toFixed(1) : gb.toFixed(2)) + " GB";
+      }
+      if (abs >= 1024 * 1024) return (value / (1024 * 1024)).toFixed(2) + " MB";
+      if (abs >= 1024) return (value / 1024).toFixed(1) + " KB";
+      return Math.round(value) + " B";
+    }
+    function sparkStrokeColor(key, points) {
+      if (key === "packets") return "#d97706";
+      if (key === "signal") return "#3b82f6";
+      if (key === "memory") {
+        const values = Array.isArray(points) ? points.map((item) => item && item[1]).filter((value) => Number.isFinite(value)) : [];
+        const current = values.length ? values[values.length - 1] : NaN;
+        const minVisible = values.length ? Math.min(...values) : NaN;
+        const lowThreshold = 32 * 1024;
+        const warningThreshold = 64 * 1024;
+        if (Number.isFinite(current) && current <= lowThreshold) return "#d14343";
+        if (Number.isFinite(minVisible) && minVisible <= lowThreshold) return "#d14343";
+        if (Number.isFinite(current) && current <= warningThreshold) return "#d97706";
+        if (Number.isFinite(minVisible) && minVisible <= warningThreshold) return "#d97706";
+      }
+      return "#2f8f4e";
+    }
+    function drawSparkline(canvas, points, key, hoverIndex) {
+      if (!canvas || !canvas.getContext) return;
+      const ctx = canvas.getContext("2d");
+      const width = canvas.clientWidth || 240;
+      const height = canvas.clientHeight || 84;
+      canvas.width = width * (window.devicePixelRatio || 1);
+      canvas.height = height * (window.devicePixelRatio || 1);
+      ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      if (!Array.isArray(points) || points.length < 2) return;
+      const values = points.map((item) => item[1]).filter((value) => Number.isFinite(value));
+      if (values.length < 2) return;
+      let minValue = Math.min(...values);
+      let maxValue = Math.max(...values);
+      if (minValue === maxValue) {
+        minValue -= 1;
+        maxValue += 1;
+      }
+      const coords = points.map((point, index) => ({
+        x: (index / Math.max(1, points.length - 1)) * (width - 8) + 4,
+        y: height - 8 - (((point[1] - minValue) / (maxValue - minValue)) * (height - 16))
+      }));
+      const strokeColor = sparkStrokeColor(key, points);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = strokeColor;
+      ctx.beginPath();
+      coords.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      });
+      ctx.stroke();
+      if (Number.isInteger(hoverIndex) && hoverIndex >= 0 && hoverIndex < coords.length) {
+        const hover = coords[hoverIndex];
+        ctx.fillStyle = strokeColor;
+        ctx.beginPath();
+        ctx.arc(hover.x, hover.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    function bindSparkHover(canvas, points, key) {
+      const tooltip = document.getElementById("tooltip-" + key);
+      if (!canvas || !tooltip || !Array.isArray(points) || points.length < 2) return;
+      const updateHover = (index) => {
+        drawSparkline(canvas, points, key, index);
+        if (index == null || index < 0 || index >= points.length) {
+          tooltip.textContent = "";
+          tooltip.classList.remove("visible");
+          return;
+        }
+        tooltip.textContent = formatTrendValue(key, points[index][1]);
+        tooltip.classList.add("visible");
+      };
+      canvas.onmousemove = (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width || 1;
+        const x = Math.max(0, Math.min(width, event.clientX - rect.left));
+        const index = Math.max(0, Math.min(points.length - 1, Math.round((x / width) * (points.length - 1))));
+        updateHover(index);
+      };
+      canvas.onmouseleave = () => updateHover(null);
+      canvas.ontouchstart = (event) => {
+        const touch = event.touches && event.touches[0];
+        if (!touch) return;
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width || 1;
+        const x = Math.max(0, Math.min(width, touch.clientX - rect.left));
+        const index = Math.max(0, Math.min(points.length - 1, Math.round((x / width) * (points.length - 1))));
+        updateHover(index);
+      };
+      canvas.ontouchend = () => updateHover(null);
+    }
+    function setTrendCardState(key, title, value) {
+      const card = document.getElementById("trend-" + key);
+      if (!card) return;
+      card.innerHTML = `<div class="trend-head">
+        <div>
+          <div class="trend-title">${escapeHtml(title)}</div>
+          <div class="trend-value">${escapeHtml(value)}</div>
+        </div>
+      </div>
+      <div class="spark-tooltip" id="tooltip-${key}"></div>
+      <canvas class="spark" id="canvas-${key}"></canvas>
+      <div class="spark-axis" id="axis-${key}">
+        <span id="axis-left-${key}"></span>
+        <span id="axis-right-${key}"></span>
+      </div>`;
+    }
+    function renderTrendResult(key, payload) {
+      const title = payload && payload.title ? payload.title : key;
+      const current = payload && Number.isFinite(payload.current) ? payload.current : NaN;
+      setTrendCardState(key, title, formatTrendValue(key, current));
+      const canvas = document.getElementById("canvas-" + key);
+      const points = payload && Array.isArray(payload.points) ? payload.points : [];
+      drawSparkline(canvas, points, key);
+      bindSparkHover(canvas, points, key);
+      const axisLeftEl = document.getElementById("axis-left-" + key);
+      const axisRightEl = document.getElementById("axis-right-" + key);
+      if (axisLeftEl && axisRightEl) {
+        if (points.length) {
+          axisLeftEl.textContent = formatRelativeAge(payload && Number.isFinite(payload.oldest_age_secs) ? payload.oldest_age_secs : 0);
+          axisRightEl.textContent = formatRelativeAge(payload && Number.isFinite(payload.latest_age_secs) ? payload.latest_age_secs : 0);
+        } else {
+          axisLeftEl.textContent = "";
+          axisRightEl.textContent = "No recent data";
+        }
+      }
+    }
+    function renderTrendError(key, message) {
+      setTrendCardState(key, key, "--");
+      const axisLeftEl = document.getElementById("axis-left-" + key);
+      const axisRightEl = document.getElementById("axis-right-" + key);
+      if (axisLeftEl && axisRightEl) {
+        axisLeftEl.textContent = "";
+        axisRightEl.textContent = message || "Unavailable";
+        axisRightEl.style.color = "var(--status-red)";
+      }
+    }
+    function initTrendCards() {
+      const trendsEl = document.getElementById("statsTrends");
+      if (!trendsEl) return;
+      trendsEl.innerHTML = ["battery", "memory", "packets", "signal"].map((key) =>
+        `<section class="trend-card" id="trend-${key}">
+          <div class="trend-title">${escapeHtml(key)}</div>
+          <div class="spark-axis"><span></span><span>Loading...</span></div>
+        </section>`
+      ).join("");
+    }
     function showAuthedUi(show) {
       document.getElementById("login").style.display = show ? "none" : "block";
-      document.getElementById("cliPanel").style.display = show ? "block" : "none";
-      document.getElementById("quickCommandsPanel").style.display = show ? "block" : "none";
-      document.getElementById("mqttSettingsPanel").style.display = show ? "block" : "none";
-      document.getElementById("infoPanel").style.display = show ? "block" : "none";
-      document.getElementById("statsPanel").style.display = show ? "block" : "none";
       document.getElementById("actionsPanel").style.display = show ? "block" : "none";
-      document.getElementById("repeaterSettingsPanel").style.display = show ? "block" : "none";
+      document.getElementById("cliPanel").style.display = show && !isStatsPage ? "block" : "none";
+      document.getElementById("quickCommandsPanel").style.display = show && !isStatsPage ? "block" : "none";
+      document.getElementById("mqttSettingsPanel").style.display = show && !isStatsPage ? "block" : "none";
+      document.getElementById("infoPanel").style.display = show && !isStatsPage ? "block" : "none";
+      document.getElementById("statsPanel").style.display = show && !isStatsPage ? "none" : "none";
+      document.getElementById("statsPagePanel").style.display = show && isStatsPage ? "block" : "none";
+      document.getElementById("repeaterSettingsPanel").style.display = show && !isStatsPage ? "block" : "none";
       if (!show) {
         commandQueue = Promise.resolve();
         const passwordEl = document.getElementById("password");
         if (passwordEl) passwordEl.value = "";
         if (statusEl) statusEl.textContent = "";
-        document.getElementById("statsDashboard").innerHTML = '<div class="stats-empty">Press Get Stats to load the dashboard.</div>';
+        const summaryEl = document.getElementById("statsSummary");
+        if (summaryEl) summaryEl.innerHTML = '<div class="stats-empty">Loading summary...</div>';
+        const trendsEl = document.getElementById("statsTrends");
+        if (trendsEl) trendsEl.innerHTML = "";
       }
     }
     function queueCommand(task) {
@@ -1427,40 +2055,35 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         setRadioPresetStatus(error && error.message ? error.message : "Unable to load community presets.", true);
       }
     }
-    async function refreshStats() {
-      const getStatsBtn = document.getElementById("getStatsBtn");
-      getStatsBtn.disabled = true;
-      getStatsBtn.textContent = "Loading...";
-      document.getElementById("statsDashboard").innerHTML = '<div class="stats-empty">Loading dashboard...</div>';
-      const results = {};
-      const errors = [];
+    async function loadStatsPage() {
+      const summaryEl = document.getElementById("statsSummary");
+      if (!summaryEl) return;
+      summaryEl.innerHTML = '<div class="stats-empty">Loading summary...</div>';
+      initTrendCards();
       try {
-        const payload = await fetchJson("/api/stats");
-        if (!payload) throw new Error("no stats payload");
-        if (typeof payload.wifi === "string") {
-          const parsed = parseWifiStatusReply(payload.wifi);
-          if (parsed != null) results.wifi = parsed;
-          else errors.push("get wifi.status: invalid reply");
-        }
-        if (typeof payload.wifi_powersave === "string") {
-          results.wifi_powersave = parseReplyValue(payload.wifi_powersave) || "--";
-        }
-        for (const key of ["core", "radio", "packets", "memory"]) {
-          if (typeof payload[key] === "string") {
-            const parsed = parseJsonReply(payload[key]);
-            if (parsed != null) results[key] = parsed;
-            else errors.push(key + ": invalid reply");
-          }
-        }
+        const payload = await fetchJson("/api/stats?view=summary");
+        if (!payload) throw new Error("no summary payload");
+        renderStatsSummary(payload);
       } catch (error) {
-        errors.push(error && error.message ? error.message : "stats request failed");
+        summaryEl.innerHTML = `<div class="stats-error">${escapeHtml(error && error.message ? error.message : "summary unavailable")}</div>`;
+        return;
       }
-      renderStatsDashboard(results, errors);
-      getStatsBtn.disabled = false;
-      getStatsBtn.textContent = "Get Stats";
+
+      const seriesOrder = ["battery", "memory", "packets", "signal"];
+      for (const key of seriesOrder) {
+        try {
+          const payload = await fetchJson("/api/stats?series=" + encodeURIComponent(key));
+          renderTrendResult(key, payload);
+        } catch (error) {
+          renderTrendError(key, error && error.message ? error.message : "Unavailable");
+        }
+        await pause(40);
+      }
     }
     document.getElementById("runBtn").onclick = () => runCommand(document.getElementById("command").value);
-    document.getElementById("getStatsBtn").onclick = () => refreshStats();
+    const openStats = () => window.location.assign("/stats");
+    const openApp = () => window.location.assign("/app");
+    document.getElementById("openStatsPanelBtn").onclick = () => openStats();
     document.getElementById("command").addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -1540,6 +2163,23 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     document.getElementById("copyPublicKeyBtn").onclick = () => copyToClipboard(document.getElementById("publicKey").value, "Public key copied");
     document.getElementById("copyPrivateKeyBtn").onclick = () => copyToClipboard(document.getElementById("privateKey").value.toUpperCase(), "Private key copied");
     document.getElementById("syncClockBtn").onclick = () => syncClock();
+    const ghostNodeModeSlider = document.getElementById("ghostNodeMode");
+    if (ghostNodeModeSlider) {
+      ghostNodeModeSlider.addEventListener("input", () => {
+        ghostNodeModeSlider.value = (Number.parseInt(ghostNodeModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
+      });
+      ghostNodeModeSlider.addEventListener("change", () => {
+        const enabled = (Number.parseInt(ghostNodeModeSlider.value, 10) || 0) >= 1;
+        const prompt = enabled
+          ? "Enable Ghost Node Mode? This leaves web and MQTT on, but turns repeat off and disables adverts."
+          : "Disable Ghost Node Mode and restore the prior repeat/advert settings?";
+        if (!confirm(prompt)) {
+          loadGhostNodeModeState({ recordHistory:false, updateInput:false });
+          return;
+        }
+        setGhostNodeMode(enabled);
+      });
+    }
     document.getElementById("radioPreset").addEventListener("change", (event) => {
       const value = event.target.value;
       if (value === "") {
@@ -1586,6 +2226,13 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         await runCommand("start ota");
       }
     };
+    document.getElementById("refreshPageBtn").onclick = async () => {
+      if (isStatsPage) {
+        await loadStatsPage();
+      } else {
+        await initApp();
+      }
+    };
     document.getElementById("logoutBtn").onclick = () => {
       redirectToLogin();
     };
@@ -1595,6 +2242,15 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         return;
       }
       showAuthedUi(true);
+      if (isStatsPage) {
+        try {
+          await loadStatsPage();
+          statusEl.textContent = "Ready";
+        } catch (error) {
+          statusEl.textContent = error && error.message ? error.message : "Unable to load stats.";
+        }
+        return;
+      }
       const quiet = { recordHistory:false, updateInput:false };
       try {
         await loadSection("Loading info...", [
@@ -1616,7 +2272,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         await loadSection("Loading advertising...", [
           () => loadField("get advert.interval", "advertInterval", null, quiet),
           () => loadField("get flood.advert.interval", "floodInterval", null, quiet),
-          () => loadField("get flood.max", "floodMax", null, quiet)
+          () => loadField("get flood.max", "floodMax", null, quiet),
+          () => loadGhostNodeModeState(quiet)
         ]);
         await loadSection("Loading MQTT settings...", [
           () => loadField("get mqtt.iata", "mqttIata", null, quiet),
@@ -1662,7 +2319,7 @@ bool WebPanelServer::start() {
 
   httpd_ssl_config_t config = HTTPD_SSL_CONFIG_DEFAULT();
   config.httpd.max_open_sockets = 2;
-  config.httpd.max_uri_handlers = 6;
+  config.httpd.max_uri_handlers = 7;
   config.httpd.max_resp_headers = 4;
   config.httpd.backlog_conn = 2;
   config.httpd.recv_wait_timeout = 2;
@@ -1688,11 +2345,13 @@ bool WebPanelServer::start() {
 
   httpd_uri_t index_uri = {.uri = "/", .method = HTTP_GET, .handler = &WebPanelServer::handleIndex, .user_ctx = &_route_context};
   httpd_uri_t app_uri = {.uri = "/app", .method = HTTP_GET, .handler = &WebPanelServer::handleApp, .user_ctx = &_route_context};
+  httpd_uri_t stats_page_uri = {.uri = "/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStatsPage, .user_ctx = &_route_context};
   httpd_uri_t login_uri = {.uri = "/login", .method = HTTP_POST, .handler = &WebPanelServer::handleLogin, .user_ctx = &_route_context};
   httpd_uri_t command_uri = {.uri = "/api/command", .method = HTTP_POST, .handler = &WebPanelServer::handleCommand, .user_ctx = &_route_context};
   httpd_uri_t stats_uri = {.uri = "/api/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStats, .user_ctx = &_route_context};
   httpd_register_uri_handler(_server, &index_uri);
   httpd_register_uri_handler(_server, &app_uri);
+  httpd_register_uri_handler(_server, &stats_page_uri);
   httpd_register_uri_handler(_server, &login_uri);
   httpd_register_uri_handler(_server, &command_uri);
   httpd_register_uri_handler(_server, &stats_uri);
@@ -1749,6 +2408,20 @@ esp_err_t WebPanelServer::handleApp(httpd_req_t* req) {
   ctx->self->noteActivity();
   httpd_resp_set_type(req, "text/html; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  return sendProgmemChunked(req, kWebPanelAppHtml);
+}
+
+esp_err_t WebPanelServer::handleStatsPage(httpd_req_t* req) {
+  auto* ctx = static_cast<RouteContext*>(req->user_ctx);
+  if (ctx == nullptr || ctx->self == nullptr) {
+    return httpd_resp_send_500(req);
+  }
+  ctx->self->noteActivity();
+  httpd_resp_set_type(req, "text/html; charset=utf-8");
+  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  if (ctx->self->_runner != nullptr && !ctx->self->_runner->isWebStatsEnabled()) {
+    return sendProgmemChunked(req, kWebPanelStatsDisabledHtml);
+  }
   return sendProgmemChunked(req, kWebPanelAppHtml);
 }
 
@@ -1827,46 +2500,41 @@ esp_err_t WebPanelServer::handleStats(httpd_req_t* req) {
   }
 
   ctx->self->noteActivity();
-  char* reply = allocScratchBuffer(kWebReplyBufferSize);
+  char view[16];
+  char series[24];
+  char* reply = allocScratchBuffer(kWebStatsReplyBufferSize);
   if (reply == nullptr) {
     freeScratchBuffer(reply);
     return httpd_resp_send_500(req);
   }
 
-  const struct {
-    const char* key;
-    const char* command;
-  } fields[] = {
-      {"wifi", "get wifi.status"},
-      {"wifi_powersave", "get wifi.powersaving"},
-      {"core", "stats-core"},
-      {"radio", "stats-radio"},
-      {"packets", "stats-packets"},
-      {"memory", "memory"},
-  };
+  if (getQueryValue(req, "view", view, sizeof(view)) && strcmp(view, "legacy") == 0) {
+    esp_err_t legacy_rc = sendLegacyStatsBundle(req, ctx->self->_runner, reply);
+    freeScratchBuffer(reply);
+    return legacy_rc;
+  }
+
+  if (!ctx->self->_runner->isWebStatsEnabled()) {
+    freeScratchBuffer(reply);
+    httpd_resp_set_status(req, "503 Service Unavailable");
+    return httpd_resp_send(req, "Stats disabled", HTTPD_RESP_USE_STRLEN);
+  }
+
+  bool ok = false;
+  if (getQueryValue(req, "series", series, sizeof(series))) {
+    ok = ctx->self->_runner->formatWebStatsSeriesJson(series, reply, kWebStatsReplyBufferSize);
+  } else {
+    ok = ctx->self->_runner->formatWebStatsSummaryJson(reply, kWebStatsReplyBufferSize);
+  }
+
+  if (!ok || reply[0] == 0) {
+    freeScratchBuffer(reply);
+    return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "No stats data");
+  }
 
   httpd_resp_set_type(req, "application/json; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
-  if (sendChunk(req, "{") != ESP_OK) {
-    freeScratchBuffer(reply);
-    httpd_resp_sendstr_chunk(req, nullptr);
-    return ESP_FAIL;
-  }
-  for (size_t i = 0; i < (sizeof(fields) / sizeof(fields[0])); ++i) {
-    memset(reply, 0, kWebReplyBufferSize);
-    ctx->self->_runner->runWebCommand(fields[i].command, reply, kWebReplyBufferSize);
-    if (sendJsonFieldChunk(req, fields[i].key, reply, i != 0) != ESP_OK) {
-      freeScratchBuffer(reply);
-      httpd_resp_sendstr_chunk(req, nullptr);
-      return ESP_FAIL;
-    }
-  }
-  esp_err_t rc = sendChunk(req, "}");
-  if (rc == ESP_OK) {
-    rc = httpd_resp_sendstr_chunk(req, nullptr);
-  } else {
-    httpd_resp_sendstr_chunk(req, nullptr);
-  }
+  esp_err_t rc = httpd_resp_send(req, reply, HTTPD_RESP_USE_STRLEN);
   freeScratchBuffer(reply);
   return rc;
 }

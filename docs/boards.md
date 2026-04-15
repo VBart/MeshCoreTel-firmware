@@ -16,14 +16,15 @@ The tables below are built from the repo's PlatformIO board metadata and variant
 - `RAM` is the MCU's built-in RAM.
 - `PSRAM` is extra memory on some boards. More PSRAM usually means more headroom for UI, MQTT, and future features.
 - `GPS` uses `✅` when present and is blank when absent.
+- `SD` uses `✅` when the board is currently known to support the SD-backed archive path in EastMesh, `🧪` when the hardware likely supports TF/microSD but the board-specific integration still needs validation, and is blank when there is no current SD/archive support note.
 
 ## Start Here
 
 - Pick an `ESP32-S3` board with `16MB` flash and PSRAM if you want strong overall headroom for MQTT plus UI: `heltec_v4_tft`, `heltec_v4`, `Station_G2`, `LilyGo_TBeam_1W`.
 - Pick a TFT board if this will be used as a human-facing companion or field node: `heltec_v4_tft`, `heltec_tracker_v2`, `LilyGo_TDeck`, `Heltec_T190`.
 - Pick e-paper if you want a status screen with lower idle draw and less frequent refresh: `Heltec_E213`, `Heltec_E290`, `Heltec_Wireless_Paper`, `ThinkNode_M5`.
-- Pick a headless board if this is mainly a fixed MQTT gateway and screen space is not useful: `Xiao_C3`, `RAK_3112`, `Tenstar_C3`, `Heltec_ct62`, `Generic_E22`.
-- Pick a headless Wi-Fi companion if the phone app will be the primary UI anyway: `Xiao_C3_companion_radio_wifi`, `RAK_3112_companion_radio_wifi`, `Xiao_S3_WIO_companion_radio_wifi`, `Station_G2_companion_radio_wifi`.
+- Pick a headless board if this is mainly a fixed MQTT gateway and screen space is not useful: `RAK_3112`, `Generic_E22`, `Meshimi`, `Xiao_C6`.
+- Pick a headless Wi-Fi companion if the phone app will be the primary UI anyway: `RAK_3112_companion_radio_wifi`, `Xiao_S3_WIO_companion_radio_wifi`, `Station_G2_companion_radio_wifi`.
 - Pick a GPS-capable board if location-aware/mobile use matters: the T-Beam family, `heltec_tracker_v2`, `Heltec_v3`, `heltec_v4`, `Station_G2`, `ThinkNode_M5`.
 - If you want the most conservative, older radio family choices, the `SX1276` boards are `LilyGo_TLora_V2_1_1_6`, `Tbeam_SX1276`, and `Heltec_v2`.
 
@@ -41,7 +42,6 @@ If you are deciding between otherwise similar boards, these target-level setting
 | Ebyte_EoRa-S3            | default | 22 dBm cfg   | ADC batt  |           |
 | Generic_E22_sx1262       | default | 22 dBm cfg   | ADC batt  | RF switch |
 | Generic_E22_sx1268       | default | 22 dBm cfg   | ADC batt  | RF switch |
-| Heltec_ct62              | 80 MHz  | 22 dBm cfg   | ADC batt  |           |
 | Heltec_E213              | default | 22 dBm cfg   | ADC batt  |           |
 | Heltec_E290              | default | 22 dBm cfg   | ADC batt  |           |
 | Heltec_T190              | default | 22 dBm cfg   | ADC batt  |           |
@@ -70,12 +70,9 @@ If you are deciding between otherwise similar boards, these target-level setting
 | T_Beam_S3_Supreme_SX1262 | default | 22 dBm cfg   | PMU       | BME280    |
 | Tbeam_SX1262             | default | 22 dBm cfg   | PMU       |           |
 | Tbeam_SX1276             | default | 20 dBm cfg   | PMU       |           |
-| Tenstar_C3_sx1262        | 80 MHz  | 22 dBm cfg   | ADC batt  |           |
-| Tenstar_C3_sx1268        | 80 MHz  | 22 dBm cfg   | ADC batt  |           |
 | ThinkNode_M2             | default | 22 dBm cfg   | ADC batt  |           |
 | ThinkNode_M5             | default | 22 dBm cfg   | ADC batt  |           |
 | WHY2025_badge            | default | 22 dBm cfg   | none      |           |
-| Xiao_C3                  | 80 MHz  | 22 dBm cfg   | ADC batt  |           |
 | Xiao_C6                  | default | 22 dBm cfg   | none      | RF switch |
 | Xiao_S3_WIO              | default | 22 dBm cfg   | none      | RF switch |
 
@@ -85,50 +82,50 @@ If you are deciding between otherwise similar boards, these target-level setting
 
 This table includes all repeater MQTT targets currently defined in `variants/eastmesh_mqtt/platformio.ini`.
 
-| Target                   | MCU     | RAM    | PSRAM | Flash | LoRa   | Display         | GPS |
-| ------------------------ | ------- | ------ | ----- | ----- | ------ | --------------- | --- |
-| Ebyte_EoRa-S3            | ESP32S3 | 512 KB | 2 MB  | 4 MB  | SX1262 | OLED (SSD1306)  |     |
-| Generic_E22_sx1262       | ESP32   | 520 KB | No    | 4 MB  | SX1262 | None            |     |
-| Generic_E22_sx1268       | ESP32   | 520 KB | No    | 4 MB  | SX1268 | None            |     |
-| Heltec_ct62              | ESP32C3 | 400 KB | No    | 4 MB  | SX1262 | None            |     |
-| Heltec_E213              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | E-paper (2.13") |     |
-| Heltec_E290              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | E-paper (2.9")  |     |
-| Heltec_T190              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | TFT (ST7789)    |     |
-| heltec_tracker_v2        | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | TFT (ST7735)    | ✅  |
-| Heltec_v2                | ESP32   | 520 KB | No    | 8 MB  | SX1276 | OLED (SSD1306)  |     |
-| Heltec_v3                | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | OLED (SSD1306)  | ✅  |
-| heltec_v4                | ESP32S3 | 512 KB | 2 MB  | 16 MB | SX1262 | OLED (SSD1306)  | ✅  |
-| heltec_v4_tft            | ESP32S3 | 512 KB | 2 MB  | 16 MB | SX1262 | TFT (ST7789)    | ✅  |
-| Heltec_Wireless_Paper    | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | E-paper (2.13") |     |
-| Heltec_Wireless_Tracker  | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | TFT (ST7735)    | ✅  |
-| Heltec_WSL3              | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |
-| LilyGo_T3S3_sx1262       | ESP32S3 | 512 KB | 2 MB  | 4 MB  | SX1262 | OLED (SSD1306)  |     |
-| LilyGo_T3S3_sx1276       | ESP32S3 | 512 KB | 2 MB  | 4 MB  | SX1276 | OLED (SSD1306)  |     |
-| LilyGo_TBeam_1W          | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  |
-| LilyGo_TDeck             | ESP32S3 | 512 KB | No    | 16 MB | SX1262 | TFT (ST7789)    | ✅  |
-| LilyGo_Tlora_C6          | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |
-| LilyGo_TLora_V2_1_1_6    | ESP32   | 520 KB | No    | 4 MB  | SX1276 | OLED (SSD1306)  | ✅  |
-| M5Stack_Unit_C6L         | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            | ✅  |
-| Meshadventurer_sx1262    | ESP32   | 520 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  | ✅  |
-| Meshadventurer_sx1268    | ESP32   | 520 KB | No    | 4 MB  | SX1268 | OLED (SSD1306)  | ✅  |
-| Meshimi                  | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |
-| nibble_screen_connect    | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  |     |
-| RAK_3112                 | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |
-| Station_G2               | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  |
-| Station_G2_logging       | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  |
-| T_Beam_S3_Supreme_SX1262 | ESP32S3 | 512 KB | 8 MB  | 8 MB  | SX1262 | OLED (SH1106)   | ✅  |
-| Tbeam_SX1262             | ESP32   | 520 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  | ✅  |
-| Tbeam_SX1276             | ESP32   | 520 KB | No    | 4 MB  | SX1276 | OLED (SSD1306)  | ✅  |
-| Tenstar_C3_sx1262        | ESP32C3 | 400 KB | No    | 4 MB  | SX1262 | None            |     |
-| Tenstar_C3_sx1268        | ESP32C3 | 400 KB | No    | 4 MB  | SX1268 | None            |     |
-| ThinkNode_M2             | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | OLED (SH1106)   |     |
-| ThinkNode_M5             | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | E-paper (GxEPD) | ✅  |
-| WHY2025_badge            | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |
-| Xiao_C3                  | ESP32C3 | 400 KB | No    | 4 MB  | SX1262 | None            | ✅  |
-| Xiao_C6                  | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |
-| Xiao_S3_WIO              | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |
+| Target                   | MCU     | RAM    | PSRAM | Flash | LoRa   | Display         | GPS | SD  |
+| ------------------------ | ------- | ------ | ----- | ----- | ------ | --------------- | --- | --- |
+| Ebyte_EoRa-S3            | ESP32S3 | 512 KB | 2 MB  | 4 MB  | SX1262 | OLED (SSD1306)  |     |     |
+| Generic_E22_sx1262       | ESP32   | 520 KB | No    | 4 MB  | SX1262 | None            |     |     |
+| Generic_E22_sx1268       | ESP32   | 520 KB | No    | 4 MB  | SX1268 | None            |     |     |
+| Heltec_E213              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | E-paper (2.13") |     |     |
+| Heltec_E290              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | E-paper (2.9")  |     |     |
+| Heltec_T190              | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | TFT (ST7789)    |     |     |
+| heltec_tracker_v2        | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | TFT (ST7735)    | ✅  |     |
+| Heltec_v2                | ESP32   | 520 KB | No    | 8 MB  | SX1276 | OLED (SSD1306)  |     |     |
+| Heltec_v3                | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | OLED (SSD1306)  | ✅  |     |
+| heltec_v4                | ESP32S3 | 512 KB | 2 MB  | 16 MB | SX1262 | OLED (SSD1306)  | ✅  |     |
+| heltec_v4_tft            | ESP32S3 | 512 KB | 2 MB  | 16 MB | SX1262 | TFT (ST7789)    | ✅  |     |
+| Heltec_Wireless_Paper    | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | E-paper (2.13") |     |     |
+| Heltec_Wireless_Tracker  | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | TFT (ST7735)    | ✅  |     |
+| Heltec_WSL3              | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |     |
+| LilyGo_T3S3_sx1262       | ESP32S3 | 512 KB | 2 MB  | 4 MB  | SX1262 | OLED (SSD1306)  |     | 🧪  |
+| LilyGo_T3S3_sx1276       | ESP32S3 | 512 KB | 2 MB  | 4 MB  | SX1276 | OLED (SSD1306)  |     | 🧪  |
+| LilyGo_TBeam_1W          | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  | ✅  |
+| LilyGo_TDeck             | ESP32S3 | 512 KB | No    | 16 MB | SX1262 | TFT (ST7789)    | ✅  | 🧪  |
+| LilyGo_Tlora_C6          | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
+| LilyGo_TLora_V2_1_1_6    | ESP32   | 520 KB | No    | 4 MB  | SX1276 | OLED (SSD1306)  | ✅  |     |
+| M5Stack_Unit_C6L         | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            | ✅  |     |
+| Meshadventurer_sx1262    | ESP32   | 520 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  | ✅  |     |
+| Meshadventurer_sx1268    | ESP32   | 520 KB | No    | 4 MB  | SX1268 | OLED (SSD1306)  | ✅  |     |
+| Meshimi                  | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
+| nibble_screen_connect    | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  |     |     |
+| RAK_3112                 | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |     |
+| Station_G2               | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  |     |
+| Station_G2_logging       | ESP32S3 | 512 KB | 8 MB  | 16 MB | SX1262 | OLED (SH1106)   | ✅  |     |
+| T_Beam_S3_Supreme_SX1262 | ESP32S3 | 512 KB | 8 MB  | 8 MB  | SX1262 | OLED (SH1106)   | ✅  | ✅  |
+| Tbeam_SX1262             | ESP32   | 520 KB | No    | 4 MB  | SX1262 | OLED (SSD1306)  | ✅  |     |
+| Tbeam_SX1276             | ESP32   | 520 KB | No    | 4 MB  | SX1276 | OLED (SSD1306)  | ✅  |     |
+| ThinkNode_M2             | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | OLED (SH1106)   |     |     |
+| ThinkNode_M5             | ESP32S3 | 512 KB | No    | 4 MB  | SX1262 | E-paper (GxEPD) | ✅  |     |
+| WHY2025_badge            | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
+| Xiao_C6                  | ESP32C6 | 512 KB | No    | 4 MB  | SX1262 | None            |     |     |
+| Xiao_S3_WIO              | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | None            | ✅  |     |
 
-Note: all current `repeater_mqtt` boards support the local web panel except `Xiao_C3`, where it is disabled to preserve limited board resources.
+SD notes:
+
+- `✅` means the board is currently known to work with the SD-backed archive path in EastMesh.
+- `🧪` means the board hardware likely supports TF/microSD, but the EastMesh board-specific integration still needs validation before it should be treated as supported.
+- For the current stats archive, a `4 GB` `FAT32` microSD card is more than sufficient. Larger cards are also supported.
 
 ## `companion_radio_wifi` Boards With A Display
 
@@ -157,15 +154,14 @@ These are the Wi-Fi companion targets that rely on the companion app as the prim
 | ----------- | ------- | ------ | ----- | ----- | ------ | --- |
 | Heltec_WSL3 | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
 | RAK_3112    | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
-| Xiao_C3     | ESP32C3 | 400 KB | No    | 4 MB  | SX1262 | ✅  |
 | Xiao_S3_WIO | ESP32S3 | 512 KB | No    | 8 MB  | SX1262 | ✅  |
 
 ## Practical Picks
 
 - Best all-round MQTT repeater with screen and overall headroom: `heltec_v4_repeater_mqtt`, `heltec_v4_tft_repeater_mqtt`, `Station_G2_repeater_mqtt`, `LilyGo_TBeam_1W_repeater_mqtt`.
-- Best MQTT repeater if you want a simple headless install: `RAK_3112_repeater_mqtt`, `Tenstar_C3_sx1262_repeater_mqtt`, `Heltec_ct62_repeater_mqtt`, `Generic_E22_sx1262_repeater_mqtt`.
+- Best MQTT repeater if you want a simple headless install: `RAK_3112_repeater_mqtt`, `Generic_E22_sx1262_repeater_mqtt`, `Meshimi_repeater_mqtt`, `Xiao_C6_repeater_mqtt`.
 - Best low-power display MQTT builds: `Heltec_E213_repeater_mqtt`, `Heltec_E290_repeater_mqtt`, `Heltec_Wireless_Paper_repeater_mqtt`, `ThinkNode_M5_Repeater_mqtt`.
 - Best companion choices if you want the richest local UI: `heltec_v4_tft_companion_radio_wifi` and `heltec_tracker_v2_companion_radio_wifi`.
 - Best companion choices if you want maximum memory headroom: `T_Beam_S3_Supreme_SX1262_companion_radio_wifi`, `Station_G2_companion_radio_wifi`, `LilyGo_TBeam_1W_companion_radio_wifi`.
-- Best companion choices if you are happy with an app-first, mostly headless setup: `Xiao_C3_companion_radio_wifi`, `RAK_3112_companion_radio_wifi`, `Xiao_S3_WIO_companion_radio_wifi`, `Station_G2_companion_radio_wifi`.
+- Best companion choices if you are happy with an app-first, mostly headless setup: `RAK_3112_companion_radio_wifi`, `Xiao_S3_WIO_companion_radio_wifi`, `Station_G2_companion_radio_wifi`.
 - Best companion choices if you prefer OLED over TFT: `T_Beam_S3_Supreme_SX1262_companion_radio_wifi`, `heltec_v4_companion_radio_wifi`, `LilyGo_TBeam_1W_companion_radio_wifi`.

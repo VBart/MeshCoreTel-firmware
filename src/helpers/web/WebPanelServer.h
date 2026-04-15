@@ -17,6 +17,20 @@ public:
   virtual ~WebPanelCommandRunner() = default;
   virtual void runWebCommand(const char* command, char* reply, size_t reply_size) = 0;
   virtual const char* getWebAdminPassword() const = 0;
+  virtual bool isWebStatsEnabled() const { return false; }
+  virtual bool formatWebStatsSummaryJson(char* reply, size_t reply_size) {
+    if (reply != nullptr && reply_size > 0) {
+      reply[0] = 0;
+    }
+    return false;
+  }
+  virtual bool formatWebStatsSeriesJson(const char* series, char* reply, size_t reply_size) {
+    (void)series;
+    if (reply != nullptr && reply_size > 0) {
+      reply[0] = 0;
+    }
+    return false;
+  }
 };
 
 class WebPanelServer {
@@ -45,6 +59,7 @@ private:
 
   static esp_err_t handleIndex(httpd_req_t* req);
   static esp_err_t handleApp(httpd_req_t* req);
+  static esp_err_t handleStatsPage(httpd_req_t* req);
   static esp_err_t handleLogin(httpd_req_t* req);
   static esp_err_t handleCommand(httpd_req_t* req);
   static esp_err_t handleStats(httpd_req_t* req);

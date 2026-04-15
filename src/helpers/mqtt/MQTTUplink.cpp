@@ -11,7 +11,6 @@
 #include <esp_idf_version.h>
 #include <esp_heap_caps.h>
 #include <esp_system.h>
-#include <esp_sntp.h>
 #include <helpers/TxtDataHelpers.h>
 #include <ctype.h>
 #include <string.h>
@@ -35,50 +34,19 @@
 
 #if MQTT_DEBUG
   #define LOG_CAT(tag, fmt, ...) Serial.printf("[" tag "] " fmt "\n", ##__VA_ARGS__)
-  #define WIFI_LOG(fmt, ...) LOG_CAT("WIFI", fmt, ##__VA_ARGS__)
-  #define WEB_LOG(fmt, ...) LOG_CAT("WEB", fmt, ##__VA_ARGS__)
-  #define TIME_LOG(fmt, ...) LOG_CAT("TIME", fmt, ##__VA_ARGS__)
   #define MQTT_LOG(fmt, ...) LOG_CAT("MQTT", fmt, ##__VA_ARGS__)
 #else
   #define LOG_CAT(...) do { } while (0)
-  #define WIFI_LOG(...) do { } while (0)
-  #define WEB_LOG(...) do { } while (0)
-  #define TIME_LOG(...) do { } while (0)
   #define MQTT_LOG(...) do { } while (0)
 #endif
 
 namespace {
-constexpr unsigned long kWifiRetryMillis = 15000;
-constexpr unsigned long kWifiConnectTimeoutMillis = 45000;
 constexpr unsigned long kBrokerRetryBaseMillis = 10000;
 constexpr unsigned long kBrokerRetryMaxMillis = 300000;
 constexpr size_t kBrokerTokenSize = 640;
 constexpr time_t kTokenLifetimeSecs = 3600;
 constexpr time_t kTokenRefreshSlackSecs = 300;
 constexpr time_t kMinSaneEpoch = 1735689600;  // 2025-01-01T00:00:00Z
-
-int getWifiQualityPercent(int rssi_dbm) {
-  if (rssi_dbm <= -100) {
-    return 0;
-  }
-  if (rssi_dbm >= -50) {
-    return 100;
-  }
-  return 2 * (rssi_dbm + 100);
-}
-
-const char* getWifiQualityLabel(int rssi_dbm) {
-  if (rssi_dbm >= -60) {
-    return "excellent";
-  }
-  if (rssi_dbm >= -67) {
-    return "good";
-  }
-  if (rssi_dbm >= -75) {
-    return "fair";
-  }
-  return "poor";
-}
 
 unsigned long getBrokerRetryDelayMillis(uint8_t failures) {
   unsigned long delay_ms = kBrokerRetryBaseMillis;
@@ -104,20 +72,6 @@ void freeScratchBuffer(void* ptr) {
   if (ptr != nullptr) {
     heap_caps_free(ptr);
   }
-}
-
-const char* getWifiStateLabel(const MQTTPrefs& prefs, bool wifi_started) {
-  if (prefs.wifi_ssid[0] == 0) {
-    return "off";
-  }
-  wl_status_t status = WiFi.status();
-  if (status == WL_CONNECTED) {
-    return "up";
-  }
-  if (wifi_started) {
-    return "conn";
-  }
-  return "down";
 }
 
 #if MQTT_DEBUG
@@ -150,10 +104,8 @@ const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[3] = {
 };
 
 MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
-    : _fs(nullptr), _rtc(&rtc), _identity(&identity), _running(false), _wifi_started(false), _sntp_started(false),
-      _have_time_sync(false), _last_wifi_attempt(0), _last_status_publish(0), _last_status{},
-      _node_name(nullptr),
-      _web_runner(nullptr)
+    : _fs(nullptr), _rtc(&rtc), _identity(&identity), _running(false), _last_status_publish(0), _last_status{},
+      _node_name(nullptr), _network(nullptr)
        {
   memset(_device_id, 0, sizeof(_device_id));
   MQTTPrefsStore::setDefaults(_prefs);
@@ -162,11 +114,6 @@ MQTTUplink::MQTTUplink(mesh::RTCClock& rtc, mesh::LocalIdentity& identity)
     _brokers[i].spec = &kBrokerSpecs[i];
   }
   MQTT_LOG("uplink init");
-}
-
-void MQTTUplink::setWebCommandRunner(MQTTWebCommandRunner* runner) {
-  _web_runner = runner;
-  _web_panel.setCommandRunner(runner);
 }
 
 bool MQTTUplink::savePrefs() {
@@ -203,24 +150,8 @@ bool MQTTUplink::isActive() const {
   return _running && hasEnabledBroker();
 }
 
-void MQTTUplink::reconnectWifi() {
-  WIFI_LOG("reset");
-  stopWebServer();
-  for (BrokerState& broker : _brokers) {
-    destroyBroker(broker);
-  }
-  if (_wifi_started) {
-    WiFi.disconnect(true, true);
-    WiFi.mode(WIFI_OFF);
-  }
-  _wifi_started = false;
-  _sntp_started = false;
-  _have_time_sync = false;
-  _last_wifi_attempt = 0;
-}
-
 bool MQTTUplink::sendStatusNow() {
-  if (!_running || !_have_time_sync || WiFi.status() != WL_CONNECTED) {
+  if (!_running || _network == nullptr || !_network->hasTimeSync() || !_network->isWifiConnected()) {
     return false;
   }
 
@@ -327,28 +258,6 @@ void MQTTUplink::escapeJsonString(const char* input, char* output, size_t output
   output[oi] = 0;
 }
 
-wifi_ps_type_t MQTTUplink::toEspPowerSave(uint8_t mode) {
-  switch (mode) {
-    case 1:
-      return WIFI_PS_MIN_MODEM;
-    case 2:
-      return WIFI_PS_MAX_MODEM;
-    default:
-      return WIFI_PS_NONE;
-  }
-}
-
-const char* MQTTUplink::getPowerSaveLabel(uint8_t mode) {
-  switch (mode) {
-    case 1:
-      return "min";
-    case 2:
-      return "max";
-    default:
-      return "none";
-  }
-}
-
 void MQTTUplink::refreshIdentityStrings() {
   bytesToHexUpper(_identity->pub_key, PUB_KEY_SIZE, _device_id, sizeof(_device_id));
   for (BrokerState& broker : _brokers) {
@@ -388,7 +297,7 @@ void MQTTUplink::refreshBrokerState(BrokerState& broker) {
 bool MQTTUplink::refreshToken(BrokerState& broker) {
   time_t now = time(nullptr);
   if (now < kMinSaneEpoch) {
-    TIME_LOG("%s token skipped: clock not ready (%lu)", broker.spec->label, static_cast<unsigned long>(now));
+    MQTT_LOG("%s token skipped: clock not ready (%lu)", broker.spec->label, static_cast<unsigned long>(now));
     return false;
   }
 
@@ -685,94 +594,6 @@ void MQTTUplink::handleMqttEvent(void* handler_args, esp_event_base_t, int32_t e
   }
 }
 
-void MQTTUplink::stopWebServer() {
-  _web_panel.stop();
-}
-
-void MQTTUplink::ensureWebServer() {
-  if (_web_runner == nullptr || _prefs.web_enabled == 0 || !_wifi_started || WiFi.status() != WL_CONNECTED) {
-    stopWebServer();
-    return;
-  }
-  _web_panel.start();
-}
-
-void MQTTUplink::ensureWifi() {
-  if (_prefs.wifi_ssid[0] == 0) {
-    WIFI_LOG("disabled: no ssid");
-    stopWebServer();
-    reconnectWifi();
-    return;
-  }
-
-  if (!hasEnabledBroker() && _web_runner == nullptr) {
-    WIFI_LOG("disabled: no mqtt endpoints and no web runner");
-    stopWebServer();
-    if (_wifi_started) {
-      WiFi.disconnect(true, true);
-      WiFi.mode(WIFI_OFF);
-      _wifi_started = false;
-      _sntp_started = false;
-      _have_time_sync = false;
-    }
-    return;
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    return;
-  }
-
-  unsigned long now_ms = millis();
-  wl_status_t status = WiFi.status();
-  if (_wifi_started) {
-    if (_last_wifi_attempt != 0 && status == WL_IDLE_STATUS && now_ms - _last_wifi_attempt < kWifiConnectTimeoutMillis) {
-      return;
-    }
-    if (now_ms - _last_wifi_attempt < kWifiRetryMillis) {
-      return;
-    }
-  }
-
-  if (!_wifi_started) {
-    WiFi.mode(WIFI_STA);
-    WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave));
-    _wifi_started = true;
-    WIFI_LOG("sta start powersaving=%s", getPowerSaveLabel(_prefs.wifi_powersave));
-  } else {
-    WIFI_LOG("retry status=%d", static_cast<int>(status));
-  }
-  _last_wifi_attempt = now_ms;
-  WIFI_LOG("begin ssid=%s", _prefs.wifi_ssid);
-  WiFi.begin(_prefs.wifi_ssid, _prefs.wifi_pwd);
-}
-
-void MQTTUplink::updateTimeSync() {
-  bool prev_have_time_sync = _have_time_sync;
-  if (!_wifi_started || WiFi.status() != WL_CONNECTED) {
-    _have_time_sync = false;
-    if (prev_have_time_sync != _have_time_sync) {
-      TIME_LOG("sntp lost");
-    }
-    return;
-  }
-
-  if (!_sntp_started) {
-    configTzTime("UTC0", "au.pool.ntp.org", "time.google.com", "time.cloudflare.com");
-    _sntp_started = true;
-    TIME_LOG("sntp start servers=au.pool.ntp.org,time.google.com,time.cloudflare.com");
-  }
-
-  sntp_sync_status_t sync_status = sntp_get_sync_status();
-  time_t now = time(nullptr);
-  bool sane_time = now >= kMinSaneEpoch;
-  bool sync_ready = sync_status == SNTP_SYNC_STATUS_COMPLETED || sync_status == SNTP_SYNC_STATUS_IN_PROGRESS;
-  _have_time_sync = sane_time && (sync_ready || prev_have_time_sync);
-  if (prev_have_time_sync != _have_time_sync) {
-    TIME_LOG("sntp %s epoch=%lu status=%ld", _have_time_sync ? "ready" : "waiting",
-             static_cast<unsigned long>(now), static_cast<long>(sync_status));
-  }
-}
-
 void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
   if (broker.spec == nullptr) {
     return;
@@ -787,7 +608,7 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
     return;
   }
 
-  if (!_have_time_sync || WiFi.status() != WL_CONNECTED) {
+  if (_network == nullptr || !_network->hasTimeSync() || !_network->isWifiConnected()) {
     return;
   }
 
@@ -899,24 +720,15 @@ void MQTTUplink::begin(FILESYSTEM* fs) {
   refreshIdentityStrings();
   _running = true;
   _last_status_publish = millis();
-  MQTT_LOG("begin iata=%s enabled_mask=0x%02X wifi_ssid=%s", _prefs.iata, _prefs.enabled_mask, _prefs.wifi_ssid);
+  MQTT_LOG("begin iata=%s enabled_mask=0x%02X", _prefs.iata, _prefs.enabled_mask);
 }
 
 void MQTTUplink::end() {
   MQTT_LOG("end");
   publishStatus(false);
-  stopWebServer();
   for (BrokerState& broker : _brokers) {
     destroyBroker(broker);
   }
-  if (_wifi_started) {
-    WiFi.disconnect(true, true);
-    WiFi.mode(WIFI_OFF);
-  }
-  _wifi_started = false;
-  _sntp_started = false;
-  _have_time_sync = false;
-  _last_wifi_attempt = 0;
   _running = false;
 }
 
@@ -926,13 +738,6 @@ void MQTTUplink::loop(const MQTTStatusSnapshot& snapshot) {
   }
 
   _last_status = snapshot;
-  ensureWifi();
-  updateTimeSync();
-  ensureWebServer();
-  if (_web_panel.isRunning() && _web_panel.shouldAutoLock(millis())) {
-    WEB_LOG("idle lock");
-    _web_panel.lockSession();
-  }
 
   BrokerState* active_connecting_broker = nullptr;
   for (BrokerState& broker : _brokers) {
@@ -958,7 +763,7 @@ void MQTTUplink::loop(const MQTTStatusSnapshot& snapshot) {
     }
   }
 
-  if (_prefs.status_enabled && hasEnabledBroker() && _have_time_sync &&
+  if (_prefs.status_enabled && hasEnabledBroker() && _network != nullptr && _network->hasTimeSync() &&
       millis() - _last_status_publish >= _prefs.status_interval_ms) {
     publishStatus(true);
     _last_status_publish = millis();
@@ -966,7 +771,8 @@ void MQTTUplink::loop(const MQTTStatusSnapshot& snapshot) {
 }
 
 void MQTTUplink::publishPacket(const mesh::Packet& packet, bool is_tx, int rssi, float snr, int score, int duration) {
-  if (!_running || !_have_time_sync || !hasEnabledBroker() || !_prefs.packets_enabled) {
+  if (!_running || _network == nullptr || !_network->hasTimeSync() || !_network->isWifiConnected() || !hasEnabledBroker() ||
+      !_prefs.packets_enabled) {
     return;
   }
   if (is_tx && !_prefs.tx_enabled) {
@@ -1035,7 +841,7 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
     if (broker->connected) {
       return "up";
     }
-    if (WiFi.status() != WL_CONNECTED || !_have_time_sync) {
+    if (_network == nullptr || !_network->isWifiConnected() || !_network->hasTimeSync()) {
       return "wait";
     }
     if (broker->client != nullptr) {
@@ -1048,34 +854,11 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
   };
 
   snprintf(reply, reply_size, "> wifi:%s ntp:%s iata:%s eastmesh-au:%s letsmesh-eu:%s letsmesh-us:%s status:%s tx:%s",
-           getWifiStateLabel(_prefs, _wifi_started), _have_time_sync ? "up" : "wait", _prefs.iata,
+           (_network != nullptr && _network->isWifiConnected()) ? "up" : "down",
+           (_network != nullptr && _network->hasTimeSync()) ? "up" : "wait",
+           _prefs.iata,
            broker_state(kEastmeshBit), broker_state(kLetsmeshEuBit), broker_state(kLetsmeshUsBit),
            _prefs.status_enabled ? "on" : "off", _prefs.tx_enabled ? "on" : "off");
-}
-
-void MQTTUplink::formatWebStatusReply(char* reply, size_t reply_size) const {
-#if WITH_WEB_PANEL
-  if (_web_runner == nullptr) {
-    snprintf(reply, reply_size, "> web:off");
-    return;
-  }
-
-  if (_prefs.web_enabled == 0) {
-    snprintf(reply, reply_size, "> web:off");
-    return;
-  }
-
-  if (!_web_panel.isRunning() || !_wifi_started || WiFi.status() != WL_CONNECTED) {
-    snprintf(reply, reply_size, "> web:down");
-    return;
-  }
-
-  snprintf(reply, reply_size, "> web:up url:https://%s/ auth:%s", WiFi.localIP().toString().c_str(),
-           _web_panel.hasSessionToken() ? "unlocked" : "locked");
-#else
-  (void)reply_size;
-  snprintf(reply, reply_size, "> web:unsupported");
-#endif
 }
 
 bool MQTTUplink::setEndpointEnabled(uint8_t bit, bool enabled) {
@@ -1117,20 +900,6 @@ bool MQTTUplink::setTxEnabled(bool enabled) {
   return savePrefs();
 }
 
-bool MQTTUplink::setWebEnabled(bool enabled) {
-#if WITH_WEB_PANEL
-  _prefs.web_enabled = enabled ? 1 : 0;
-  bool ok = savePrefs();
-  if (_prefs.web_enabled != 0) {
-    ensureWebServer();
-  }
-  return ok;
-#else
-  (void)enabled;
-  return false;
-#endif
-}
-
 bool MQTTUplink::setIata(const char* iata) {
   if (iata == nullptr || *iata == 0) {
     return false;
@@ -1145,54 +914,6 @@ bool MQTTUplink::setIata(const char* iata) {
   StrHelper::strncpy(_prefs.iata, cleaned, sizeof(_prefs.iata));
   refreshIdentityStrings();
   return savePrefs();
-}
-
-bool MQTTUplink::setWifiPowerSave(const char* mode) {
-  if (mode == nullptr) {
-    return false;
-  }
-
-  uint8_t next_mode;
-  if (strcmp(mode, "none") == 0) {
-    next_mode = 0;
-  } else if (strcmp(mode, "min") == 0) {
-    next_mode = 1;
-  } else if (strcmp(mode, "max") == 0) {
-    next_mode = 2;
-  } else {
-    return false;
-  }
-
-  _prefs.wifi_powersave = next_mode;
-  bool ok = savePrefs();
-  if (_wifi_started) {
-    ok = WiFi.setSleep(toEspPowerSave(_prefs.wifi_powersave)) && ok;
-  }
-  return ok;
-}
-
-const char* MQTTUplink::getWifiPowerSave() const {
-  return getPowerSaveLabel(_prefs.wifi_powersave);
-}
-
-bool MQTTUplink::setWifiSSID(const char* ssid) {
-  if (ssid == nullptr) {
-    return false;
-  }
-  StrHelper::strncpy(_prefs.wifi_ssid, ssid, sizeof(_prefs.wifi_ssid));
-  bool ok = savePrefs();
-  reconnectWifi();
-  return ok;
-}
-
-bool MQTTUplink::setWifiPassword(const char* pwd) {
-  if (pwd == nullptr) {
-    return false;
-  }
-  StrHelper::strncpy(_prefs.wifi_pwd, pwd, sizeof(_prefs.wifi_pwd));
-  bool ok = savePrefs();
-  reconnectWifi();
-  return ok;
 }
 
 bool MQTTUplink::setOwnerPublicKey(const char* owner_public_key) {
@@ -1227,66 +948,21 @@ bool MQTTUplink::setOwnerEmail(const char* owner_email) {
   return savePrefs();
 }
 
-void MQTTUplink::formatWifiStatusReply(char* reply, size_t reply_size) const {
-  const char* status = "disconnected";
-  const char* state = "disconnected";
-  wl_status_t wifi_status = WiFi.status();
-  if (_prefs.wifi_ssid[0] == 0) {
-    status = "unconfigured";
-    state = "unconfigured";
-  } else if (wifi_status == WL_CONNECTED) {
-    status = "connected";
-    state = "connected";
-  } else if (_wifi_started) {
-    status = "connecting";
+bool MQTTUplink::isAnyBrokerConnected() const {
+  for (const BrokerState& broker : _brokers) {
+    if (broker.spec != nullptr && broker.connected) {
+      return true;
+    }
   }
-
-  switch (wifi_status) {
-    case WL_IDLE_STATUS:
-      state = "idle";
-      break;
-    case WL_NO_SSID_AVAIL:
-      state = "no_ssid";
-      break;
-    case WL_SCAN_COMPLETED:
-      state = "scan_completed";
-      break;
-    case WL_CONNECTED:
-      state = "connected";
-      break;
-    case WL_CONNECT_FAILED:
-      state = "connect_failed";
-      break;
-    case WL_CONNECTION_LOST:
-      state = "connection_lost";
-      break;
-    case WL_DISCONNECTED:
-      state = "disconnected";
-      break;
-    default:
-      state = "unknown";
-      break;
-  }
-
-  if (wifi_status == WL_CONNECTED) {
-    const int rssi_dbm = WiFi.RSSI();
-    snprintf(reply, reply_size,
-             "> ssid:%s status:%s code:%d state:%s ip:%s rssi:%d quality:%d%% signal:%s",
-             _prefs.wifi_ssid, status, static_cast<int>(wifi_status), state, WiFi.localIP().toString().c_str(),
-             rssi_dbm, getWifiQualityPercent(rssi_dbm), getWifiQualityLabel(rssi_dbm));
-  } else {
-    snprintf(reply, reply_size, "> ssid:%s status:%s code:%d state:%s", _prefs.wifi_ssid[0] ? _prefs.wifi_ssid : "-",
-             status, static_cast<int>(wifi_status), state);
-  }
+  return false;
 }
 
 #else
 
 MQTTUplink::MQTTUplink(mesh::RTCClock&, mesh::LocalIdentity&)
-    : _fs(nullptr), _rtc(nullptr), _identity(nullptr), _running(false), _wifi_started(false), _sntp_started(false),
-      _have_time_sync(false), _last_wifi_attempt(0), _last_status_publish(0), _last_status{},
-      _node_name(nullptr),
-      _web_runner(nullptr) {
+    : _fs(nullptr), _rtc(nullptr), _identity(nullptr), _running(false), _last_status_publish(0), _last_status{},
+      _node_name(nullptr), _network(nullptr) {
+  MQTTPrefsStore::setDefaults(_prefs);
 }
 
 bool MQTTUplink::savePrefs() { return false; }
@@ -1295,25 +971,18 @@ void MQTTUplink::end() {}
 void MQTTUplink::loop(const MQTTStatusSnapshot&) {}
 void MQTTUplink::publishPacket(const mesh::Packet&, bool, int, float, int, int) {}
 void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const { snprintf(reply, reply_size, "> unsupported"); }
-void MQTTUplink::formatWebStatusReply(char* reply, size_t reply_size) const { snprintf(reply, reply_size, "> unsupported"); }
 bool MQTTUplink::setEndpointEnabled(uint8_t, bool) { return false; }
 bool MQTTUplink::isEndpointEnabled(uint8_t) const { return false; }
 bool MQTTUplink::setPacketsEnabled(bool) { return false; }
 bool MQTTUplink::setRawEnabled(bool) { return false; }
 bool MQTTUplink::setStatusEnabled(bool) { return false; }
 bool MQTTUplink::setTxEnabled(bool) { return false; }
-bool MQTTUplink::setWebEnabled(bool) { return false; }
 bool MQTTUplink::setIata(const char*) { return false; }
-bool MQTTUplink::setWifiPowerSave(const char*) { return false; }
-const char* MQTTUplink::getWifiPowerSave() const { return "unsupported"; }
 bool MQTTUplink::isActive() const { return false; }
-bool MQTTUplink::setWifiSSID(const char*) { return false; }
-bool MQTTUplink::setWifiPassword(const char*) { return false; }
 bool MQTTUplink::setOwnerPublicKey(const char*) { return false; }
 bool MQTTUplink::setOwnerEmail(const char*) { return false; }
-void MQTTUplink::formatWifiStatusReply(char* reply, size_t reply_size) const { snprintf(reply, reply_size, "> unsupported"); }
-void MQTTUplink::reconnectWifi() {}
 bool MQTTUplink::sendStatusNow() { return false; }
+bool MQTTUplink::isAnyBrokerConnected() const { return false; }
 
 #endif
 

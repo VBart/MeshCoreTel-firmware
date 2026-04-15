@@ -67,7 +67,6 @@ These are the full PlatformIO env names used for local source builds and release
 ```text
 Generic_E22_sx1262_repeater_mqtt
 Generic_E22_sx1268_repeater_mqtt
-Heltec_ct62_repeater_mqtt
 Heltec_E213_repeater_mqtt
 Heltec_E290_repeater_mqtt
 Heltec_T190_repeater_mqtt
@@ -96,17 +95,10 @@ Station_G2_repeater_mqtt
 T_Beam_S3_Supreme_SX1262_repeater_mqtt
 Tbeam_SX1262_repeater_mqtt
 Tbeam_SX1276_repeater_mqtt
-Tenstar_C3_sx1262_repeater_mqtt
-Tenstar_C3_sx1268_repeater_mqtt
 WHY2025_badge_repeater_mqtt
-Xiao_C3_repeater_mqtt
 Xiao_C6_repeater_mqtt
 Xiao_S3_WIO_repeater_mqtt
 ```
-
-Notes:
-
-- `Xiao_C3_repeater_mqtt` disables the web panel to stay within flash limits
 
 ## Supported `companion_radio_wifi` Boards
 
@@ -127,7 +119,6 @@ Station_G2_companion_radio_wifi
 T_Beam_S3_Supreme_SX1262_companion_radio_wifi
 ThinkNode_M2_companion_radio_wifi
 ThinkNode_M5_companion_radio_wifi
-Xiao_C3_companion_radio_wifi
 Xiao_S3_WIO_companion_radio_wifi
 ```
 

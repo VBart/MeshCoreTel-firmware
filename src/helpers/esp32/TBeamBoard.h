@@ -26,7 +26,7 @@
   #define P_BOARD_SPI_MOSI  35  //SPI for SD Card and QMI8653 (IMU)
   #define P_BOARD_SPI_MISO  37  //SPI for SD Card and QMI8653 (IMU)
   #define P_BOARD_SPI_SCK   36  //SPI for SD Card and QMI8653 (IMU)
-  #define P_BPARD_SPI_CS    47  //Pin for SD Card CS
+  #define P_BOARD_SPI_CS    47  //Pin for SD Card CS
   #define P_BOARD_IMU_CS    34  //Pin for QMI8653 (IMU) CS
 
   #define P_BOARD_IMU_INT  33  //IMU Int pin
@@ -154,8 +154,24 @@ public:
   esp_deep_sleep_start();   // CPU halts here and never returns!
 }
 
-  uint16_t getBattMilliVolts(){
-    return PMU->getBattVoltage();
+  uint16_t getBattMilliVolts() override {
+    return PMU != NULL ? PMU->getBattVoltage() : 0;
+  }
+
+  int getBatteryPercent() override {
+    return (PMU != NULL && PMU->isBatteryConnect()) ? PMU->getBatteryPercent() : -1;
+  }
+
+  bool isCharging() override {
+    return PMU != NULL && PMU->isCharging();
+  }
+
+  bool isVbusPresent() override {
+    return PMU != NULL && PMU->isVbusIn();
+  }
+
+  bool isExternalPowered() override {
+    return isVbusPresent();
   }
 
   const char* getManufacturerName() const{

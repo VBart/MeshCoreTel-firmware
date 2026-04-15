@@ -165,8 +165,6 @@ Features include:
 
 Recommended use is initial setup and occasional troubleshooting. On MQTT repeater deployments, disable the panel again when finished if you want maximum MQTT heap headroom.
 
-Some constrained targets disable the panel to stay within flash limits. For example, `Xiao_C3_repeater_mqtt` builds with `WITH_WEB_PANEL=0`.
-
 ### Companion WiFi Additions
 
 `*_companion_radio_wifi` targets now support persisted WiFi rescue commands:

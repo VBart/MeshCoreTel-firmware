@@ -3,22 +3,15 @@
 #ifdef WITH_MQTT_UPLINK
 
 #include <Mesh.h>
-#include <helpers/CommonCLI.h>
-#include <helpers/web/WebPanelServer.h>
+#include <helpers/NetworkStateProvider.h>
 #include <target.h>
 
 #include "JWTHelper.h"
 #include "MQTTPrefs.h"
 
 #if defined(ESP_PLATFORM)
-#include <WiFi.h>
-#if !defined(WITH_WEB_PANEL)
-  #define WITH_WEB_PANEL 1
-#endif
 #include <mqtt_client.h>
 #endif
-
-using MQTTWebCommandRunner = WebPanelCommandRunner;
 
 struct MQTTStatusSnapshot {
   int battery_mv;
@@ -49,7 +42,6 @@ public:
   bool isActive() const;
 
   void formatStatusReply(char* reply, size_t reply_size) const;
-  void formatWebStatusReply(char* reply, size_t reply_size) const;
 
   bool setEndpointEnabled(uint8_t bit, bool enabled);
   bool isEndpointEnabled(uint8_t bit) const;
@@ -61,24 +53,16 @@ public:
   bool isStatusEnabled() const { return _prefs.status_enabled != 0; }
   bool setTxEnabled(bool enabled);
   bool isTxEnabled() const { return _prefs.tx_enabled != 0; }
-  bool setWebEnabled(bool enabled);
-  bool isWebEnabled() const { return _prefs.web_enabled != 0; }
   bool setIata(const char* iata);
   const char* getIata() const { return _prefs.iata; }
   void setNodeNameSource(const char* node_name) { _node_name = node_name; }
-  void setWebCommandRunner(MQTTWebCommandRunner* runner);
-  bool setWifiSSID(const char* ssid);
-  bool setWifiPassword(const char* pwd);
-  const char* getWifiSSID() const { return _prefs.wifi_ssid; }
-  bool setWifiPowerSave(const char* mode);
-  const char* getWifiPowerSave() const;
   bool setOwnerPublicKey(const char* owner_public_key);
   const char* getOwnerPublicKey() const { return _prefs.owner_public_key; }
   bool setOwnerEmail(const char* owner_email);
   const char* getOwnerEmail() const { return _prefs.owner_email; }
-  void formatWifiStatusReply(char* reply, size_t reply_size) const;
-  void reconnectWifi();
   bool sendStatusNow();
+  bool isAnyBrokerConnected() const;
+  void setNetworkStateProvider(NetworkStateProvider* network) { _network = network; }
 
 private:
 #if defined(ESP_PLATFORM)
@@ -114,16 +98,11 @@ private:
   mesh::LocalIdentity* _identity;
   MQTTPrefs _prefs;
   bool _running;
-  bool _wifi_started;
-  bool _sntp_started;
-  bool _have_time_sync;
-  unsigned long _last_wifi_attempt;
   unsigned long _last_status_publish;
   MQTTStatusSnapshot _last_status;
   char _device_id[65];
   const char* _node_name;
-  MQTTWebCommandRunner* _web_runner;
-  WebPanelServer _web_panel;
+  NetworkStateProvider* _network;
 
 #if defined(ESP_PLATFORM)
   static constexpr uint8_t kEastmeshBit = 0x01;
@@ -135,10 +114,6 @@ private:
   BrokerState _brokers[3];
 
   static void handleMqttEvent(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
-  void ensureWebServer();
-  void stopWebServer();
-  void ensureWifi();
-  void updateTimeSync();
   bool hasEnabledBroker() const;
   static uint8_t normalizeEnabledMask(uint8_t mask);
   void formatTopic(char* dst, size_t dst_size, const char* leaf) const;
@@ -155,8 +130,6 @@ private:
   int buildPacketJson(char* buffer, size_t buffer_size, const mesh::Packet& packet, bool is_tx, int rssi, float snr,
                       int score, int duration) const;
   int buildRawJson(char* buffer, size_t buffer_size, const mesh::Packet& packet, bool is_tx, int rssi, float snr) const;
-  static wifi_ps_type_t toEspPowerSave(uint8_t mode);
-  static const char* getPowerSaveLabel(uint8_t mode);
   static void escapeJsonString(const char* input, char* output, size_t output_size);
   static void makeSafeToken(const char* input, char* output, size_t output_size);
   static void bytesToHexUpper(const uint8_t* src, size_t len, char* dst, size_t dst_size);

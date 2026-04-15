@@ -47,6 +47,9 @@ public:
   virtual bool supportsBatteryReporting() const { return false; }
   virtual bool setBatteryReporting(bool enabled) { (void)enabled; return false; }
   virtual bool isBatteryReportingEnabled() const { return true; }
+  virtual int getBatteryPercent() { return -1; }
+  virtual bool isCharging() { return false; }
+  virtual bool isVbusPresent() { return false; }
   virtual float getMCUTemperature() { return NAN; }
   virtual bool setAdcMultiplier(float multiplier) { return false; };
   virtual float getAdcMultiplier() const { return 0.0f; }
