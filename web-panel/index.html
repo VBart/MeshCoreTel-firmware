@@ -592,6 +592,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="&#x2f;stats Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stats-history-capacity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stats History Capacity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1070,6 +1087,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="&#x2f;stats Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stats-history-capacity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stats History Capacity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1454,6 +1488,48 @@
 </ol>
 <p>This keeps browser-side and device-side memory use lower than the previous in-page stats view.</p>
 <p>If <code>web.stats</code> is enabled and an SD archive is mounted, trends can restore archived summary points after reboot. Recent live points are still added from in-memory history.</p>
+<h3 id="stats-history-capacity">Stats History Capacity<a class="headerlink" href="#stats-history-capacity" title="Permanent link">&para;</a></h3>
+<p>Stats samples are collected once per minute.</p>
+<p>Current in-memory history caps are:</p>
+<table>
+<thead>
+<tr>
+<th>Board class</th>
+<th style="text-align: right;">Sample cap</th>
+<th style="text-align: right;">Event cap</th>
+<th>Approx. sampled history</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No PSRAM</td>
+<td style="text-align: right;"><code>24</code></td>
+<td style="text-align: right;"><code>8</code></td>
+<td>Live-only recent history</td>
+</tr>
+<tr>
+<td>Less than <code>4MB</code> PSRAM</td>
+<td style="text-align: right;"><code>240</code></td>
+<td style="text-align: right;"><code>96</code></td>
+<td>About <code>4</code> hours</td>
+</tr>
+<tr>
+<td><code>4MB</code> to less than <code>8MB</code> PSRAM</td>
+<td style="text-align: right;"><code>480</code></td>
+<td style="text-align: right;"><code>192</code></td>
+<td>About <code>8</code> hours</td>
+</tr>
+<tr>
+<td><code>8MB</code> PSRAM or more</td>
+<td style="text-align: right;"><code>720</code></td>
+<td style="text-align: right;"><code>288</code></td>
+<td>About <code>12</code> hours</td>
+</tr>
+</tbody>
+</table>
+<p>Archive-backed restore requires <code>web.stats</code> enabled plus a mounted SD card on boards that support the EastMesh archive path.</p>
+<p>The main purpose of the SD card is to let the repeater retain and restore stats history for <code>/stats</code>. As a secondary option, the archive files can also be removed and inspected on a computer for deeper manual review.</p>
+<p>On no-PSRAM boards, <code>/stats</code> can still show recent graphs while the stats view is active, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.</p>
 <p>Useful CLI commands:</p>
 <ul>
 <li><code>set web.stats on</code></li>
