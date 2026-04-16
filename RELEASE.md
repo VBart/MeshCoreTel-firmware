@@ -51,11 +51,15 @@ Example:
 ## Typical Release Flow
 
 1. Update the `OFFICIAL_MESHCORE_VERSION` GitHub Actions variable if upstream has changed.
-2. Create the release tags you want on the target commit.
-3. Push the tags.
-4. Wait for the workflows to finish building.
-5. Review the draft GitHub Releases.
-6. Update the release notes and publish them.
+2. Update `release-notes.yml` on `develop` for any release entries you want included in the tagged commit.
+3. Open and merge the release PR from `develop` to `main`.
+4. Create the release tags you want on the target commit on `main`.
+5. Push the tags.
+6. Wait for the workflows to finish building.
+7. Review the draft GitHub Releases.
+8. Publish the release.
+
+If `release-notes.yml` should reflect the tagged firmware release in-repo, make that change before the PR to `main` so the tagged commit already contains the matching release notes.
 
 Example:
 
