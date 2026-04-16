@@ -28,6 +28,8 @@ constexpr uint32_t kEventFlushIntervalMs = 60UL * 1000UL;
 constexpr size_t kMaxSeriesPoints = 64;
 constexpr size_t kSummaryRestoreWindowBytes = 16384;
 constexpr size_t kEventsRestoreWindowBytes = 4096;
+constexpr size_t kLiveOnlySampleCapacity = 24;
+constexpr size_t kLiveOnlyEventCapacity = 8;
 
 struct HistoryCapacityBucket {
   size_t sample_capacity;
@@ -37,7 +39,7 @@ struct HistoryCapacityBucket {
 HistoryCapacityBucket getHistoryCapacityBucket(bool want_psram) {
 #if defined(ESP32)
   if (!want_psram) {
-    return {96, 32};
+    return {kLiveOnlySampleCapacity, kLiveOnlyEventCapacity};
   }
 
   const uint32_t psram_size = ESP.getPsramSize();
@@ -51,6 +53,14 @@ HistoryCapacityBucket getHistoryCapacityBucket(bool want_psram) {
 #else
   (void)want_psram;
   return {96, 32};
+#endif
+}
+
+bool shouldUseLiveOnlyStats() {
+#if defined(ESP32)
+  return !psramFound();
+#else
+  return false;
 #endif
 }
 
@@ -251,10 +261,10 @@ uint8_t eventTypeFromName(const char* name) {
 }  // namespace
 
 StatsHistory::StatsHistory()
-    : _enabled(false), _psram_backed(false), _degraded(false), _summary_dirty(false), _next_summary_flush_ms(0),
-      _next_event_flush_ms(0), _sample_capacity(0), _sample_head(0), _sample_count(0), _event_capacity(0),
-      _event_head(0), _event_count(0), _samples(nullptr), _events(nullptr), _archive(nullptr), _restored_sample_count(0),
-      _pending_event_count(0) {
+    : _enabled(false), _activated(false), _psram_backed(false), _degraded(false), _live_only(false),
+      _summary_dirty(false), _next_summary_flush_ms(0), _next_event_flush_ms(0), _last_access_ms(0),
+      _sample_capacity(0), _sample_head(0), _sample_count(0), _event_capacity(0), _event_head(0), _event_count(0),
+      _samples(nullptr), _events(nullptr), _archive(nullptr), _restored_sample_count(0), _pending_event_count(0) {
 }
 
 StatsHistory::~StatsHistory() {
@@ -264,11 +274,12 @@ StatsHistory::~StatsHistory() {
 
 void StatsHistory::begin(bool enabled, ArchiveStorage* archive) {
   _archive = archive;
+  _live_only = shouldUseLiveOnlyStats();
+  _degraded = _live_only;
+  _psram_backed = !_live_only;
+  _activated = false;
+  _last_access_ms = 0;
   _enabled = enabled;
-  ensureBuffers();
-  if (_enabled && _sample_count == 0 && isArchiveAvailable()) {
-    restoreSummaryLog();
-  }
   _next_summary_flush_ms = millis() + kSummaryFlushIntervalMs;
   _next_event_flush_ms = millis() + kEventFlushIntervalMs;
 }
@@ -278,13 +289,23 @@ void StatsHistory::setArchive(ArchiveStorage* archive) {
 }
 
 void StatsHistory::setEnabled(bool enabled) {
-  if (enabled && !ensureBuffers()) {
+  const bool was_enabled = _enabled;
+  _live_only = shouldUseLiveOnlyStats();
+  _degraded = _live_only;
+  _psram_backed = !_live_only;
+
+  if (!enabled) {
     _enabled = false;
+    releaseBuffers();
     return;
   }
-  _enabled = enabled;
-  if (_enabled && _sample_count == 0 && isArchiveAvailable()) {
-    restoreSummaryLog();
+
+  _enabled = true;
+  if (!was_enabled) {
+    _activated = false;
+    _last_access_ms = 0;
+    _next_summary_flush_ms = millis() + kSummaryFlushIntervalMs;
+    _next_event_flush_ms = millis() + kEventFlushIntervalMs;
   }
 }
 
@@ -292,26 +313,42 @@ bool StatsHistory::isArchiveAvailable() const {
   return _archive != nullptr && _archive->isMounted();
 }
 
+bool StatsHistory::activate() {
+  if (_activated) {
+    return true;
+  }
+  if (!ensureBuffers()) {
+    return false;
+  }
+  _activated = true;
+  if (supportsPersistence() && isArchiveAvailable()) {
+    if (_sample_count == 0) {
+      restoreSummaryLog();
+    }
+    if (_event_count == 0) {
+      restoreEventsLog();
+    }
+  }
+  return true;
+}
+
 bool StatsHistory::ensureBuffers() {
-  if (_samples != nullptr && _events != nullptr) {
+  if (_samples != nullptr && (_event_capacity == 0 || _events != nullptr)) {
     return true;
   }
 
-#if defined(ESP32)
-  const bool want_psram = psramFound();
-#else
-  const bool want_psram = false;
-#endif
+  const bool want_psram = !shouldUseLiveOnlyStats();
+  _live_only = !want_psram;
+  _degraded = _live_only;
+  _psram_backed = want_psram;
 
   const HistoryCapacityBucket bucket = getHistoryCapacityBucket(want_psram);
   _sample_capacity = bucket.sample_capacity;
   _event_capacity = bucket.event_capacity;
   _samples = allocHistoryBuffer<HistorySample>(_sample_capacity);
-  _events = allocHistoryBuffer<HistoryEvent>(_event_capacity);
-  _psram_backed = want_psram;
-  _degraded = !want_psram;
+  _events = (_event_capacity > 0) ? allocHistoryBuffer<HistoryEvent>(_event_capacity) : nullptr;
 
-  if (_samples == nullptr || _events == nullptr) {
+  if (_samples == nullptr || (_event_capacity > 0 && _events == nullptr)) {
     freeHistoryBuffer(_samples);
     freeHistoryBuffer(_events);
     _samples = allocHistoryBuffer<HistorySample>(64);
@@ -320,9 +357,53 @@ bool StatsHistory::ensureBuffers() {
     _event_capacity = (_events != nullptr) ? 24 : 0;
     _psram_backed = false;
     _degraded = true;
+    _live_only = true;
   }
 
-  return _samples != nullptr && _events != nullptr;
+  return _samples != nullptr && (_event_capacity == 0 || _events != nullptr);
+}
+
+void StatsHistory::releaseBuffers() {
+  freeHistoryBuffer(_samples);
+  freeHistoryBuffer(_events);
+  _samples = nullptr;
+  _events = nullptr;
+  _activated = false;
+  _last_access_ms = 0;
+  _sample_capacity = 0;
+  _sample_head = 0;
+  _sample_count = 0;
+  _event_capacity = 0;
+  _event_head = 0;
+  _event_count = 0;
+  _summary_dirty = false;
+  _pending_event_count = 0;
+  _restored_sample_count = 0;
+}
+
+bool StatsHistory::supportsPersistence() const {
+  return !_live_only;
+}
+
+bool StatsHistory::isAccessActive(uint32_t now_ms) const {
+  if (!_live_only) {
+    return true;
+  }
+  return _last_access_ms != 0 && (now_ms - _last_access_ms) < kLiveOnlyIdleTimeoutMs;
+}
+
+void StatsHistory::noteAccess(uint32_t now_ms) {
+  _last_access_ms = now_ms;
+  if (_enabled) {
+    activate();
+  }
+}
+
+void StatsHistory::maybeReleaseIdleBuffers(uint32_t now_ms) {
+  if (!_enabled || !_live_only || !isRecentHistoryAvailable() || isAccessActive(now_ms)) {
+    return;
+  }
+  releaseBuffers();
 }
 
 void StatsHistory::storeSample(const HistorySample& sample, bool mark_dirty) {
@@ -408,7 +489,7 @@ bool StatsHistory::parseSummaryLine(const char* line, HistorySample& sample) con
 }
 
 bool StatsHistory::restoreSummaryLog() {
-  if (!isArchiveAvailable() || _sample_capacity == 0) {
+  if (!supportsPersistence() || !isArchiveAvailable() || _sample_capacity == 0) {
     return false;
   }
 
@@ -507,7 +588,7 @@ bool StatsHistory::parseEventLine(const char* line, HistoryEvent& event) const {
 }
 
 bool StatsHistory::restoreEventsLog() {
-  if (!isArchiveAvailable() || _event_capacity == 0) {
+  if (!supportsPersistence() || !isArchiveAvailable() || _event_capacity == 0) {
     return false;
   }
 
@@ -573,7 +654,7 @@ bool StatsHistory::restoreEventsLog() {
 }
 
 void StatsHistory::pushSample(const HistorySample& sample) {
-  if (!_enabled || !ensureBuffers()) {
+  if (!_enabled || !_activated || (_live_only && !isAccessActive(millis())) || !ensureBuffers()) {
     return;
   }
   storeSample(sample, true);
@@ -590,7 +671,7 @@ void StatsHistory::appendPendingEvent(const HistoryEvent& event) {
 }
 
 void StatsHistory::storeEvent(const HistoryEvent& event, bool queue_pending) {
-  if (!ensureBuffers()) {
+  if (_event_capacity == 0 || !ensureBuffers()) {
     return;
   }
 
@@ -606,7 +687,7 @@ void StatsHistory::storeEvent(const HistoryEvent& event, bool queue_pending) {
 }
 
 void StatsHistory::recordEvent(uint8_t type, uint32_t epoch_secs, uint32_t uptime_secs, int16_t value) {
-  if (!ensureBuffers()) {
+  if (!_enabled || !_activated || (_live_only && !isAccessActive(millis())) || _event_capacity == 0 || !ensureBuffers()) {
     return;
   }
 
@@ -619,7 +700,7 @@ void StatsHistory::recordEvent(uint8_t type, uint32_t epoch_secs, uint32_t uptim
 }
 
 void StatsHistory::maybeFlush(uint32_t now_ms) {
-  if (!_enabled || !isArchiveAvailable()) {
+  if (!_enabled || !_activated || !supportsPersistence() || !isArchiveAvailable()) {
     return;
   }
 
@@ -636,7 +717,7 @@ void StatsHistory::maybeFlush(uint32_t now_ms) {
 }
 
 void StatsHistory::flushSummaryLog() {
-  if (_archive == nullptr || _sample_count == 0) {
+  if (!supportsPersistence() || _archive == nullptr || _sample_count == 0) {
     return;
   }
 
@@ -686,7 +767,7 @@ void StatsHistory::flushSummaryLog() {
 }
 
 void StatsHistory::flushEventsLog() {
-  if (_archive == nullptr || _pending_event_count == 0) {
+  if (!supportsPersistence() || _archive == nullptr || _pending_event_count == 0) {
     return;
   }
 
@@ -724,7 +805,7 @@ void StatsHistory::flushEventsLog() {
 }
 
 void StatsHistory::writeMetaFile() const {
-  if (_archive == nullptr) {
+  if (!supportsPersistence() || _archive == nullptr) {
     return;
   }
   FILESYSTEM* fs = _archive->getFS();

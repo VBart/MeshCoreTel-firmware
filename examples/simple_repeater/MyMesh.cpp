@@ -1077,7 +1077,7 @@ void MyMesh::begin(FILESYSTEM *fs, ArchiveStorage* archive) {
   web.setNetworkStateProvider(&network);
   web.begin(_fs);
   _stats_history.begin(web.isWebStatsEnabled(), _archive);
-  if (web.isWebStatsEnabled() && _archive != nullptr && _archive->isMounted()) {
+  if (web.isWebStatsEnabled() && !_stats_history.isLiveOnly() && _archive != nullptr && _archive->isMounted()) {
     restoreArchiveNeighbours();
     next_archive_neighbours_flush_ms = millis() + kArchiveNeighboursFlushIntervalMs;
   }
@@ -1449,6 +1449,7 @@ void MyMesh::updateStatsHistory(unsigned long now_ms) {
     _archive_neighbours_dirty = false;
     return;
   }
+  _stats_history.maybeReleaseIdleBuffers(now_ms);
 
   const bool wifi_connected = network.isWifiConnected();
 #ifdef WITH_MQTT_UPLINK
@@ -1460,6 +1461,7 @@ void MyMesh::updateStatsHistory(unsigned long now_ms) {
   const bool archive_mounted = (_archive != nullptr) && _archive->isMounted();
 #if defined(ESP32)
   const uint32_t free_heap = ESP.getFreeHeap();
+  const uint32_t max_alloc_heap = ESP.getMaxAllocHeap();
   const uint32_t uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
   bool low_memory = _stats_state.low_memory;
   if (!_stats_state.initialized) {
@@ -1493,14 +1495,14 @@ void MyMesh::updateStatsHistory(unsigned long now_ms) {
     if (_stats_state.archive_mounted != archive_mounted) {
       recordStatsEvent(archive_mounted ? HISTORY_EVENT_ARCHIVE_MOUNTED : HISTORY_EVENT_ARCHIVE_UNAVAILABLE);
       _stats_state.archive_mounted = archive_mounted;
-      if (archive_mounted) {
+      if (!_stats_history.isLiveOnly() && archive_mounted) {
         if (getNeighbourCount() == 0) {
           restoreArchiveNeighbours();
         }
         next_archive_neighbours_flush_ms = now_ms + kArchiveNeighboursFlushIntervalMs;
       }
     }
-    if (!_stats_state.low_memory && low_memory) {
+    if (!_stats_history.isLiveOnly() && !_stats_state.low_memory && low_memory) {
 #if defined(ESP32)
       if (_stats_state.last_low_memory_event_uptime_secs == 0 ||
           (uptime_secs - _stats_state.last_low_memory_event_uptime_secs) >= kLowMemoryEventCooldownSecs) {
@@ -1513,43 +1515,55 @@ void MyMesh::updateStatsHistory(unsigned long now_ms) {
     _stats_state.low_memory = low_memory;
   }
 
-  if (next_history_sample_ms == 0 || millisHasNowPassed(next_history_sample_ms)) {
-    HistorySample sample{};
-    sample.epoch_secs = getRTCClock()->getCurrentTime();
-    sample.uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
-    sample.packets_sent = radio_driver.getPacketsSent();
-    sample.packets_recv = radio_driver.getPacketsRecv();
-    sample.battery_mv = board.getBattMilliVolts();
-    sample.queue_len = static_cast<uint16_t>(_mgr->getOutboundTotal());
-    sample.error_flags = _err_flags;
-    sample.recv_errors = static_cast<uint16_t>(min<uint32_t>(radio_driver.getPacketsRecvErrors(), 0xFFFF));
-    sample.neighbour_count = static_cast<uint16_t>(min<size_t>(getNeighbourCount(), 0xFFFF));
-    sample.direct_dups = static_cast<uint16_t>(min<uint32_t>(((SimpleMeshTables *)getTables())->getNumDirectDups(), 0xFFFF));
-    sample.flood_dups = static_cast<uint16_t>(min<uint32_t>(((SimpleMeshTables *)getTables())->getNumFloodDups(), 0xFFFF));
-    sample.last_rssi_x4 = static_cast<int16_t>(radio_driver.getLastRSSI() * 4.0f);
-    sample.last_snr_x4 = static_cast<int16_t>(radio_driver.getLastSNR() * 4.0f);
-    sample.noise_floor = static_cast<int16_t>(_radio->getNoiseFloor());
-    sample.battery_pct = static_cast<int8_t>(board.getBatteryPercent());
 #if defined(ESP32)
-    sample.heap_free = ESP.getFreeHeap();
-    sample.heap_min = ESP.getMinFreeHeap();
-    sample.psram_free = ESP.getFreePsram();
-    sample.psram_min = ESP.getMinFreePsram();
+  const bool live_stats_headroom_low =
+      _stats_history.isLiveOnly() && (free_heap <= kLowMemoryClearBytes || max_alloc_heap <= (24UL * 1024UL));
+#else
+  const bool live_stats_headroom_low = false;
 #endif
-    if (board.isExternalPowered()) sample.flags |= HISTORY_FLAG_EXTERNAL_POWER;
-    if (board.isCharging()) sample.flags |= HISTORY_FLAG_CHARGING;
-    if (board.isVbusPresent()) sample.flags |= HISTORY_FLAG_VBUS;
-    if (wifi_connected) sample.flags |= HISTORY_FLAG_WIFI_CONNECTED;
-    if (mqtt_connected) sample.flags |= HISTORY_FLAG_MQTT_CONNECTED;
-    if (web.isWebEnabled()) sample.flags |= HISTORY_FLAG_WEB_ENABLED;
-    if (web_panel_up) sample.flags |= HISTORY_FLAG_WEB_PANEL_UP;
-    if (archive_mounted) sample.flags |= HISTORY_FLAG_ARCHIVE_MOUNTED;
-    _stats_history.pushSample(sample);
+  if (next_history_sample_ms == 0 || millisHasNowPassed(next_history_sample_ms)) {
+    if (!live_stats_headroom_low) {
+      HistorySample sample{};
+      sample.epoch_secs = getRTCClock()->getCurrentTime();
+      sample.uptime_secs = static_cast<uint32_t>(uptime_millis / 1000);
+      sample.packets_sent = radio_driver.getPacketsSent();
+      sample.packets_recv = radio_driver.getPacketsRecv();
+      sample.battery_mv = board.getBattMilliVolts();
+      sample.queue_len = static_cast<uint16_t>(_mgr->getOutboundTotal());
+      sample.error_flags = _err_flags;
+      sample.recv_errors = static_cast<uint16_t>(min<uint32_t>(radio_driver.getPacketsRecvErrors(), 0xFFFF));
+      sample.neighbour_count = static_cast<uint16_t>(min<size_t>(getNeighbourCount(), 0xFFFF));
+      sample.direct_dups =
+          static_cast<uint16_t>(min<uint32_t>(((SimpleMeshTables *)getTables())->getNumDirectDups(), 0xFFFF));
+      sample.flood_dups =
+          static_cast<uint16_t>(min<uint32_t>(((SimpleMeshTables *)getTables())->getNumFloodDups(), 0xFFFF));
+      sample.last_rssi_x4 = static_cast<int16_t>(radio_driver.getLastRSSI() * 4.0f);
+      sample.last_snr_x4 = static_cast<int16_t>(radio_driver.getLastSNR() * 4.0f);
+      sample.noise_floor = static_cast<int16_t>(_radio->getNoiseFloor());
+      sample.battery_pct = static_cast<int8_t>(board.getBatteryPercent());
+#if defined(ESP32)
+      sample.heap_free = free_heap;
+      sample.heap_min = ESP.getMinFreeHeap();
+      sample.psram_free = ESP.getFreePsram();
+      sample.psram_min = ESP.getMinFreePsram();
+#endif
+      if (board.isExternalPowered()) sample.flags |= HISTORY_FLAG_EXTERNAL_POWER;
+      if (board.isCharging()) sample.flags |= HISTORY_FLAG_CHARGING;
+      if (board.isVbusPresent()) sample.flags |= HISTORY_FLAG_VBUS;
+      if (wifi_connected) sample.flags |= HISTORY_FLAG_WIFI_CONNECTED;
+      if (mqtt_connected) sample.flags |= HISTORY_FLAG_MQTT_CONNECTED;
+      if (web.isWebEnabled()) sample.flags |= HISTORY_FLAG_WEB_ENABLED;
+      if (web_panel_up) sample.flags |= HISTORY_FLAG_WEB_PANEL_UP;
+      if (archive_mounted) sample.flags |= HISTORY_FLAG_ARCHIVE_MOUNTED;
+      _stats_history.pushSample(sample);
+    }
     next_history_sample_ms = now_ms + 60000UL;
   }
 
   _stats_history.maybeFlush(now_ms);
-  maybeFlushArchiveNeighbours(now_ms);
+  if (!_stats_history.isLiveOnly()) {
+    maybeFlushArchiveNeighbours(now_ms);
+  }
 #else
   (void)now_ms;
 #endif
@@ -1845,11 +1859,12 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     web.formatWebStatusReply(reply, 160);
   } else if (strcmp(command, "get web.stats.status") == 0) {
     snprintf(reply, 160,
-             "> enabled:%s history:%s psram:%s degraded:%s samples:%u/%u events:%u/%u archive:%s logical:%s path:%s",
+             "> enabled:%s history:%s psram:%s degraded:%s mode:%s samples:%u/%u events:%u/%u archive:%s logical:%s path:%s",
              web.isWebStatsEnabled() ? "on" : "off",
              (_stats_history.isEnabled() && _stats_history.isRecentHistoryAvailable()) ? "active" : "inactive",
              _stats_history.isPsramBacked() ? "yes" : "no",
              _stats_history.isDegraded() ? "yes" : "no",
+             _stats_history.isLiveOnly() ? "live" : "full",
              static_cast<unsigned>(_stats_history.getSampleCount()),
              static_cast<unsigned>(_stats_history.getSampleCapacity()),
              static_cast<unsigned>(_stats_history.getEventCount()),
@@ -2235,11 +2250,12 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
   const char* archive_name = (_archive != nullptr) ? _archive->getLogicalName() : "archive";
   const char* archive_path = (_archive != nullptr) ? _archive->getLogicalStatsPath() : "archive:/stats";
   const char* archive_type = (_archive != nullptr) ? _archive->getCardTypeName() : "unavailable";
+  _stats_history.noteAccess(millis());
 
   size_t offset = 0;
   offset += snprintf(&reply[offset], reply_size - offset,
                      "{\"enabled\":true,"
-                     "\"history\":{\"active\":%s,\"psram\":%s,\"degraded\":%s,\"samples\":%u,\"sample_capacity\":%u,\"sample_interval_secs\":%lu,"
+                     "\"history\":{\"active\":%s,\"psram\":%s,\"degraded\":%s,\"live_only\":%s,\"samples\":%u,\"sample_capacity\":%u,\"sample_interval_secs\":%lu,"
                      "\"archive_restored\":%s,\"archive_restored_samples\":%u,\"archive_summary_interval_secs\":%lu,"
                      "\"events\":%u,\"event_capacity\":%u},"
                      "\"archive\":{\"logical\":\"%s\",\"available\":%s,\"path\":\"%s\",\"type\":\"%s\","
@@ -2256,6 +2272,7 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      (_stats_history.isEnabled() && _stats_history.isRecentHistoryAvailable()) ? "true" : "false",
                      _stats_history.isPsramBacked() ? "true" : "false",
                      _stats_history.isDegraded() ? "true" : "false",
+                     _stats_history.isLiveOnly() ? "true" : "false",
                      static_cast<unsigned>(_stats_history.getSampleCount()),
                      static_cast<unsigned>(_stats_history.getSampleCapacity()),
                      static_cast<unsigned long>(StatsHistory::getSampleIntervalSecs()),
@@ -2339,6 +2356,7 @@ bool MyMesh::formatWebStatsSeriesJson(const char* series, char* reply, size_t re
     }
     return false;
   }
+  _stats_history.noteAccess(millis());
   return _stats_history.buildSeriesJson(
       series,
       reply,

@@ -65,6 +65,7 @@ class StatsHistory {
 public:
   static constexpr uint32_t kSampleIntervalSecs = 60;
   static constexpr uint32_t kArchiveSummaryIntervalSecs = 300;
+  static constexpr uint32_t kLiveOnlyIdleTimeoutMs = 2UL * 60UL * 1000UL;
 
   StatsHistory();
   ~StatsHistory();
@@ -77,6 +78,7 @@ public:
   bool isRecentHistoryAvailable() const { return _samples != nullptr; }
   bool isPsramBacked() const { return _psram_backed; }
   bool isDegraded() const { return _degraded; }
+  bool isLiveOnly() const { return _live_only; }
   bool isArchiveAvailable() const;
   bool hasArchiveRestore() const { return _restored_sample_count > 0; }
 
@@ -89,6 +91,8 @@ public:
   void pushSample(const HistorySample& sample);
   void recordEvent(uint8_t type, uint32_t epoch_secs, uint32_t uptime_secs, int16_t value = 0);
   void maybeFlush(uint32_t now_ms);
+  void noteAccess(uint32_t now_ms);
+  void maybeReleaseIdleBuffers(uint32_t now_ms);
 
   bool buildSeriesJson(const char* series, char* buffer, size_t buffer_size, uint32_t now_epoch_secs, uint32_t now_uptime_secs) const;
   bool getRecentEvent(size_t reverse_index, HistoryEvent& event) const;
@@ -98,7 +102,11 @@ public:
   static constexpr uint32_t getArchiveSummaryIntervalSecs() { return kArchiveSummaryIntervalSecs; }
 
 private:
+  bool activate();
   bool ensureBuffers();
+  void releaseBuffers();
+  bool supportsPersistence() const;
+  bool isAccessActive(uint32_t now_ms) const;
   bool restoreSummaryLog();
   bool restoreEventsLog();
   bool parseSummaryLine(const char* line, HistorySample& sample) const;
@@ -112,11 +120,14 @@ private:
   bool getSampleFromOldest(size_t index, HistorySample& sample) const;
 
   bool _enabled;
+  bool _activated;
   bool _psram_backed;
   bool _degraded;
+  bool _live_only;
   bool _summary_dirty;
   uint32_t _next_summary_flush_ms;
   uint32_t _next_event_flush_ms;
+  uint32_t _last_access_ms;
   size_t _sample_capacity;
   size_t _sample_head;
   size_t _sample_count;
