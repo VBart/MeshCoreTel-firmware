@@ -188,6 +188,9 @@ int buildPointValue(const HistorySample& sample, const HistorySample* previous, 
   if (strcmp(series, "signal") == 0) {
     return static_cast<int>(sample.last_rssi_x4);
   }
+  if (strcmp(series, "noise_floor") == 0) {
+    return static_cast<int>(sample.noise_floor * 4);
+  }
   if (strcmp(series, "packets") == 0) {
     if (previous == nullptr) {
       return 0;
@@ -212,6 +215,9 @@ const char* seriesTitle(const char* series) {
   if (strcmp(series, "signal") == 0) {
     return "Signal";
   }
+  if (strcmp(series, "noise_floor") == 0) {
+    return "Noise Floor";
+  }
   return "";
 }
 
@@ -227,6 +233,9 @@ const char* seriesUnit(const char* series) {
   }
   if (strcmp(series, "signal") == 0) {
     return "rssi_x4";
+  }
+  if (strcmp(series, "noise_floor") == 0) {
+    return "noise_floor_x4";
   }
   return "";
 }
@@ -328,6 +337,9 @@ bool StatsHistory::activate() {
     if (_event_count == 0) {
       restoreEventsLog();
     }
+  }
+  for (size_t i = 0; i < _pending_event_count; ++i) {
+    storeEvent(_pending_events[i], false);
   }
   return true;
 }
@@ -432,6 +444,7 @@ bool StatsHistory::parseSummaryLine(const char* line, HistorySample& sample) con
   unsigned queue_len = 0;
   int last_rssi_x4 = 0;
   int last_snr_x4 = 0;
+  int noise_floor = 0;
   unsigned long packets_sent = 0;
   unsigned long packets_recv = 0;
   unsigned long heap_free = 0;
@@ -443,26 +456,58 @@ bool StatsHistory::parseSummaryLine(const char* line, HistorySample& sample) con
   unsigned flood_dups = 0;
   unsigned flags = 0;
 
-  const int parsed = sscanf(line,
-                            "%lu,%lu,%u,%u,%d,%d,%lu,%lu,%lu,%lu,%u,%u,%u,%u,%u,%u",
-                            &epoch_secs,
-                            &uptime_secs,
-                            &battery_mv,
-                            &queue_len,
-                            &last_rssi_x4,
-                            &last_snr_x4,
-                            &packets_sent,
-                            &packets_recv,
-                            &heap_free,
-                            &psram_free,
-                            &error_flags,
-                            &recv_errors,
-                            &neighbour_count,
-                            &direct_dups,
-                            &flood_dups,
-                            &flags);
-  if (parsed != 16) {
-    return false;
+  int parsed = sscanf(line,
+                      "%lu,%lu,%u,%u,%d,%d,%d,%lu,%lu,%lu,%lu,%u,%u,%u,%u,%u,%u",
+                      &epoch_secs,
+                      &uptime_secs,
+                      &battery_mv,
+                      &queue_len,
+                      &last_rssi_x4,
+                      &last_snr_x4,
+                      &noise_floor,
+                      &packets_sent,
+                      &packets_recv,
+                      &heap_free,
+                      &psram_free,
+                      &error_flags,
+                      &recv_errors,
+                      &neighbour_count,
+                      &direct_dups,
+                      &flood_dups,
+                      &flags);
+  if (parsed != 17) {
+    noise_floor = 0;
+    packets_sent = 0;
+    packets_recv = 0;
+    heap_free = 0;
+    psram_free = 0;
+    error_flags = 0;
+    recv_errors = 0;
+    neighbour_count = 0;
+    direct_dups = 0;
+    flood_dups = 0;
+    flags = 0;
+    parsed = sscanf(line,
+                    "%lu,%lu,%u,%u,%d,%d,%lu,%lu,%lu,%lu,%u,%u,%u,%u,%u,%u",
+                    &epoch_secs,
+                    &uptime_secs,
+                    &battery_mv,
+                    &queue_len,
+                    &last_rssi_x4,
+                    &last_snr_x4,
+                    &packets_sent,
+                    &packets_recv,
+                    &heap_free,
+                    &psram_free,
+                    &error_flags,
+                    &recv_errors,
+                    &neighbour_count,
+                    &direct_dups,
+                    &flood_dups,
+                    &flags);
+    if (parsed != 16) {
+      return false;
+    }
   }
 
   memset(&sample, 0, sizeof(sample));
@@ -483,6 +528,7 @@ bool StatsHistory::parseSummaryLine(const char* line, HistorySample& sample) con
   sample.flood_dups = static_cast<uint16_t>(flood_dups);
   sample.last_rssi_x4 = static_cast<int16_t>(last_rssi_x4);
   sample.last_snr_x4 = static_cast<int16_t>(last_snr_x4);
+  sample.noise_floor = static_cast<int16_t>(noise_floor);
   sample.flags = static_cast<uint8_t>(flags);
   sample.battery_pct = -1;
   return true;
@@ -687,7 +733,7 @@ void StatsHistory::storeEvent(const HistoryEvent& event, bool queue_pending) {
 }
 
 void StatsHistory::recordEvent(uint8_t type, uint32_t epoch_secs, uint32_t uptime_secs, int16_t value) {
-  if (!_enabled || !_activated || (_live_only && !isAccessActive(millis())) || _event_capacity == 0 || !ensureBuffers()) {
+  if (!_enabled) {
     return;
   }
 
@@ -696,6 +742,11 @@ void StatsHistory::recordEvent(uint8_t type, uint32_t epoch_secs, uint32_t uptim
   event.epoch_secs = epoch_secs;
   event.uptime_secs = uptime_secs;
   event.value = value;
+
+  if (!_activated || (_live_only && !isAccessActive(millis())) || _event_capacity == 0 || !ensureBuffers()) {
+    appendPendingEvent(event);
+    return;
+  }
   storeEvent(event, true);
 }
 
@@ -739,13 +790,14 @@ void StatsHistory::flushSummaryLog() {
 
   char line[256];
   snprintf(line, sizeof(line),
-           "%lu,%lu,%u,%u,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+           "%lu,%lu,%u,%u,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
            static_cast<unsigned long>(latest.epoch_secs),
            static_cast<unsigned long>(latest.uptime_secs),
            static_cast<unsigned>(latest.battery_mv),
            static_cast<unsigned>(latest.queue_len),
            static_cast<int>(latest.last_rssi_x4),
            static_cast<int>(latest.last_snr_x4),
+           static_cast<int>(latest.noise_floor),
            static_cast<unsigned>(latest.packets_sent),
            static_cast<unsigned>(latest.packets_recv),
            static_cast<unsigned>(latest.heap_free),

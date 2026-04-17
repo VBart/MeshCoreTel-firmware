@@ -256,6 +256,11 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
   </main>
   <script>
     const statusEl = document.getElementById("status");
+    const LAST_PAGE_KEY = "repeater-last-page";
+    function getPreferredPage() {
+      const stored = localStorage.getItem(LAST_PAGE_KEY);
+      return stored === "/stats" ? "/stats" : "/app";
+    }
     async function login() {
       const pwd = document.getElementById("password").value;
       const res = await fetch("/login", { method:"POST", body: pwd });
@@ -265,7 +270,7 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
         return;
       }
       sessionStorage.setItem("repeater-token", text.trim());
-      window.location.replace("/app");
+      window.location.replace(getPreferredPage());
     }
     document.getElementById("loginBtn").onclick = () => login();
     document.getElementById("password").addEventListener("keydown", (event) => {
@@ -526,7 +531,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       <h1>Repeater Config</h1>
       <p>Use the repeater admin password to unlock the command console.</p>
       <div class="row" style="margin-top:14px">
-        <input id="password" type="password" placeholder="Admin password">
+        <input id="password" type="password" placeholder="Admin password" maxlength="15">
         <button id="loginBtn">Unlock</button>
       </div>
       <div id="status"></div>
@@ -672,7 +677,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           <div class="field-card">
             <label class="label" for="adminPassword">Admin Password</label>
             <div class="inline-actions">
-              <input id="adminPassword" type="password" placeholder="new admin password">
+              <input id="adminPassword" type="password" placeholder="new admin password" maxlength="15">
 	            <span class="placeholder-slot" aria-hidden="true"></span>
               <button class="savebtn" data-prefix="password " data-input="adminPassword">Save</button>
             </div>
@@ -680,7 +685,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           <div class="field-card">
             <label class="label" for="guestPassword">Guest Password</label>
             <div class="inline-actions">
-              <input id="guestPassword" type="password" placeholder="new guest password">
+              <input id="guestPassword" type="password" placeholder="new guest password" maxlength="15">
 	            <span class="placeholder-slot" aria-hidden="true"></span>
               <button class="savebtn" data-prefix="set guest.password " data-input="guestPassword">Save</button>
             </div>
@@ -987,6 +992,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
   <script>
     const RADIO_PRESETS_URL = "https://api.meshcore.nz/api/v1/config";
     const isStatsPage = window.location.pathname === "/stats";
+    const LAST_PAGE_KEY = "repeater-last-page";
     let token = sessionStorage.getItem("repeater-token") || "";
     let commandQueue = Promise.resolve();
     let radioPresetEntries = [];
@@ -995,11 +1001,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     const replyEl = document.getElementById("reply");
     const themeToggleEl = document.getElementById("themeToggle");
     const rootEl = document.documentElement;
+    function rememberCurrentPage() {
+      localStorage.setItem(LAST_PAGE_KEY, isStatsPage ? "/stats" : "/app");
+    }
     function redirectToLogin() {
+      rememberCurrentPage();
       sessionStorage.removeItem("repeater-token");
       token = "";
       window.location.replace("/");
     }
+    rememberCurrentPage();
     function getPreferredTheme() {
       const saved = localStorage.getItem("repeater-theme");
       if (saved === "light" || saved === "dark") return saved;
@@ -1304,9 +1315,21 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (percent >= 40) return "warn";
       return "bad";
     }
-    function renderMeter(label, value, percent, note, invert) {
+    function toneForThreshold(value, greenMin, yellowMin) {
+      if (!Number.isFinite(value)) return "bad";
+      if (value >= greenMin) return "";
+      if (value >= yellowMin) return "warn";
+      return "bad";
+    }
+    function toneForThresholdDescending(value, greenMax, yellowMax) {
+      if (!Number.isFinite(value)) return "bad";
+      if (value <= greenMax) return "";
+      if (value <= yellowMax) return "warn";
+      return "bad";
+    }
+    function renderMeter(label, value, percent, note, toneOrInvert, invertFill = false) {
       const pct = clamp(Math.round(percent), 0, 100);
-      const tone = toneForPercent(pct, invert);
+      const tone = typeof toneOrInvert === "string" ? toneOrInvert : toneForPercent(pct, !!toneOrInvert);
       return `<div class="hud-row">
         <div class="hud-kpi">
           <div>
@@ -1315,7 +1338,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           </div>
           <div class="hud-sub">${escapeHtml(note)}</div>
         </div>
-        <div class="meter"><div class="meter-fill${tone ? " " + tone : ""}" style="width:${pct}%"></div></div>
+        <div class="meter"><div class="meter-fill${tone ? " " + tone : ""}" style="width:${pct}%;${invertFill ? "margin-left:auto;" : ""}"></div></div>
       </div>`;
     }
     function renderMetric(label, value) {
@@ -1399,12 +1422,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     }
     function renderWifiCard(wifi, powersave) {
       const qualityPct = Number.isFinite(wifi.quality) ? clamp(wifi.quality, 0, 100) : pctRange(wifi.rssi, -100, -50);
-      const rssiPct = pctRange(wifi.rssi, -100, -50);
+      const rssiPct = pctRange(wifi.rssi, -90, -50);
       const statusNote = wifi.status === "connected" ? (wifi.signal || "linked") : (wifi.state || "idle");
+      const qualityTone = Number.isFinite(wifi.rssi)
+        ? toneForThreshold(wifi.rssi, -67, -75)
+        : toneForThreshold(qualityPct, 67, 40);
+      const rssiTone = toneForThreshold(wifi.rssi, -67, -75);
       return `<section class="hud-card">
         <h3>Wi-Fi</h3>
-        ${renderMeter("Signal Quality", Number.isFinite(wifi.quality) ? wifi.quality + "%" : "--", qualityPct, statusNote, false)}
-        ${renderMeter("RSSI", Number.isFinite(wifi.rssi) ? wifi.rssi + " dBm" : "--", rssiPct, wifi.ssid || "-", false)}
+        ${renderMeter("Signal Quality", Number.isFinite(wifi.quality) ? wifi.quality + "%" : "--", qualityPct, statusNote, qualityTone)}
+        ${renderMeter("RSSI", Number.isFinite(wifi.rssi) ? wifi.rssi + " dBm" : "--", rssiPct, wifi.ssid || "-", rssiTone)}
         <div class="metric-grid">
           ${renderMetric("Status", wifi.status || "--")}
           ${renderMetric("State", wifi.state || "--")}
@@ -1416,16 +1443,19 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       </section>`;
     }
     function renderRadioCard(radio) {
-      const rssiPct = pctRange(radio.last_rssi, -130, -90);
-      const snrPct = pctRange(radio.last_snr, -20, 20);
-      const noisePct = pctRange(radio.noise_floor, -60, -113);
+      const rssiPct = pctRange(radio.last_rssi, -125, -30);
+      const snrPct = pctRange(radio.last_snr, -15, 15);
+      const noisePct = 100 - pctRange(radio.noise_floor, -130, -50);
       const totalAir = (radio.tx_air_secs || 0) + (radio.rx_air_secs || 0);
       const txShare = pctRatio(radio.tx_air_secs || 0, totalAir);
+      const rssiTone = toneForThreshold(radio.last_rssi, -90, -110);
+      const snrTone = toneForThreshold(radio.last_snr, 5, -5);
+      const noiseTone = toneForThresholdDescending(radio.noise_floor, -110, -95);
       return `<section class="hud-card">
         <h3>Radio</h3>
-        ${renderMeter("RSSI", (radio.last_rssi ?? "--") + " dBm", rssiPct, "signal strength", false)}
-        ${renderMeter("SNR", Number.isFinite(radio.last_snr) ? radio.last_snr.toFixed(1) + " dB" : "--", snrPct, "link quality", false)}
-        ${renderMeter("Noise Floor", (radio.noise_floor ?? "--") + " dBm", noisePct, "ambient RF", false)}
+        ${renderMeter("RSSI", (radio.last_rssi ?? "--") + " dBm", rssiPct, "signal strength", rssiTone)}
+        ${renderMeter("SNR", Number.isFinite(radio.last_snr) ? radio.last_snr.toFixed(1) + " dB" : "--", snrPct, "link quality", snrTone)}
+        ${renderMeter("Noise Floor", (radio.noise_floor ?? "--") + " dBm", noisePct, "ambient RF", noiseTone)}
         <div class="metric-grid">
           ${renderMetric("TX Air", String(radio.tx_air_secs ?? 0) + " s")}
           ${renderMetric("RX Air", String(radio.rx_air_secs ?? 0) + " s")}
@@ -1499,17 +1529,19 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const archiveUsed = archive.used_bytes || 0;
       const archiveFree = Math.max(0, archiveTotal - archiveUsed);
       const archiveFreePct = archiveTotal > 0 ? Math.round((archiveFree / archiveTotal) * 100) : 0;
-      return `<section class="hud-card">
-        <h3>Services</h3>
-        <div class="metric-grid">
-          ${renderMetric("MQTT", services.mqtt_connected ? "up" : "down")}
-          ${renderMetric("Web", services.web_panel_up ? services.web_auth || "up" : "down")}
-          ${renderMetric("Archive", archive.available ? archive.logical || "archive" : "unavailable")}
-          ${renderMetric("Neighbours", packets.neighbors || 0)}
+      const archiveMetrics = archive.available ? `
           ${renderMetric("Card", archive.type || "--")}
           ${renderMetric("Archive Total", formatArchiveGigabytes(archiveTotal))}
           ${renderMetric("Archive Used", formatArchiveUsed(archiveUsed))}
-          ${renderMetric("Archive Free", archiveTotal > 0 ? (formatArchiveGigabytes(archiveFree) + " (" + archiveFreePct + "%)") : "--")}
+          ${renderMetric("Archive Free", archiveTotal > 0 ? (formatArchiveGigabytes(archiveFree) + " (" + archiveFreePct + "%)") : "--")}` : "";
+      return `<section class="hud-card">
+        <h3>Services</h3>
+        <div class="metric-grid">
+          ${renderMetric("MQTT", services.mqtt_state || (services.mqtt_connected ? "up" : "down"))}
+          ${renderMetric("Web", services.web_panel_up ? services.web_auth || "up" : "down")}
+          ${renderMetric("Archive", archive.available ? archive.logical || "archive" : "unavailable")}
+          ${renderMetric("Neighbours", packets.neighbors || 0)}
+          ${archiveMetrics}
         </div>
       </section>`;
     }
@@ -1560,7 +1592,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         <td>${Number.isFinite(neighbour.snr_db) ? neighbour.snr_db.toFixed(2) + " dB" : "--"}</td>
         <td>${escapeHtml(formatDuration(neighbour.heard_secs_ago || 0))}</td>
         <td>${escapeHtml(formatDuration(neighbour.advert_secs_ago || 0))}</td>
-        <td>${escapeHtml(neighbour.route || "unknown")}</td>
       </tr>`).join("");
       return `<section class="hud-card">
         <h3>Neighbours</h3>
@@ -1572,7 +1603,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
                 <th>SNR</th>
                 <th>Heard</th>
                 <th>Advert</th>
-                <th>Route</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -1632,6 +1662,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (key === "memory") return formatBytes(value);
       if (key === "packets") return Math.round(value) + " pkts";
       if (key === "signal") return (value / 4).toFixed(1) + " dBm";
+      if (key === "noise_floor") return (value / 4).toFixed(1) + " dBm";
       return String(value);
     }
     function formatArchiveGigabytes(value) {
@@ -1653,6 +1684,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function sparkStrokeColor(key, points) {
       if (key === "packets") return "#d97706";
       if (key === "signal") return "#3b82f6";
+      if (key === "noise_floor") return "#ef4444";
       if (key === "memory") {
         const values = Array.isArray(points) ? points.map((item) => item && item[1]).filter((value) => Number.isFinite(value)) : [];
         const current = values.length ? values[values.length - 1] : NaN;
@@ -1666,6 +1698,47 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       return "#2f8f4e";
     }
+    function sparkValueRange(key, values) {
+      if (key === "signal") {
+        return { min:(-125 * 4), max:(-30 * 4) };
+      }
+      if (key === "noise_floor") {
+        return { min:(-130 * 4), max:(-50 * 4) };
+      }
+      let minValue = Math.min(...values);
+      let maxValue = Math.max(...values);
+      if (minValue === maxValue) {
+        minValue -= 1;
+        maxValue += 1;
+      }
+      return { min:minValue, max:maxValue };
+    }
+    function sparkGuideValues(key) {
+      if (key === "signal") {
+        return [-120, -110, -100, -90, -80, -70, -60, -50, -40].map((value) => value * 4);
+      }
+      if (key === "noise_floor") {
+        return [-120, -110, -100, -90, -80, -70, -60, -50].map((value) => value * 4);
+      }
+      return [];
+    }
+    function sparkBands(key) {
+      if (key === "signal") {
+        return [
+          { from:(-125 * 4), to:(-110 * 4), color:"rgba(191,75,75,0.14)" },
+          { from:(-110 * 4), to:(-90 * 4), color:"rgba(215,165,49,0.14)" },
+          { from:(-90 * 4), to:(-30 * 4), color:"rgba(47,143,78,0.12)" }
+        ];
+      }
+      if (key === "noise_floor") {
+        return [
+          { from:(-130 * 4), to:(-110 * 4), color:"rgba(47,143,78,0.12)" },
+          { from:(-110 * 4), to:(-95 * 4), color:"rgba(215,165,49,0.14)" },
+          { from:(-95 * 4), to:(-50 * 4), color:"rgba(191,75,75,0.14)" }
+        ];
+      }
+      return [];
+    }
     function drawSparkline(canvas, points, key, hoverIndex) {
       if (!canvas || !canvas.getContext) return;
       const ctx = canvas.getContext("2d");
@@ -1675,20 +1748,57 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       canvas.height = height * (window.devicePixelRatio || 1);
       ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
       ctx.clearRect(0, 0, width, height);
-      if (!Array.isArray(points) || points.length < 2) return;
+      if (!Array.isArray(points) || points.length < 1) return;
       const values = points.map((item) => item[1]).filter((value) => Number.isFinite(value));
-      if (values.length < 2) return;
-      let minValue = Math.min(...values);
-      let maxValue = Math.max(...values);
-      if (minValue === maxValue) {
-        minValue -= 1;
-        maxValue += 1;
-      }
+      if (values.length < 1) return;
+      const range = sparkValueRange(key, values);
+      const minValue = range.min;
+      const maxValue = range.max;
+      const plotLeft = 4;
+      const plotRight = width - 4;
+      const plotTop = 8;
+      const plotBottom = height - 8;
+      const scaleY = (value) => {
+        const clamped = clamp(value, minValue, maxValue);
+        if (key === "noise_floor") {
+          return plotTop + (((clamped - minValue) / (maxValue - minValue)) * (plotBottom - plotTop));
+        }
+        return plotBottom - (((clamped - minValue) / (maxValue - minValue)) * (plotBottom - plotTop));
+      };
+      sparkBands(key).forEach((band) => {
+        const y1 = scaleY(band.from);
+        const y2 = scaleY(band.to);
+        const top = Math.min(y1, y2);
+        const bandHeight = Math.max(1, Math.abs(y2 - y1));
+        ctx.fillStyle = band.color;
+        ctx.fillRect(plotLeft, top, plotRight - plotLeft, bandHeight);
+      });
+      sparkGuideValues(key).forEach((guide) => {
+        const y = scaleY(guide);
+        ctx.strokeStyle = "rgba(75,85,99,0.18)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(plotLeft, y);
+        ctx.lineTo(plotRight, y);
+        ctx.stroke();
+      });
       const coords = points.map((point, index) => ({
-        x: (index / Math.max(1, points.length - 1)) * (width - 8) + 4,
-        y: height - 8 - (((point[1] - minValue) / (maxValue - minValue)) * (height - 16))
+        x: (index / Math.max(1, points.length - 1)) * (plotRight - plotLeft) + plotLeft,
+        y: scaleY(point[1])
       }));
       const strokeColor = sparkStrokeColor(key, points);
+      if (key === "packets") {
+        const slotWidth = (plotRight - plotLeft) / Math.max(points.length, 1);
+        const barWidth = Math.max(3, Math.min(18, slotWidth * 0.68));
+        coords.forEach((point, index) => {
+          const left = clamp(point.x - (barWidth / 2), plotLeft, plotRight - barWidth);
+          const top = point.y;
+          const barHeight = Math.max(1, plotBottom - top);
+          ctx.fillStyle = Number.isInteger(hoverIndex) && hoverIndex === index ? "#f59e0b" : strokeColor;
+          ctx.fillRect(left, top, barWidth, barHeight);
+        });
+        return;
+      }
       ctx.lineWidth = 2;
       ctx.strokeStyle = strokeColor;
       ctx.beginPath();
@@ -1707,7 +1817,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     }
     function bindSparkHover(canvas, points, key) {
       const tooltip = document.getElementById("tooltip-" + key);
-      if (!canvas || !tooltip || !Array.isArray(points) || points.length < 2) return;
+      if (!canvas || !tooltip || !Array.isArray(points) || points.length < 1) return;
       const updateHover = (index) => {
         drawSparkline(canvas, points, key, index);
         if (index == null || index < 0 || index >= points.length) {
@@ -1786,7 +1896,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function initTrendCards() {
       const trendsEl = document.getElementById("statsTrends");
       if (!trendsEl) return;
-      trendsEl.innerHTML = ["battery", "memory", "packets", "signal"].map((key) =>
+      trendsEl.innerHTML = ["battery", "memory", "signal", "noise_floor", "packets"].map((key) =>
         `<section class="trend-card" id="trend-${key}">
           <div class="trend-title">${escapeHtml(key)}</div>
           <div class="spark-axis"><span></span><span>Loading...</span></div>
@@ -1844,7 +1954,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       });
     }
     function runPrefixed(prefix, inputId) {
-      const value = document.getElementById(inputId).value;
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const maxLength = Number.isFinite(input.maxLength) && input.maxLength > 0 ? input.maxLength : null;
+      const value = maxLength ? input.value.slice(0, maxLength) : input.value;
+      if (value !== input.value) input.value = value;
       runCommand(prefix + value);
     }
     async function loadField(cmd, inputId, format, options = {}) {
@@ -2069,7 +2183,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         return;
       }
 
-      const seriesOrder = ["battery", "memory", "packets", "signal"];
+      const seriesOrder = ["battery", "memory", "signal", "noise_floor", "packets"];
       for (const key of seriesOrder) {
         try {
           const payload = await fetchJson("/api/stats?series=" + encodeURIComponent(key));

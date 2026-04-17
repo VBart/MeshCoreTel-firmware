@@ -8,6 +8,7 @@
 #include <rom/rtc.h>
 #include <sys/time.h>
 #include <Wire.h>
+#include <Preferences.h>
 #include "driver/rtc_io.h"
 
 class ESP32Board : public mesh::MainBoard {
@@ -129,16 +130,55 @@ public:
 };
 
 class ESP32RTCClock : public mesh::RTCClock {
+  Preferences _prefs;
+  bool _prefs_ready = false;
+  uint32_t _last_persisted_time = 0;
+  unsigned long _last_persist_ms = 0;
+
+  static constexpr uint32_t kDefaultEpoch = 1715770351;  // 15 May 2024, 8:50pm
+  static constexpr unsigned long kPersistIntervalMs = 15UL * 60UL * 1000UL;
+
+  void applyTime(uint32_t time) {
+    struct timeval tv;
+    tv.tv_sec = time;
+    tv.tv_usec = 0;
+    settimeofday(&tv, NULL);
+  }
+
+  void persistCurrentTime(bool force) {
+    if (!_prefs_ready) {
+      return;
+    }
+
+    const unsigned long now_ms = millis();
+    const uint32_t now = getCurrentTime();
+    if (!force) {
+      if (now == 0 || now == _last_persisted_time) {
+        return;
+      }
+      if ((now_ms - _last_persist_ms) < kPersistIntervalMs) {
+        return;
+      }
+    }
+
+    _prefs.putULong("epoch", now);
+    _last_persisted_time = now;
+    _last_persist_ms = now_ms;
+  }
+
 public:
   ESP32RTCClock() { }
   void begin() {
+    _prefs_ready = _prefs.begin("mesh-clock", false);
+    const uint32_t persisted_epoch = _prefs_ready ? _prefs.getULong("epoch", 0) : 0;
     esp_reset_reason_t reason = esp_reset_reason();
-    if (reason == ESP_RST_POWERON) {
+    if (persisted_epoch > kDefaultEpoch) {
+      applyTime(persisted_epoch);
+      _last_persisted_time = persisted_epoch;
+      _last_persist_ms = millis();
+    } else if (reason == ESP_RST_POWERON) {
       // start with some date/time in the recent past
-      struct timeval tv;
-      tv.tv_sec = 1715770351;  // 15 May 2024, 8:50pm
-      tv.tv_usec = 0;
-      settimeofday(&tv, NULL);
+      applyTime(kDefaultEpoch);
     }
   }
   uint32_t getCurrentTime() override {
@@ -146,11 +186,12 @@ public:
     time(&_now);
     return _now;
   }
-  void setCurrentTime(uint32_t time) override { 
-    struct timeval tv;
-    tv.tv_sec = time;
-    tv.tv_usec = 0;
-    settimeofday(&tv, NULL);
+  void setCurrentTime(uint32_t time) override {
+    applyTime(time);
+    persistCurrentTime(true);
+  }
+  void tick() override {
+    persistCurrentTime(false);
   }
 };
 

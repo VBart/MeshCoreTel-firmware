@@ -957,6 +957,29 @@ bool MQTTUplink::isAnyBrokerConnected() const {
   return false;
 }
 
+const char* MQTTUplink::getAggregateBrokerState() const {
+  uint8_t enabled_count = 0;
+  uint8_t connected_count = 0;
+
+  for (const BrokerState& broker : _brokers) {
+    if (broker.spec == nullptr || (broker.spec->bit & _prefs.enabled_mask) == 0) {
+      continue;
+    }
+    enabled_count++;
+    if (broker.connected) {
+      connected_count++;
+    }
+  }
+
+  if (enabled_count == 0 || connected_count == 0) {
+    return "down";
+  }
+  if (connected_count < enabled_count) {
+    return "degraded";
+  }
+  return "up";
+}
+
 #else
 
 MQTTUplink::MQTTUplink(mesh::RTCClock&, mesh::LocalIdentity&)
@@ -983,6 +1006,7 @@ bool MQTTUplink::setOwnerPublicKey(const char*) { return false; }
 bool MQTTUplink::setOwnerEmail(const char*) { return false; }
 bool MQTTUplink::sendStatusNow() { return false; }
 bool MQTTUplink::isAnyBrokerConnected() const { return false; }
+const char* MQTTUplink::getAggregateBrokerState() const { return "down"; }
 
 #endif
 

@@ -8,7 +8,7 @@ on:
       - "examples/**"
       - "variants/**"
       - "platformio.ini"
-      - ".github/workflows/pr-build-check.yml"
+      - ".github/workflows/push-build-check.yml"
 
 jobs:
   build:

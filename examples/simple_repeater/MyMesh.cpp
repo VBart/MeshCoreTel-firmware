@@ -1627,17 +1627,14 @@ bool MyMesh::appendJsonNeighbours(char* reply, size_t reply_size, size_t& offset
     mesh::Utils::toHex(full_hex, neighbour->id.pub_key, PUB_KEY_SIZE);
     const uint32_t heard_secs_ago = now_secs - neighbour->heard_timestamp;
     const uint32_t advert_secs_ago = now_secs - neighbour->advert_timestamp;
-    ClientInfo* client = const_cast<ClientACL&>(acl).getClient(neighbour->id.pub_key, PUB_KEY_SIZE);
-    const bool route_known = (client != nullptr && client->out_path_len != OUT_PATH_UNKNOWN);
     offset += snprintf(&reply[offset], reply_size - offset,
-                       "%s{\"id\":\"%s\",\"full_id\":\"%s\",\"heard_secs_ago\":%lu,\"advert_secs_ago\":%lu,\"snr_db\":%.2f,\"route\":\"%s\"}",
+                       "%s{\"id\":\"%s\",\"full_id\":\"%s\",\"heard_secs_ago\":%lu,\"advert_secs_ago\":%lu,\"snr_db\":%.2f}",
                        i == 0 ? "" : ",",
                        hex,
                        full_hex,
                        static_cast<unsigned long>(heard_secs_ago),
                        static_cast<unsigned long>(advert_secs_ago),
-                       static_cast<double>(neighbour->snr) / 4.0,
-                       route_known ? "known" : "unknown");
+                       static_cast<double>(neighbour->snr) / 4.0);
     if (offset >= reply_size) {
       return false;
     }
@@ -2243,8 +2240,10 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
   const bool archive_available = (_archive != nullptr) && _archive->isMounted();
 #ifdef WITH_MQTT_UPLINK
   const bool mqtt_connected = mqtt.isAnyBrokerConnected();
+  const char* mqtt_state = mqtt.getAggregateBrokerState();
 #else
   const bool mqtt_connected = false;
+  const char* mqtt_state = "down";
 #endif
   const bool web_panel_up = web.isPanelRunning();
   const char* archive_name = (_archive != nullptr) ? _archive->getLogicalName() : "archive";
@@ -2267,7 +2266,7 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      "\"recv_errors\":%u,\"direct_dups\":%u,\"flood_dups\":%u,\"neighbors\":%u},"
                      "\"memory\":{\"heap_free\":%u,\"heap_min\":%u,\"heap_max\":%u,\"psram_free\":%u,\"psram_min\":%u,\"psram_max\":%u},"
                      "\"wifi\":{\"ssid\":\"%s\",\"status\":\"%s\",\"connected\":%s,\"state\":\"%s\",\"code\":%d,\"ip\":\"%s\",\"rssi\":%d,\"quality\":%d,\"signal\":\"%s\",\"powersave\":\"%s\"},"
-                     "\"services\":{\"mqtt_connected\":%s,\"web_enabled\":%s,\"web_panel_up\":%s,\"web_auth\":\"%s\","
+                     "\"services\":{\"mqtt_connected\":%s,\"mqtt_state\":\"%s\",\"web_enabled\":%s,\"web_panel_up\":%s,\"web_auth\":\"%s\","
                      "\"archive_available\":%s}",
                      (_stats_history.isEnabled() && _stats_history.isRecentHistoryAvailable()) ? "true" : "false",
                      _stats_history.isPsramBacked() ? "true" : "false",
@@ -2327,6 +2326,7 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      wifi_signal,
                      wifi_powersave,
                      mqtt_connected ? "true" : "false",
+                     mqtt_state,
                      web.isWebEnabled() ? "true" : "false",
                      web_panel_up ? "true" : "false",
                      web.isPanelUnlocked() ? "unlocked" : "locked",

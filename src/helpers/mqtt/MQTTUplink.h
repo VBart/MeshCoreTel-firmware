@@ -62,6 +62,7 @@ public:
   const char* getOwnerEmail() const { return _prefs.owner_email; }
   bool sendStatusNow();
   bool isAnyBrokerConnected() const;
+  const char* getAggregateBrokerState() const;
   void setNetworkStateProvider(NetworkStateProvider* network) { _network = network; }
 
 private:

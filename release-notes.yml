@@ -215,3 +215,33 @@ releases:
         area: web-panel
         text: "Refreshed the published web panel screenshots and docs to use separate light and dark mode captures."
     breaking_changes: []
+
+  - track: repeater-mqtt
+    version: "1.3.2"
+    tag: "repeater-mqtt-eastmesh-v1.3.2"
+    date: "2026-04-17"
+    previous_version: "1.3.1"
+    summary: "Refined the repeater /stats UX, added better early-event and noise-floor handling, and persisted the ESP32 fallback clock across reboot."
+    changes:
+      - type: fixed
+        area: stats
+        text: "Removed the misleading neighbour Route column from /stats and cleaned up the neighbour table payload to match the stored data."
+      - type: changed
+        area: stats
+        text: "Retuned the /stats radio noise-floor meter and added a dedicated noise-floor trend with clearer ranges, colour bands, and orientation."
+      - type: changed
+        area: web-panel
+        text: "Reordered the /stats trend cards and changed Packet Activity to a bar chart for interval-based packet counts."
+      - type: fixed
+        area: stats
+        text: "Captured boot/session events earlier on live-only non-PSRAM repeaters so the Events panel is populated before /stats is first opened."
+      - type: fixed
+        area: clock
+        text: "Persisted the ESP32 fallback clock in NVS with immediate saves on sync and periodic checkpoints so boards without a hardware RTC recover a recent sane epoch after reboot."
+      - type: changed
+        area: web-panel
+        text: "Remembered whether the local web UI was last on /app or /stats and returned to that page after unlocking again."
+      - type: changed
+        area: mqtt
+        text: "Changed the Services MQTT status to report degraded when only some enabled MQTT brokers are connected instead of treating any single connected broker as fully up."
+    breaking_changes: []

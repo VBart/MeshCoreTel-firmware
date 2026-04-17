@@ -187,9 +187,9 @@ The stats page is loaded separately from `/app` and is intended to keep the main
 
 The `/stats` page currently shows:
 
-- `Services`: MQTT, web, archive, card, neighbour count, and archive capacity
-- `Trends`: battery, heap free, packet activity, and signal
-- `Neighbours`: current neighbour table
+- `Services`: MQTT, web, archive, neighbour count, and, when mounted, card and archive capacity
+- `Trends`: battery, heap free, packet activity, signal, and noise floor
+- `Neighbours`: current neighbour table with ID, SNR, heard age, and advert age
 - `Events`: current boot/session events
 
 The trend graphs load sequentially rather than as one large payload:
