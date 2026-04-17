@@ -245,3 +245,30 @@ releases:
         area: mqtt
         text: "Changed the Services MQTT status to report degraded when only some enabled MQTT brokers are connected instead of treating any single connected broker as fully up."
     breaking_changes: []
+
+  - track: repeater-mqtt
+    version: "1.3.3"
+    tag: "repeater-mqtt-eastmesh-v1.3.3"
+    date: "2026-04-17"
+    previous_version: "1.3.2"
+    summary: "Improved /stats memory visibility, tightened web stats startup on 2 MB-class PSRAM boards, and polished the local repeater admin UI."
+    changes:
+      - type: fixed
+        area: stats
+        text: "Adjusted boot auto-capture for web stats to recognise 2 MB-class ESP32 PSRAM sizes instead of requiring an exact 2 MiB boundary."
+      - type: changed
+        area: stats
+        text: "Extended `get web.stats.status` with focused startup diagnostics for PSRAM size and boot auto-capture, while trimming low-value fields so the reply fits cleanly."
+      - type: changed
+        area: web-panel
+        text: "Updated the /stats Memory card to promote Heap Free, refine its headroom thresholds, and align the memory trend colours with the recent heap-free state."
+      - type: fixed
+        area: web-panel
+        text: "Captured the /stats summary memory snapshot earlier in the request path so the live memory values are more consistent while the page is loading."
+      - type: changed
+        area: web-panel
+        text: "Changed the local web panel tab title to use the repeater name when available, with a fallback to `Repeater Config`."
+      - type: docs
+        area: web-panel
+        text: "Updated the web panel docs to describe the rough 2 MB PSRAM boot-history cutoff."
+    breaking_changes: []
