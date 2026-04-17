@@ -1856,19 +1856,18 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     web.formatWebStatusReply(reply, 160);
   } else if (strcmp(command, "get web.stats.status") == 0) {
     snprintf(reply, 160,
-             "> enabled:%s history:%s psram:%s degraded:%s mode:%s samples:%u/%u events:%u/%u archive:%s logical:%s path:%s",
+             "> enabled:%s history:%s mode:%s psram:%s psram_bytes:%lu boot_auto:%s samples:%u/%u events:%u/%u archive:%s",
              web.isWebStatsEnabled() ? "on" : "off",
              (_stats_history.isEnabled() && _stats_history.isRecentHistoryAvailable()) ? "active" : "inactive",
-             _stats_history.isPsramBacked() ? "yes" : "no",
-             _stats_history.isDegraded() ? "yes" : "no",
              _stats_history.isLiveOnly() ? "live" : "full",
+             _stats_history.isPsramBacked() ? "yes" : "no",
+             static_cast<unsigned long>(_stats_history.getDetectedPsramSizeBytes()),
+             _stats_history.isBootAutoCaptureExpected() ? "yes" : "no",
              static_cast<unsigned>(_stats_history.getSampleCount()),
              static_cast<unsigned>(_stats_history.getSampleCapacity()),
              static_cast<unsigned>(_stats_history.getEventCount()),
              static_cast<unsigned>(_stats_history.getEventCapacity()),
-             (_archive != nullptr && _archive->isMounted()) ? "mounted" : "unavailable",
-             (_archive != nullptr) ? _archive->getLogicalName() : "archive",
-             (_archive != nullptr) ? _archive->getLogicalStatsPath() : "archive:/stats");
+             (_archive != nullptr && _archive->isMounted()) ? "mounted" : "unavailable");
 #endif
 #if defined(ESP_PLATFORM)
   } else if (memcmp(command, "get wifi.status", 15) == 0) {
@@ -2250,6 +2249,12 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
   const char* archive_path = (_archive != nullptr) ? _archive->getLogicalStatsPath() : "archive:/stats";
   const char* archive_type = (_archive != nullptr) ? _archive->getCardTypeName() : "unavailable";
   _stats_history.noteAccess(millis());
+  const uint32_t heap_free = ESP.getFreeHeap();
+  const uint32_t heap_min = ESP.getMinFreeHeap();
+  const uint32_t heap_max = ESP.getMaxAllocHeap();
+  const uint32_t psram_free = ESP.getFreePsram();
+  const uint32_t psram_min = ESP.getMinFreePsram();
+  const uint32_t psram_max = ESP.getMaxAllocPsram();
 
   size_t offset = 0;
   offset += snprintf(&reply[offset], reply_size - offset,
@@ -2309,12 +2314,12 @@ bool MyMesh::formatWebStatsSummaryJson(char* reply, size_t reply_size) {
                      static_cast<unsigned>(((SimpleMeshTables *)getTables())->getNumDirectDups()),
                      static_cast<unsigned>(((SimpleMeshTables *)getTables())->getNumFloodDups()),
                      static_cast<unsigned>(getNeighbourCount()),
-                     ESP.getFreeHeap(),
-                     ESP.getMinFreeHeap(),
-                     ESP.getMaxAllocHeap(),
-                     ESP.getFreePsram(),
-                     ESP.getMinFreePsram(),
-                     ESP.getMaxAllocPsram(),
+                     heap_free,
+                     heap_min,
+                     heap_max,
+                     psram_free,
+                     psram_min,
+                     psram_max,
                      wifi_ssid,
                      wifi_status,
                      network.isWifiConnected() ? "true" : "false",

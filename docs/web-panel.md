@@ -217,7 +217,7 @@ Current in-memory history caps are:
 | `4 MB` to less than `8 MB` PSRAM |      `480` |     `192` | About `8` hours          |
 | `8 MB` PSRAM or more             |      `720` |     `288` | About `12` hours         |
 
-On boards with `4 MB` PSRAM or more, stats history starts capturing from boot when `web.stats` is enabled, even if `/stats` has not been opened yet.
+On boards with roughly `2 MB` PSRAM or more, stats history starts capturing from boot when `web.stats` is enabled, even if `/stats` has not been opened yet.
 
 Archive-backed restore requires `web.stats` enabled plus a mounted SD card on boards that support the EastMesh archive path.
 

@@ -28,6 +28,7 @@ constexpr uint32_t kEventFlushIntervalMs = 60UL * 1000UL;
 constexpr size_t kMaxSeriesPoints = 64;
 constexpr size_t kSummaryRestoreWindowBytes = 16384;
 constexpr size_t kEventsRestoreWindowBytes = 4096;
+constexpr uint32_t kBootAutoCapturePsramMinBytes = 2000000UL;
 constexpr size_t kLiveOnlySampleCapacity = 24;
 constexpr size_t kLiveOnlyEventCapacity = 8;
 
@@ -66,7 +67,7 @@ bool shouldUseLiveOnlyStats() {
 
 bool hasBootAutoCapturePsram() {
 #if defined(ESP32)
-  return psramFound() && ESP.getPsramSize() >= (4UL * 1024UL * 1024UL);
+  return psramFound() && ESP.getPsramSize() >= kBootAutoCapturePsramMinBytes;
 #else
   return false;
 #endif
@@ -413,6 +414,18 @@ bool StatsHistory::supportsPersistence() const {
 
 bool StatsHistory::shouldAutoActivateFromBoot() const {
   return _enabled && !_live_only && hasBootAutoCapturePsram();
+}
+
+bool StatsHistory::isBootAutoCaptureExpected() const {
+  return shouldAutoActivateFromBoot();
+}
+
+uint32_t StatsHistory::getDetectedPsramSizeBytes() const {
+#if defined(ESP32)
+  return psramFound() ? ESP.getPsramSize() : 0;
+#else
+  return 0;
+#endif
 }
 
 bool StatsHistory::isAccessActive(uint32_t now_ms) const {

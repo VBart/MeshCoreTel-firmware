@@ -81,6 +81,8 @@ public:
   bool isLiveOnly() const { return _live_only; }
   bool isArchiveAvailable() const;
   bool hasArchiveRestore() const { return _restored_sample_count > 0; }
+  bool isBootAutoCaptureExpected() const;
+  uint32_t getDetectedPsramSizeBytes() const;
 
   size_t getSampleCapacity() const { return _sample_capacity; }
   size_t getSampleCount() const { return _sample_count; }
