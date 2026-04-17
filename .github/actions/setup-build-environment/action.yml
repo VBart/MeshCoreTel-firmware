@@ -3,13 +3,27 @@ description: Setup Build Environment
 runs:
   using: "composite"
   steps:
-    - name: Init Cache
+    - name: Restore uv Cache
       uses: actions/cache@v5
       with:
         path: |
           ~/.cache/uv
+          .venv
+        key: ${{ runner.os }}-py311-uv-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-py311-uv-
+
+    - name: Restore PlatformIO Cache
+      uses: actions/cache@v5
+      with:
+        path: |
           ~/.platformio/.cache
-        key: ${{ runner.os }}-pio
+          ~/.platformio/packages
+          ~/.platformio/platforms
+          ~/.platformio/lib
+        key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini', 'variants/**/platformio.ini') }}
+        restore-keys: |
+          ${{ runner.os }}-pio-
 
     - name: Install Python
       uses: actions/setup-python@v6
