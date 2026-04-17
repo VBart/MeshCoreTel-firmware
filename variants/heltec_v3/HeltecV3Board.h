@@ -11,6 +11,9 @@
 #ifndef PIN_ADC_CTRL              // set in platformio.ini for Heltec Wireless Tracker (2)
   #define  PIN_ADC_CTRL    37
 #endif
+#ifndef ADC_MULTIPLIER            //default ADC multiplier
+  #define ADC_MULTIPLIER 5.42
+#endif
 #define  PIN_ADC_CTRL_ACTIVE    LOW
 #define  PIN_ADC_CTRL_INACTIVE  HIGH
 
@@ -95,7 +98,7 @@ public:
 
     digitalWrite(PIN_ADC_CTRL, !adc_active_state);
 
-    uint16_t mv = (5.42 * (3.3 / 1024.0) * raw) * 1000;
+    uint16_t mv = (ADC_MULTIPLIER * (3.3 / 1024.0) * raw) * 1000;
 
     // Heltec V3 USB-powered boards without a battery can bias or float the
     // VBAT sense rail, which shows up as an impossible LiPo voltage.

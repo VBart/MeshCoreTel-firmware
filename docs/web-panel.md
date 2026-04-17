@@ -28,12 +28,12 @@ Operational guidance:
 
 The screenshots below show the current split between the lighter `/app` admin page and the dedicated `/stats` status page.
 
-### `/app`
+### `/app` screenshot
 
 ![Repeater web panel `/app` overview](./_assets/repeater_web_panel_app_light.png#only-light)
 ![Repeater web panel `/app` overview](./_assets/repeater_web_panel_app_dark.png#only-dark)
 
-### `/stats`
+### `/stats` screenshot
 
 ![Repeater web panel `/stats` overview](./_assets/repeater_web_panel_stats_light.png#only-light)
 ![Repeater web panel `/stats` overview](./_assets/repeater_web_panel_stats_dark.png#only-dark)
@@ -210,12 +210,14 @@ Stats samples are collected once per minute.
 
 Current in-memory history caps are:
 
-| Board class                    | Sample cap | Event cap | Approx. sampled history  |
-| ------------------------------ | ---------: | --------: | ------------------------ |
-| No PSRAM                       |       `24` |       `8` | Live-only recent history |
-| Less than `4MB` PSRAM          |      `240` |      `96` | About `4` hours          |
-| `4MB` to less than `8MB` PSRAM |      `480` |     `192` | About `8` hours          |
-| `8MB` PSRAM or more            |      `720` |     `288` | About `12` hours         |
+| Board class                      | Sample cap | Event cap | Approx. sampled history  |
+| -------------------------------- | ---------: | --------: | ------------------------ |
+| No PSRAM                         |       `24` |       `8` | Live-only recent history |
+| Less than `4 MB` PSRAM           |      `240` |      `96` | About `4` hours          |
+| `4 MB` to less than `8 MB` PSRAM |      `480` |     `192` | About `8` hours          |
+| `8 MB` PSRAM or more             |      `720` |     `288` | About `12` hours         |
+
+On boards with roughly `2 MB` PSRAM or more, stats history starts capturing from boot when `web.stats` is enabled, even if `/stats` has not been opened yet.
 
 Archive-backed restore requires `web.stats` enabled plus a mounted SD card on boards that support the EastMesh archive path.
 

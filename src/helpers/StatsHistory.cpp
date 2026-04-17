@@ -28,6 +28,7 @@ constexpr uint32_t kEventFlushIntervalMs = 60UL * 1000UL;
 constexpr size_t kMaxSeriesPoints = 64;
 constexpr size_t kSummaryRestoreWindowBytes = 16384;
 constexpr size_t kEventsRestoreWindowBytes = 4096;
+constexpr uint32_t kBootAutoCapturePsramMinBytes = 2000000UL;
 constexpr size_t kLiveOnlySampleCapacity = 24;
 constexpr size_t kLiveOnlyEventCapacity = 8;
 
@@ -59,6 +60,14 @@ HistoryCapacityBucket getHistoryCapacityBucket(bool want_psram) {
 bool shouldUseLiveOnlyStats() {
 #if defined(ESP32)
   return !psramFound();
+#else
+  return false;
+#endif
+}
+
+bool hasBootAutoCapturePsram() {
+#if defined(ESP32)
+  return psramFound() && ESP.getPsramSize() >= kBootAutoCapturePsramMinBytes;
 #else
   return false;
 #endif
@@ -291,6 +300,9 @@ void StatsHistory::begin(bool enabled, ArchiveStorage* archive) {
   _enabled = enabled;
   _next_summary_flush_ms = millis() + kSummaryFlushIntervalMs;
   _next_event_flush_ms = millis() + kEventFlushIntervalMs;
+  if (_enabled && shouldAutoActivateFromBoot()) {
+    activate();
+  }
 }
 
 void StatsHistory::setArchive(ArchiveStorage* archive) {
@@ -315,6 +327,9 @@ void StatsHistory::setEnabled(bool enabled) {
     _last_access_ms = 0;
     _next_summary_flush_ms = millis() + kSummaryFlushIntervalMs;
     _next_event_flush_ms = millis() + kEventFlushIntervalMs;
+    if (shouldAutoActivateFromBoot()) {
+      activate();
+    }
   }
 }
 
@@ -395,6 +410,22 @@ void StatsHistory::releaseBuffers() {
 
 bool StatsHistory::supportsPersistence() const {
   return !_live_only;
+}
+
+bool StatsHistory::shouldAutoActivateFromBoot() const {
+  return _enabled && !_live_only && hasBootAutoCapturePsram();
+}
+
+bool StatsHistory::isBootAutoCaptureExpected() const {
+  return shouldAutoActivateFromBoot();
+}
+
+uint32_t StatsHistory::getDetectedPsramSizeBytes() const {
+#if defined(ESP32)
+  return psramFound() ? ESP.getPsramSize() : 0;
+#else
+  return 0;
+#endif
 }
 
 bool StatsHistory::isAccessActive(uint32_t now_ms) const {

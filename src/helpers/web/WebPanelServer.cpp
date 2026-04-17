@@ -478,6 +478,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .hud-sub { font-size:12px; color:var(--text-muted); }
     .meter { height:10px; background:var(--background); border:1px solid var(--border); border-radius:999px; overflow:hidden; }
     .meter-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--accent-hover)); }
+    .meter-fill.ok { background:linear-gradient(90deg,#6ea43f,#8cb857); }
     .meter-fill.warn { background:linear-gradient(90deg,#d7a531,#e9bf52); }
     .meter-fill.bad { background:linear-gradient(90deg,#bf4b4b,#dd6a6a); }
     .metric-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
@@ -1001,6 +1002,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     const replyEl = document.getElementById("reply");
     const themeToggleEl = document.getElementById("themeToggle");
     const rootEl = document.documentElement;
+    function updatePanelTitle(nameValue) {
+      const fallbackTitle = "Repeater Config";
+      const trimmedName = String(nameValue == null ? "" : nameValue).trim();
+      document.title = trimmedName ? trimmedName : fallbackTitle;
+    }
     function rememberCurrentPage() {
       localStorage.setItem(LAST_PAGE_KEY, isStatsPage ? "/stats" : "/app");
     }
@@ -1327,6 +1333,20 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (value <= yellowMax) return "warn";
       return "bad";
     }
+    function toneForHeapFreePercent(percent) {
+      if (!Number.isFinite(percent)) return "bad";
+      if (percent >= 75) return "";
+      if (percent >= 55) return "ok";
+      if (percent >= 35) return "warn";
+      return "bad";
+    }
+    function colorForHeapFreePercent(percent) {
+      const tone = toneForHeapFreePercent(percent);
+      if (tone === "ok") return "#6ea43f";
+      if (tone === "warn") return "#d7a531";
+      if (tone === "bad") return "#d14343";
+      return "#2f8f4e";
+    }
     function renderMeter(label, value, percent, note, toneOrInvert, invertFill = false) {
       const pct = clamp(Math.round(percent), 0, 100);
       const tone = typeof toneOrInvert === "string" ? toneOrInvert : toneForPercent(pct, !!toneOrInvert);
@@ -1490,8 +1510,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const heapMax = memory.heap_max || 0;
       const psramFree = memory.psram_free || 0;
       const psramMax = memory.psram_max || 0;
+      const heapFreePct = pctRange(heapFree, 0, 128 * 1024);
       return `<section class="hud-card">
         <h3>Memory</h3>
+        ${renderMeter("Heap Free", formatBytes(heapFree), heapFreePct, "total free heap", toneForHeapFreePercent(heapFreePct))}
         ${renderMeter("Heap Largest Block", formatBytes(heapMax), pctRatio(heapMax, heapFree), "largest alloc vs free", false)}
         ${renderMeter("PSRAM Largest Block", formatBytes(psramMax), pctRatio(psramMax, psramFree), "largest alloc vs free", false)}
         <div class="metric-grid">
@@ -1684,17 +1706,13 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function sparkStrokeColor(key, points) {
       if (key === "packets") return "#d97706";
       if (key === "signal") return "#3b82f6";
-      if (key === "noise_floor") return "#ef4444";
+      if (key === "noise_floor") return "#94a3b8";
       if (key === "memory") {
         const values = Array.isArray(points) ? points.map((item) => item && item[1]).filter((value) => Number.isFinite(value)) : [];
-        const current = values.length ? values[values.length - 1] : NaN;
-        const minVisible = values.length ? Math.min(...values) : NaN;
-        const lowThreshold = 32 * 1024;
-        const warningThreshold = 64 * 1024;
-        if (Number.isFinite(current) && current <= lowThreshold) return "#d14343";
-        if (Number.isFinite(minVisible) && minVisible <= lowThreshold) return "#d14343";
-        if (Number.isFinite(current) && current <= warningThreshold) return "#d97706";
-        if (Number.isFinite(minVisible) && minVisible <= warningThreshold) return "#d97706";
+        const recentValues = values.slice(-5);
+        const minRecent = recentValues.length ? Math.min(...recentValues) : NaN;
+        const percent = pctRange(minRecent, 0, 128 * 1024);
+        return colorForHeapFreePercent(percent);
       }
       return "#2f8f4e";
     }
@@ -1918,6 +1936,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         const passwordEl = document.getElementById("password");
         if (passwordEl) passwordEl.value = "";
         if (statusEl) statusEl.textContent = "";
+        updatePanelTitle();
         const summaryEl = document.getElementById("statsSummary");
         if (summaryEl) summaryEl.innerHTML = '<div class="stats-empty">Loading summary...</div>';
         const trendsEl = document.getElementById("statsTrends");
@@ -1953,13 +1972,17 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         return { ok, text };
       });
     }
-    function runPrefixed(prefix, inputId) {
+    async function runPrefixed(prefix, inputId) {
       const input = document.getElementById(inputId);
       if (!input) return;
       const maxLength = Number.isFinite(input.maxLength) && input.maxLength > 0 ? input.maxLength : null;
       const value = maxLength ? input.value.slice(0, maxLength) : input.value;
       if (value !== input.value) input.value = value;
-      runCommand(prefix + value);
+      const result = await runCommand(prefix + value);
+      if (!result.ok) return;
+      if (inputId === "nodeName") {
+        await loadField("get name", "nodeName", null, { recordHistory:false, updateInput:false });
+      }
     }
     async function loadField(cmd, inputId, format, options = {}) {
       const result = await runCommand(cmd, options);
@@ -1971,6 +1994,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         value = value.toUpperCase();
       }
       document.getElementById(inputId).value = value;
+      if (inputId === "nodeName") {
+        updatePanelTitle(value);
+      }
     }
     async function copyToClipboard(value, successMessage) {
       try {

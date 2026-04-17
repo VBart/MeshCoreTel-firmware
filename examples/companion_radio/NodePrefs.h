@@ -35,4 +35,6 @@ struct NodePrefs {  // persisted to file
   uint8_t wifi_powersave;    // 0 = none, 1 = min, 2 = max
   char wifi_ssid[33];
   char wifi_pwd[65];
+  char default_scope_name[31];
+  uint8_t default_scope_key[16];
 };
