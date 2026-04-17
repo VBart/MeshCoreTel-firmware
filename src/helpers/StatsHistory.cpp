@@ -64,6 +64,14 @@ bool shouldUseLiveOnlyStats() {
 #endif
 }
 
+bool hasBootAutoCapturePsram() {
+#if defined(ESP32)
+  return psramFound() && ESP.getPsramSize() >= (4UL * 1024UL * 1024UL);
+#else
+  return false;
+#endif
+}
+
 template <typename T>
 T* allocHistoryBuffer(size_t count) {
 #if defined(ESP32)
@@ -291,6 +299,9 @@ void StatsHistory::begin(bool enabled, ArchiveStorage* archive) {
   _enabled = enabled;
   _next_summary_flush_ms = millis() + kSummaryFlushIntervalMs;
   _next_event_flush_ms = millis() + kEventFlushIntervalMs;
+  if (_enabled && shouldAutoActivateFromBoot()) {
+    activate();
+  }
 }
 
 void StatsHistory::setArchive(ArchiveStorage* archive) {
@@ -315,6 +326,9 @@ void StatsHistory::setEnabled(bool enabled) {
     _last_access_ms = 0;
     _next_summary_flush_ms = millis() + kSummaryFlushIntervalMs;
     _next_event_flush_ms = millis() + kEventFlushIntervalMs;
+    if (shouldAutoActivateFromBoot()) {
+      activate();
+    }
   }
 }
 
@@ -395,6 +409,10 @@ void StatsHistory::releaseBuffers() {
 
 bool StatsHistory::supportsPersistence() const {
   return !_live_only;
+}
+
+bool StatsHistory::shouldAutoActivateFromBoot() const {
+  return _enabled && !_live_only && hasBootAutoCapturePsram();
 }
 
 bool StatsHistory::isAccessActive(uint32_t now_ms) const {

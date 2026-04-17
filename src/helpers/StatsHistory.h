@@ -106,6 +106,7 @@ private:
   bool ensureBuffers();
   void releaseBuffers();
   bool supportsPersistence() const;
+  bool shouldAutoActivateFromBoot() const;
   bool isAccessActive(uint32_t now_ms) const;
   bool restoreSummaryLog();
   bool restoreEventsLog();

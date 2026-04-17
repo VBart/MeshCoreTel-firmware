@@ -1684,7 +1684,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function sparkStrokeColor(key, points) {
       if (key === "packets") return "#d97706";
       if (key === "signal") return "#3b82f6";
-      if (key === "noise_floor") return "#ef4444";
+      if (key === "noise_floor") return "#94a3b8";
       if (key === "memory") {
         const values = Array.isArray(points) ? points.map((item) => item && item[1]).filter((value) => Number.isFinite(value)) : [];
         const current = values.length ? values[values.length - 1] : NaN;
