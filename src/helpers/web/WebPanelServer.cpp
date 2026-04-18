@@ -994,6 +994,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     const RADIO_PRESETS_URL = "https://api.meshcore.nz/api/v1/config";
     const isStatsPage = window.location.pathname === "/stats";
     const LAST_PAGE_KEY = "repeater-last-page";
+    const PANEL_TITLE_KEY = "repeater-panel-title";
     let token = sessionStorage.getItem("repeater-token") || "";
     let commandQueue = Promise.resolve();
     let radioPresetEntries = [];
@@ -1005,7 +1006,19 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     function updatePanelTitle(nameValue) {
       const fallbackTitle = "Repeater Config";
       const trimmedName = String(nameValue == null ? "" : nameValue).trim();
-      document.title = trimmedName ? trimmedName : fallbackTitle;
+      const nextTitle = trimmedName ? trimmedName : fallbackTitle;
+      document.title = nextTitle;
+      if (trimmedName) {
+        localStorage.setItem(PANEL_TITLE_KEY, trimmedName);
+      } else {
+        localStorage.removeItem(PANEL_TITLE_KEY);
+      }
+    }
+    function applyCachedPanelTitle() {
+      const cachedTitle = localStorage.getItem(PANEL_TITLE_KEY);
+      if (cachedTitle && cachedTitle.trim()) {
+        document.title = cachedTitle.trim();
+      }
     }
     function rememberCurrentPage() {
       localStorage.setItem(LAST_PAGE_KEY, isStatsPage ? "/stats" : "/app");
@@ -1017,6 +1030,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       window.location.replace("/");
     }
     rememberCurrentPage();
+    applyCachedPanelTitle();
     function getPreferredTheme() {
       const saved = localStorage.getItem("repeater-theme");
       if (saved === "light" || saved === "dark") return saved;
