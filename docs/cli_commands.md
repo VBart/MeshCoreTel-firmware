@@ -261,6 +261,20 @@ If `noise_floor` reports `0`, check `get agc.reset.interval`. If it is not `0`, 
 
 ---
 
+#### View or change the boosted receive gain mode
+**Usage:**
+- `get radio.rxgain`
+- `set radio.rxgain <state>`
+
+**Parameters:**
+- `state`: `on`|`off`
+
+**Default:** `off`
+
+**Note:** Only available on SX1262 and SX1268 based boards.
+
+---
+
 #### Change the radio parameters for a set duration
 
 **Usage:**
