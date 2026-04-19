@@ -89,6 +89,9 @@ When the repeater web panel is enabled, it only allows a limited command set.
 That allowlist currently includes:
 
 - `clock`
+- `region default`
+- `region default <name>`
+- `region default <null>`
 - `get mqtt.status`
 - `get web`
 - `get web.status`

@@ -2002,6 +2002,7 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
 
   bool allowed =
       matches_exact("clock") ||
+      matches_exact("region default") ||
       matches_exact("get mqtt.status") ||
       matches_exact("get web.status") ||
       matches_exact("get web.stats.status") ||
@@ -2076,6 +2077,7 @@ void MyMesh::runWebCommand(const char* command, char* reply, size_t reply_size) 
       matches_prefix("set repeat ") ||
       matches_prefix("set flood.max ") ||
       matches_prefix("set path.hash.mode ") ||
+      matches_prefix("region default ") ||
       matches_prefix("time ") ||
       matches_prefix("time.force ") ||
       matches_prefix("set owner.info ");
