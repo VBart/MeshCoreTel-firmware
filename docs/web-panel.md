@@ -13,7 +13,7 @@ It gives you:
 - a password-gated local admin page at `/app`
 - a dedicated stats and trends page at `/stats`
 - quick `get` commands for common repeater and MQTT checks
-- a terminal-style CLI panel for allowlisted commands
+- a terminal-style CLI panel for full repeater CLI access
 - editable repeater settings
 - editable MQTT settings
 - a historical stats view with trends, neighbours, and recent events
@@ -71,7 +71,7 @@ Example:
 - the panel uses the same admin password as the repeater CLI
 - the connection is HTTPS, but the certificate is self-signed
 - browsers will warn the first time you connect
-- the panel only exposes an allowlisted subset of CLI commands
+- the panel exposes the repeater CLI after login
 
 This is intended for local admin use on a trusted network, not for open internet exposure.
 
@@ -134,13 +134,13 @@ These are useful for quick checks without typing into the CLI field.
 
 ## Run CLI Command
 
-This is a small terminal for allowlisted commands.
+This is a small terminal for the repeater CLI.
 
 - press `Enter` to run the command
 - command history is shown in the terminal box below
 - save buttons elsewhere in the page also show the generated command and the reply here
 - `clock` is available here if you want to check the repeater's current board time
-- the full current allowlist is documented in `docs/custom-cli.md` under `Web Panel Allowlisted Commands`
+- authenticated sessions can run the same CLI commands accepted by the repeater
 
 This makes it easy to see exactly what the panel sent to the repeater.
 
@@ -310,9 +310,9 @@ Check:
 
 For fixed installations where MQTT uptime matters more than browser access, use the panel briefly and then disable it again.
 
-### A command says it is not allowlisted
+### HTTP opens instead of HTTPS
 
-The panel intentionally limits what can be run from the browser. Use the serial CLI for commands outside the web allowlist. `clock` is included, but most maintenance and debug commands are still serial-only.
+The repeater now redirects plain `http://` requests to the local `https://` panel URL. If the browser still shows a connection problem after redirecting, open `https://<repeater-ip>/` directly and accept the self-signed certificate warning first.
 
 ### Stats or settings do not refresh
 

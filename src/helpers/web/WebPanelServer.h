@@ -9,6 +9,7 @@
   #endif
   #if WITH_WEB_PANEL
     #include <esp_https_server.h>
+    #include <esp_http_server.h>
   #endif
 #endif
 
@@ -53,11 +54,13 @@ private:
 
   WebPanelCommandRunner* _runner;
   httpd_handle_t _server;
+  httpd_handle_t _redirect_server;
   char _token[33];
   unsigned long _last_activity_ms;
   RouteContext _route_context;
 
   static esp_err_t handleIndex(httpd_req_t* req);
+  static esp_err_t handleHttpRedirect(httpd_req_t* req);
   static esp_err_t handleApp(httpd_req_t* req);
   static esp_err_t handleStatsPage(httpd_req_t* req);
   static esp_err_t handleLogin(httpd_req_t* req);

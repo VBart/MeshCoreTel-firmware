@@ -82,93 +82,15 @@ Legacy dotted aliases are also accepted:
 - `get battery.reporting`: shows whether board battery reporting is enabled. Support is board-dependent.
 - `set battery.reporting on|off`: enables or disables battery voltage reporting on supported boards. This is currently useful for Heltec V3 boards where USB-only power can produce misleading battery readings. If your board needs this too, open an issue and support can be added board-by-board.
 
-## Web Panel Allowlisted Commands
+## Web Panel CLI Access
 
-When the repeater web panel is enabled, it only allows a limited command set.
+When the repeater web panel is enabled and you are authenticated, the browser CLI panel can run the same CLI commands accepted by the repeater.
 
-That allowlist currently includes:
+Notes:
 
-- `clock`
-- `region default`
-- `region default <name>`
-- `region default <null>`
-- `get mqtt.status`
-- `get web`
-- `get web.status`
-- `get web.stats.status`
-- `advert`
-- `reboot`
-- `start ota`
-- `memory`
-- `stats-core`
-- `stats-radio`
-- `stats-packets`
-- `get wifi.status`
-- `get wifi.powersaving`
-- `set wifi.ssid <ssid>`
-- `set wifi.pwd <password>`
-- `set wifi.powersaving on|off`
-- `get mqtt.iata`
-- `set mqtt.iata <code>`
-- `get mqtt.owner`
-- `set mqtt.owner <64-hex-char-public-key>`
-- `get mqtt.email`
-- `set mqtt.email <email>`
-- `get mqtt.packets`
-- `set mqtt.packets on|off`
-- `get mqtt.raw`
-- `set mqtt.raw on|off`
-- `get mqtt.statuscfg`
-- `set mqtt.status on|off`
-- `get mqtt.tx`
-- `set mqtt.tx on|off`
-- `get mqtt.eastmesh-au`
-- `set mqtt.eastmesh-au on|off`
-- `get mqtt.eastmesh.au`
-- `set mqtt.eastmesh.au on|off`
-- `get mqtt.letsmesh-eu`
-- `set mqtt.letsmesh-eu on|off`
-- `get mqtt.letsmesh.eu`
-- `set mqtt.letsmesh.eu on|off`
-- `get mqtt.letsmesh-us`
-- `set mqtt.letsmesh-us on|off`
-- `get mqtt.letsmesh.us`
-- `set mqtt.letsmesh.us on|off`
-- `set web on|off`
-- `set.web on|off`
-- `set web.stats on|off`
-- `set.web.stats on|off`
-- `get name`
-- `set name <device-name>`
-- `get lat`
-- `set lat <latitude>`
-- `get lon`
-- `set lon <longitude>`
-- `get radio`
-- `set radio <freq> <bw> <sf> <cr>`
-- `get prv.key`
-- `get guest.password`
-- `password <admin-password>`
-- `set guest.password <password>`
-- `set prv.key <64-hex-char-private-key>`
-- `get role`
-- `get public.key`
-- `get advert.interval`
-- `set advert.interval <minutes>`
-- `get agc.reset.interval`
-- `set agc.reset.interval <seconds>`
-- `get flood.advert.interval`
-- `set flood.advert.interval <hours>`
-- `get repeat`
-- `set repeat on|off`
-- `get flood.max`
-- `set flood.max <count>`
-- `get path.hash.mode`
-- `set path.hash.mode <mode>`
-- `get owner.info`
-- `set owner.info <text>`
-- `time <iso-or-epoch>`
-- `time.force <iso-or-epoch>`
+- the panel still uses the repeater admin password for access
+- commands run with the same care as if you typed them into the repeater CLI directly
+- this is intended for local admin use on a trusted network
 
 ## Companion WiFi Rescue Commands
 

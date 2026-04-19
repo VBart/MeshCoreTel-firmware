@@ -256,10 +256,10 @@ const char kWebPanelLoginHtml[] PROGMEM = R"HTML(
   </main>
   <script>
     const statusEl = document.getElementById("status");
-    const LAST_PAGE_KEY = "repeater-last-page";
     function getPreferredPage() {
-      const stored = localStorage.getItem(LAST_PAGE_KEY);
-      return stored === "/stats" ? "/stats" : "/app";
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+      return next === "/stats" ? "/stats" : "/app";
     }
     async function login() {
       const pwd = document.getElementById("password").value;
@@ -586,7 +586,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         <input id="command" placeholder="get mqtt.status">
         <button id="runBtn">Run</button>
       </div>
-      <p class="panel-copy">Only the allowlisted commands exposed by this panel will run here.</p>
+      <p class="panel-copy">Authenticated sessions can run repeater CLI commands here.</p>
       <div id="reply" class="terminal"></div>
     </section>
 
@@ -993,7 +993,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
   <script>
     const RADIO_PRESETS_URL = "https://api.meshcore.nz/api/v1/config";
     const isStatsPage = window.location.pathname === "/stats";
-    const LAST_PAGE_KEY = "repeater-last-page";
     const PANEL_TITLE_KEY = "repeater-panel-title";
     let token = sessionStorage.getItem("repeater-token") || "";
     let commandQueue = Promise.resolve();
@@ -1020,16 +1019,12 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         document.title = cachedTitle.trim();
       }
     }
-    function rememberCurrentPage() {
-      localStorage.setItem(LAST_PAGE_KEY, isStatsPage ? "/stats" : "/app");
-    }
     function redirectToLogin() {
-      rememberCurrentPage();
+      const next = isStatsPage ? "/stats" : "/app";
       sessionStorage.removeItem("repeater-token");
       token = "";
-      window.location.replace("/");
+      window.location.replace("/?next=" + encodeURIComponent(next));
     }
-    rememberCurrentPage();
     applyCachedPanelTitle();
     function getPreferredTheme() {
       const saved = localStorage.getItem("repeater-theme");
@@ -2466,7 +2461,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 }  // namespace
 
 WebPanelServer::WebPanelServer()
-    : _runner(nullptr), _server(nullptr), _token{0}, _last_activity_ms(0), _route_context{this} {
+    : _runner(nullptr), _server(nullptr), _redirect_server(nullptr), _token{0}, _last_activity_ms(0), _route_context{this} {
 }
 
 void WebPanelServer::setCommandRunner(WebPanelCommandRunner* runner) {
@@ -2518,11 +2513,37 @@ bool WebPanelServer::start() {
   httpd_register_uri_handler(_server, &login_uri);
   httpd_register_uri_handler(_server, &command_uri);
   httpd_register_uri_handler(_server, &stats_uri);
+
+  httpd_config_t redirect_config = HTTPD_DEFAULT_CONFIG();
+  redirect_config.server_port = 80;
+  redirect_config.ctrl_port = 32768;
+  redirect_config.max_open_sockets = 2;
+  redirect_config.max_uri_handlers = 1;
+  redirect_config.max_resp_headers = 4;
+  redirect_config.backlog_conn = 2;
+  redirect_config.recv_wait_timeout = 2;
+  redirect_config.send_wait_timeout = 2;
+  redirect_config.stack_size = kWebServerStackSize;
+  redirect_config.uri_match_fn = httpd_uri_match_wildcard;
+
+  rc = httpd_start(&_redirect_server, &redirect_config);
+  if (rc == ESP_OK) {
+    httpd_uri_t redirect_uri = {.uri = "/*", .method = HTTP_GET, .handler = &WebPanelServer::handleHttpRedirect, .user_ctx = &_route_context};
+    httpd_register_uri_handler(_redirect_server, &redirect_uri);
+  } else {
+    _redirect_server = nullptr;
+    WEB_PANEL_LOG("redirect server start failed rc=0x%x", static_cast<unsigned>(rc));
+  }
+
   WEB_PANEL_LOG("server started on https://%s/", WiFi.localIP().toString().c_str());
   return true;
 }
 
 void WebPanelServer::stop() {
+  if (_redirect_server != nullptr) {
+    httpd_stop(_redirect_server);
+    _redirect_server = nullptr;
+  }
   if (_server != nullptr) {
     WEB_PANEL_LOG("server stopped");
     httpd_ssl_stop(_server);
@@ -2561,6 +2582,21 @@ esp_err_t WebPanelServer::handleIndex(httpd_req_t* req) {
   httpd_resp_set_type(req, "text/html; charset=utf-8");
   httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   return sendProgmemChunked(req, kWebPanelLoginHtml);
+}
+
+esp_err_t WebPanelServer::handleHttpRedirect(httpd_req_t* req) {
+  auto* ctx = static_cast<RouteContext*>(req->user_ctx);
+  if (ctx == nullptr || ctx->self == nullptr) {
+    return httpd_resp_send_500(req);
+  }
+
+  char location[160];
+  const char* path = (req->uri != nullptr && req->uri[0] != 0) ? req->uri : "/";
+  snprintf(location, sizeof(location), "https://%s%s", WiFi.localIP().toString().c_str(), path);
+  httpd_resp_set_status(req, "302 Found");
+  httpd_resp_set_hdr(req, "Location", location);
+  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  return httpd_resp_send(req, "", 0);
 }
 
 esp_err_t WebPanelServer::handleApp(httpd_req_t* req) {
