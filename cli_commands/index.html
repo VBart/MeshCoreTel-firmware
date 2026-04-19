@@ -841,6 +841,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#view-or-change-the-boosted-receive-gain-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View or change the boosted receive gain mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#change-the-radio-parameters-for-a-set-duration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1845,6 +1856,15 @@
 <p><strong>Set by build flag:</strong> <code>LORA_TX_POWER</code></p>
 <p><strong>Default:</strong> Varies by board</p>
 <p><strong>Notes:</strong> This setting only controls the power level of the LoRa chip. Some nodes have an additional power amplifier stage which increases the total output. Refer to the node's manual for the correct setting to use. <strong>Setting a value too high may violate the laws in your country.</strong></p>
+<hr />
+<h4 id="view-or-change-the-boosted-receive-gain-mode">View or change the boosted receive gain mode<a class="headerlink" href="#view-or-change-the-boosted-receive-gain-mode" title="Permanent link">&para;</a></h4>
+<p><strong>Usage:</strong>
+- <code>get radio.rxgain</code>
+- <code>set radio.rxgain &lt;state&gt;</code></p>
+<p><strong>Parameters:</strong>
+- <code>state</code>: <code>on</code>|<code>off</code></p>
+<p><strong>Default:</strong> <code>off</code></p>
+<p><strong>Note:</strong> Only available on SX1262 and SX1268 based boards.</p>
 <hr />
 <h4 id="change-the-radio-parameters-for-a-set-duration">Change the radio parameters for a set duration<a class="headerlink" href="#change-the-radio-parameters-for-a-set-duration" title="Permanent link">&para;</a></h4>
 <p><strong>Usage:</strong></p>
