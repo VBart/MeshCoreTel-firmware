@@ -6,7 +6,11 @@
 #include <stdint.h>
 
 #ifndef MQTT_DEFAULT_IATA
-  #define MQTT_DEFAULT_IATA "MEL"
+  #define MQTT_DEFAULT_IATA "UNSET"
+#endif
+
+#ifndef MQTT_UNSET_IATA
+  #define MQTT_UNSET_IATA "UNSET"
 #endif
 
 struct MQTTPrefs {

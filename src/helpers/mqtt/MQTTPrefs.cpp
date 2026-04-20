@@ -63,6 +63,9 @@ bool MQTTPrefsStore::load(FILESYSTEM* fs, MQTTPrefs& prefs) {
   if (prefs.legacy_wifi_powersave > 2) {
     prefs.legacy_wifi_powersave = 0;
   }
+  if (prefs.iata[0] == 0) {
+    StrHelper::strncpy(prefs.iata, MQTT_DEFAULT_IATA, sizeof(prefs.iata));
+  }
   prefs.status_interval_ms = kFixedStatusIntervalMs;
   prefs.enabled_mask &= 0x07;
   return true;

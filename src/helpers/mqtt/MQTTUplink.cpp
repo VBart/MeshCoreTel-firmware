@@ -124,6 +124,10 @@ bool MQTTUplink::hasEnabledBroker() const {
   return (_prefs.enabled_mask & 0x07) != 0;
 }
 
+bool MQTTUplink::isUnsetIataValue(const char* iata) {
+  return iata == nullptr || iata[0] == 0 || strcmp(iata, MQTT_UNSET_IATA) == 0;
+}
+
 uint8_t MQTTUplink::normalizeEnabledMask(uint8_t mask) {
   uint8_t normalized = 0;
   uint8_t count = 0;
@@ -599,7 +603,8 @@ void MQTTUplink::ensureBroker(BrokerState& broker, bool allow_new_connect) {
     return;
   }
   bool enabled = (_prefs.enabled_mask & broker.spec->bit) != 0;
-  if (!enabled) {
+  bool iata_configured = !isUnsetIataValue(_prefs.iata);
+  if (!enabled || !iata_configured) {
     if (broker.client != nullptr || broker.token != nullptr || broker.connected || broker.connect_announced ||
         broker.reconnect_pending || broker.next_connect_attempt != 0 || broker.last_connect_attempt != 0 ||
         broker.reconnect_failures != 0 || broker.token_expires_at != 0) {
@@ -828,6 +833,9 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
     if ((_prefs.enabled_mask & bit) == 0) {
       return "off";
     }
+    if (isUnsetIataValue(_prefs.iata)) {
+      return "invalid iata";
+    }
     const BrokerState* broker = nullptr;
     for (const BrokerState& candidate : _brokers) {
       if (candidate.spec != nullptr && candidate.spec->bit == bit) {
@@ -910,6 +918,11 @@ bool MQTTUplink::setIata(const char* iata) {
   makeSafeToken(iata, cleaned, sizeof(cleaned));
   for (size_t i = 0; cleaned[i] != 0; ++i) {
     cleaned[i] = toupper(static_cast<unsigned char>(cleaned[i]));
+  }
+  if (strcmp(cleaned, MQTT_UNSET_IATA) == 0) {
+    StrHelper::strncpy(_prefs.iata, MQTT_UNSET_IATA, sizeof(_prefs.iata));
+    refreshIdentityStrings();
+    return savePrefs();
   }
   StrHelper::strncpy(_prefs.iata, cleaned, sizeof(_prefs.iata));
   refreshIdentityStrings();

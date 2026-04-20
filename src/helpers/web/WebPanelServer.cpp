@@ -431,6 +431,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .mode-label.disabled { opacity:.4; }
     .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
     .panel-copy, .panel-note, .panel-status, .panel-warning, .stats-empty, .stats-error, .events-empty, .spark-status { font-size:13px; line-height:1.45; font-weight:400; }
+    .top-banner { display:none; margin-bottom:18px; padding:12px 14px; border-radius:12px; border:1px solid rgba(212,90,90,.45); background:rgba(212,90,90,.12); color:var(--text); }
+    .top-banner.visible { display:block; }
     .panel-warning { min-height:1.4em; color:var(--status-red); }
     .panel-note { color:var(--text-muted); }
     .panel-status { min-height:1.4em; color:var(--text-muted); }
@@ -528,6 +530,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 </head>
 <body>
   <main>
+    <section class="top-banner" id="mqttIataBanner">MQTT IATA needs setting under MQTT Settings.</section>
     <section class="card" id="login" style="display:none">
       <h1>Repeater Config</h1>
       <p>Use the repeater admin password to unlock the command console.</p>
@@ -813,6 +816,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           <label class="label" for="mqttIata">MQTT IATA</label>
           <div class="inline-actions">
             <select id="mqttIata">
+              <optgroup label="Configuration">
+                <option value="UNSET">UNSET - To be configured</option>
+              </optgroup>
               <optgroup label="ACT">
                 <option value="CBR">CBR - Canberra</option>
               </optgroup>
@@ -872,7 +878,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
                 <option value="AVV">AVV - Avalon</option>
                 <option value="GEX">GEX - Geelong West</option>
                 <option value="MEB">MEB - Essendon Fields</option>
-                <option value="MEL" selected>MEL - Melbourne</option>
+                <option value="MEL">MEL - Melbourne</option>
                 <option value="MQL">MQL - Mildura</option>
               </optgroup>
             </select>
@@ -1940,6 +1946,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       ).join("");
     }
     function showAuthedUi(show) {
+      const mqttIataBanner = document.getElementById("mqttIataBanner");
       document.getElementById("login").style.display = show ? "none" : "block";
       document.getElementById("actionsPanel").style.display = show ? "block" : "none";
       document.getElementById("cliPanel").style.display = show && !isStatsPage ? "block" : "none";
@@ -1950,6 +1957,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       document.getElementById("statsPagePanel").style.display = show && isStatsPage ? "block" : "none";
       document.getElementById("repeaterSettingsPanel").style.display = show && !isStatsPage ? "block" : "none";
       if (!show) {
+        if (mqttIataBanner) mqttIataBanner.classList.remove("visible");
         commandQueue = Promise.resolve();
         const passwordEl = document.getElementById("password");
         if (passwordEl) passwordEl.value = "";
@@ -1959,6 +1967,23 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         if (summaryEl) summaryEl.innerHTML = '<div class="stats-empty">Loading summary...</div>';
         const trendsEl = document.getElementById("statsTrends");
         if (trendsEl) trendsEl.innerHTML = "";
+      }
+    }
+    function isUnsetMqttIata(value) {
+      return String(value || "").trim().toUpperCase() === "UNSET";
+    }
+    function refreshMqttIataWarning() {
+      const input = document.getElementById("mqttIata");
+      const banner = document.getElementById("mqttIataBanner");
+      const inlineWarning = document.getElementById("mqttBrokerWarning");
+      const showWarning = !!(input && isUnsetMqttIata(input.value));
+      if (banner) {
+        banner.classList.toggle("visible", showWarning && !isStatsPage);
+      }
+      if (inlineWarning) {
+        inlineWarning.textContent = showWarning
+          ? "MQTT IATA is unset. Set it before enabling EastMesh or LetsMesh brokers."
+          : "";
       }
     }
     function queueCommand(task) {
@@ -1998,6 +2023,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (value !== input.value) input.value = value;
       const result = await runCommand(prefix + value);
       if (!result.ok) return;
+      if (inputId === "mqttIata") {
+        refreshMqttIataWarning();
+      }
       if (inputId === "nodeName") {
         await loadField("get name", "nodeName", null, { recordHistory:false, updateInput:false });
       }
@@ -2012,6 +2040,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         value = value.toUpperCase();
       }
       document.getElementById(inputId).value = value;
+      if (inputId === "mqttIata") {
+        refreshMqttIataWarning();
+      }
       if (inputId === "nodeName") {
         updatePanelTitle(value);
       }
@@ -2251,6 +2282,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    document.querySelectorAll("[data-cmd]").forEach((btn) => btn.onclick = () => runCommand(btn.dataset.cmd));
 	    document.querySelectorAll("[data-prefix]").forEach((btn) => btn.onclick = () => runPrefixed(btn.dataset.prefix, btn.dataset.input));
 	    document.querySelectorAll("[data-load-cmd]").forEach((btn) => btn.onclick = () => loadField(btn.dataset.loadCmd, btn.dataset.loadInput, btn.dataset.loadFormat));
+	    const mqttIataSelect = document.getElementById("mqttIata");
+	    if (mqttIataSelect) {
+	      mqttIataSelect.addEventListener("change", refreshMqttIataWarning);
+	    }
 	    async function setEastmeshMode(enabled) {
 	      if (enabled && getLetsmeshMode() === "both") {
 	        await setLetsmeshMode("eu");

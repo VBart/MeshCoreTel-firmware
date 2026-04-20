@@ -111,6 +111,7 @@ private:
   static constexpr uint8_t kLetsmeshUsBit = 0x04;
   static constexpr uint8_t kMaxEnabledBrokers = 2;
   static const BrokerSpec kBrokerSpecs[3];
+  static bool isUnsetIataValue(const char* iata);
 
   BrokerState _brokers[3];
 
