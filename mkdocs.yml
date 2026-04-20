@@ -40,5 +40,6 @@ nav:
   - Releases: releases.md
   - Migration: migration.md
   - Web Panel: web-panel.md
+  - Repeater API: api.md
   - Local Builds: local-builds.md
   - Custom CLI: custom-cli.md
