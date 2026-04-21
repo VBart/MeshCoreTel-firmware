@@ -1104,6 +1104,7 @@
 <ul>
 <li>this summary view is also what the repo's web panel requests first before loading trend series</li>
 <li>if <code>web.stats</code> is disabled, the endpoint returns <code>503 Service Unavailable</code></li>
+<li>supported boards may also include an optional <code>sensors</code> object in the summary payload for current GPS and environmental telemetry</li>
 </ul>
 <h3 id="get-apistatsseriesname"><code>GET /api/stats?series=&lt;name&gt;</code><a class="headerlink" href="#get-apistatsseriesname" title="Permanent link">&para;</a></h3>
 <p>Fetch one trend series.</p>
@@ -1114,6 +1115,14 @@
 <li><code>signal</code></li>
 <li><code>noise_floor</code></li>
 <li><code>packets</code></li>
+<li><code>voltage</code></li>
+<li><code>sensor_temp</code></li>
+<li><code>humidity</code></li>
+<li><code>pressure</code></li>
+<li><code>pressure_altitude</code></li>
+<li><code>mcu_temp</code></li>
+<li><code>gps_altitude</code></li>
+<li><code>gps_satellites</code></li>
 </ul>
 <p>Example:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;https://&lt;repeater-ip&gt;/api/stats?series=memory&quot;</span><span class="w"> </span><span class="se">\</span>
@@ -1123,6 +1132,7 @@
 <ul>
 <li>use <code>?series=battery</code>, not just <code>?series</code></li>
 <li>the built-in web panel loads these series sequentially rather than all at once to keep board memory pressure lower</li>
+<li>environment series are included only when the board reports those readings; if a series has no captured points yet, it returns an empty <code>points</code> array and <code>current:null</code></li>
 </ul>
 <h3 id="get-apistatsviewlegacy"><code>GET /api/stats?view=legacy</code><a class="headerlink" href="#get-apistatsviewlegacy" title="Permanent link">&para;</a></h3>
 <p>Fetch the older bundle-style stats payload.</p>

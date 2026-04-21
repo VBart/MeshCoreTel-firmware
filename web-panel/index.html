@@ -1504,10 +1504,13 @@
 <p>The <code>/stats</code> page currently shows:</p>
 <ul>
 <li><code>Services</code>: MQTT, web, archive, neighbour count, and, when mounted, card and archive capacity</li>
-<li><code>Trends</code>: battery, heap free, packet activity, signal, and noise floor</li>
+<li>optional full-width <code>Environment</code> summary card on boards that report GPS or environmental telemetry</li>
+<li><code>Trends</code>: battery, heap free, packet activity, signal, noise floor, and supported environment history such as voltage, temperatures, humidity, barometer, altitude, and, when GPS is enabled, satellites</li>
 <li><code>Neighbours</code>: current neighbour table with ID, SNR, heard age, and advert age</li>
 <li><code>Events</code>: current boot/session events</li>
 </ul>
+<p>For boards that expose extra telemetry, the optional <code>Environment</code> summary card can show current values such as GPS fix state, latitude, longitude, GPS altitude, voltage, sensor temperature, humidity, barometer, pressure-derived altitude, and MCU temperature.</p>
+<p>Metrics with no current value are hidden rather than showing placeholder rows, so the cards vary by board and by current sensor state.</p>
 <p>The trend graphs load sequentially rather than as one large payload:</p>
 <ol>
 <li>summary/status</li>
@@ -1515,9 +1518,10 @@
 <li>memory</li>
 <li>packet activity</li>
 <li>signal</li>
+<li>remaining supported environment series</li>
 </ol>
 <p>This keeps browser-side and device-side memory use lower than the previous in-page stats view.</p>
-<p>If <code>web.stats</code> is enabled and an SD archive is mounted, trends can restore archived summary points after reboot. Recent live points are still added from in-memory history.</p>
+<p>If <code>web.stats</code> is enabled and an SD archive is mounted, trends can restore archived summary points after reboot. Recent live points are still added from in-memory history. This now includes the supported environment series as well as the original core/radio stats.</p>
 <h3 id="stats-history-capacity">Stats History Capacity<a class="headerlink" href="#stats-history-capacity" title="Permanent link">&para;</a></h3>
 <p>Stats samples are collected once per minute.</p>
 <p>Current in-memory history caps are:</p>
@@ -1601,6 +1605,7 @@
 <ol>
 <li>Press <code>Start OTA</code>.</li>
 <li>Confirm the action.</li>
+<li>The local repeater web panel is suspended until reboot so OTA can take over HTTP on port <code>80</code>.</li>
 <li>Continue with your normal OTA workflow.</li>
 </ol>
 <h3 id="use-historical-stats">Use Historical Stats<a class="headerlink" href="#use-historical-stats" title="Permanent link">&para;</a></h3>

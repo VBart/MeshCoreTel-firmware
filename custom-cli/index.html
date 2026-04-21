@@ -897,8 +897,8 @@
 <h3 id="web-panel-controls">Web Panel Controls<a class="headerlink" href="#web-panel-controls" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get web</code></li>
-<li><code>get web.status</code>: shows whether the local HTTPS panel is available.</li>
-<li><code>get web.stats.status</code>: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted.</li>
+<li><code>get web.status</code>: shows whether the local HTTPS panel is available. After <code>start ota</code>, this reports <code>web:suspended ota</code> until the repeater reboots.</li>
+<li><code>get web.stats.status</code>: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series.</li>
 <li><code>set web on|off</code></li>
 <li><code>set.web on|off</code>: enables or disables the local HTTPS panel.</li>
 <li><code>set web.stats on|off</code></li>
@@ -950,6 +950,7 @@
 <li>the panel still uses the repeater admin password for access</li>
 <li>commands run with the same care as if you typed them into the repeater CLI directly</li>
 <li>this is intended for local admin use on a trusted network</li>
+<li><code>start ota</code> suspends the local repeater web panel until reboot so the OTA HTTP listener can take over port <code>80</code></li>
 </ul>
 <h2 id="companion-wifi-rescue-commands">Companion WiFi Rescue Commands<a class="headerlink" href="#companion-wifi-rescue-commands" title="Permanent link">&para;</a></h2>
 <p>These commands are available in the serial rescue CLI for <code>*_companion_radio_wifi</code> builds.</p>
