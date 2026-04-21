@@ -93,7 +93,13 @@ void CommonCLI::loadPrefsInt(FILESYSTEM* fs, const char* filename) {
     if (file.available() >= (int)sizeof(_prefs->rx_boosted_gain)) {
       file.read((uint8_t *)&_prefs->rx_boosted_gain, sizeof(_prefs->rx_boosted_gain));            // 291
     }
-    // next: 292
+    if (file.available() >= (int)sizeof(_prefs->fan_mode)) {
+      file.read((uint8_t *)&_prefs->fan_mode, sizeof(_prefs->fan_mode));                          // 292
+    }
+    if (file.available() >= (int)sizeof(_prefs->fan_timeout_secs)) {
+      file.read((uint8_t *)&_prefs->fan_timeout_secs, sizeof(_prefs->fan_timeout_secs));          // 293
+    }
+    // next: 295
 
     // sanitise bad pref values
     _prefs->rx_delay_base = constrain(_prefs->rx_delay_base, 0, 20.0f);
@@ -124,6 +130,8 @@ void CommonCLI::loadPrefsInt(FILESYSTEM* fs, const char* filename) {
 
     // sanitise settings
     _prefs->rx_boosted_gain = constrain(_prefs->rx_boosted_gain, 0, 1); // boolean
+    _prefs->fan_mode = constrain(_prefs->fan_mode, 0, 2);
+    _prefs->fan_timeout_secs = constrain(_prefs->fan_timeout_secs, 0, 600);
 
     file.close();
   }
@@ -186,7 +194,9 @@ void CommonCLI::savePrefs(FILESYSTEM* fs) {
     file.write((uint8_t *)_prefs->owner_info, sizeof(_prefs->owner_info));                          // 170
     file.write((uint8_t *)&_prefs->battery_reporting_enabled, sizeof(_prefs->battery_reporting_enabled)); // 290
     file.write((uint8_t *)&_prefs->rx_boosted_gain, sizeof(_prefs->rx_boosted_gain));              // 291
-    // next: 292
+    file.write((uint8_t *)&_prefs->fan_mode, sizeof(_prefs->fan_mode));                            // 292
+    file.write((uint8_t *)&_prefs->fan_timeout_secs, sizeof(_prefs->fan_timeout_secs));            // 293
+    // next: 295
 
     file.close();
   }

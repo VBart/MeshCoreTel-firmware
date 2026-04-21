@@ -35,12 +35,16 @@ const char* cardTypeName(uint8_t type) {
 
 }  // namespace
 
+#if defined(ESP32)
+SPIClass* getBoardSharedArchiveSPI() __attribute__((weak));
+#endif
+
 ArchiveStorage::ArchiveStorage()
     : _attempted(false), _mounted(false), _mount_failed(false), _supported(false), _card_type(0), _spi_bus(HSPI),
       _cs_pin(0xFF), _sck_pin(0xFF),
       _miso_pin(0xFF), _mosi_pin(0xFF), _card_size_bytes(0), _total_bytes(0), _used_bytes(0)
 #if defined(ESP32)
-      , _spi(nullptr)
+      , _spi(nullptr), _owns_spi(false)
 #endif
 {
 }
@@ -88,11 +92,15 @@ void ArchiveStorage::begin() {
               static_cast<unsigned>(_miso_pin),
               static_cast<unsigned>(_mosi_pin));
 
-  _spi = new SPIClass(_spi_bus);
+  _spi = getBoardSharedArchiveSPI();
+  _owns_spi = (_spi == nullptr);
   if (_spi == nullptr) {
-    _mount_failed = true;
-    ARCHIVE_LOG("mount failed: SPI alloc failed");
-    return;
+    _spi = new SPIClass(_spi_bus);
+    if (_spi == nullptr) {
+      _mount_failed = true;
+      ARCHIVE_LOG("mount failed: SPI alloc failed");
+      return;
+    }
   }
 
   if (!mountArchiveSd(_spi, _spi_bus, _cs_pin, _sck_pin, _miso_pin, _mosi_pin)) {
@@ -130,7 +138,9 @@ bool ArchiveStorage::recover() {
 
   ARCHIVE_LOG("recover begin bus=%u cs=%u", static_cast<unsigned>(_spi_bus), static_cast<unsigned>(_cs_pin));
   SD.end();
-  _spi->end();
+  if (_owns_spi) {
+    _spi->end();
+  }
   _mounted = false;
   _mount_failed = false;
   _card_size_bytes = 0;
@@ -200,6 +210,16 @@ bool ArchiveStorage::resolvePins() {
   _miso_pin = 37;
   _mosi_pin = 35;
   _cs_pin = 47;
+#if defined(FSPI)
+  _spi_bus = FSPI;
+#endif
+  return true;
+#elif defined(TBEAM_1W)
+  // T-Beam 1W microSD shares the board SPI pins but uses its own chip select.
+  _sck_pin = 13;
+  _miso_pin = 12;
+  _mosi_pin = 11;
+  _cs_pin = 10;
 #if defined(FSPI)
   _spi_bus = FSPI;
 #endif

@@ -109,6 +109,10 @@ void setup() {
 }
 
 void loop() {
+#if defined(TBEAM_1W)
+  board.updateFanControl();
+#endif
+
   int len = strlen(command);
   while (Serial.available() && len < sizeof(command)-1) {
     char c = Serial.read();

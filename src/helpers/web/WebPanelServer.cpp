@@ -2394,7 +2394,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         setRadioPresetStatus("Select a community preset first.", true);
         return;
       }
-      const command = `set radio ${preset.frequency} ${preset.bandwidth} ${preset.spreadingFactor} ${preset.codingRate}`;
+      const command = `set radio ${preset.frequency},${preset.bandwidth},${preset.spreadingFactor},${preset.codingRate}`;
       const result = await runCommand(command);
       if (!result.ok) {
         setRadioPresetStatus(parseReplyValue(result.text) || "Unable to apply radio preset.", true);
@@ -2551,7 +2551,9 @@ bool WebPanelServer::start() {
 
   httpd_config_t redirect_config = HTTPD_DEFAULT_CONFIG();
   redirect_config.server_port = 80;
-  redirect_config.ctrl_port = 32768;
+  // HTTPS already uses the default control port from HTTPD_SSL_CONFIG_DEFAULT().
+  // The redirect listener needs its own control port or startup will fail.
+  redirect_config.ctrl_port = 32769;
   redirect_config.max_open_sockets = 2;
   redirect_config.max_uri_handlers = 1;
   redirect_config.max_resp_headers = 4;

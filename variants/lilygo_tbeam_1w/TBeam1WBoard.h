@@ -28,8 +28,22 @@
 //   - Battery must support 2A+ discharge for high-power TX
 
 class TBeam1WBoard : public ESP32Board {
+public:
+  enum class FanMode : uint8_t {
+    Auto = 0,
+    On,
+    Off
+  };
+
 private:
   bool radio_powered = false;
+  bool fan_enabled = true;
+  uint32_t fan_force_on_until = 0;
+  uint32_t next_fan_control_check_at = 0;
+  uint32_t fan_post_tx_hold_ms = 30000;
+  FanMode fan_mode = FanMode::Auto;
+  float last_board_temperature_c = NAN;
+  float readBoardTemperatureC() const;
 
 public:
   void begin();
@@ -42,4 +56,11 @@ public:
   // Fan control methods
   void setFanEnabled(bool enabled);
   bool isFanEnabled() const;
+  void setFanMode(FanMode mode);
+  FanMode getFanMode() const;
+  const char* getFanModeName() const;
+  float getLastBoardTemperatureC() const;
+  bool setFanPostTxHoldMs(uint32_t hold_ms);
+  uint32_t getFanPostTxHoldMs() const;
+  void updateFanControl(bool force = false);
 };

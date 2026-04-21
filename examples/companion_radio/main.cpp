@@ -227,6 +227,10 @@ void setup() {
 }
 
 void loop() {
+#if defined(TBEAM_1W)
+  board.updateFanControl();
+#endif
+
   the_mesh.loop();
   sensors.loop();
 #ifdef DISPLAY_CLASS

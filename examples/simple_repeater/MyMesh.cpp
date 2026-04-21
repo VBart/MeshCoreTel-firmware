@@ -1,5 +1,10 @@
 #include "MyMesh.h"
 #include <algorithm>
+#include <cstdlib>
+
+#if defined(TBEAM_1W)
+  #include <TBeam1WBoard.h>
+#endif
 
 #if defined(ESP32) && WITH_WEB_PANEL
   #include <WiFi.h>
@@ -1043,6 +1048,8 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
 
   _prefs.adc_multiplier = 0.0f; // 0.0f means use default board multiplier
   _prefs.battery_reporting_enabled = 1;
+  _prefs.fan_mode = 0; // auto
+  _prefs.fan_timeout_secs = 30;
 
 #if defined(USE_SX1262) || defined(USE_SX1268)
 #ifdef SX126X_RX_BOOSTED_GAIN
@@ -1148,6 +1155,11 @@ void MyMesh::begin(FILESYSTEM *fs, ArchiveStorage* archive) {
 
   board.setAdcMultiplier(_prefs.adc_multiplier);
   board.setBatteryReporting(_prefs.battery_reporting_enabled);
+#if defined(TBEAM_1W)
+  auto& tbeam1w_board = static_cast<TBeam1WBoard&>(board);
+  tbeam1w_board.setFanPostTxHoldMs(static_cast<uint32_t>(_prefs.fan_timeout_secs) * 1000UL);
+  tbeam1w_board.setFanMode(static_cast<TBeam1WBoard::FanMode>(_prefs.fan_mode));
+#endif
 
 #if ENV_INCLUDE_GPS == 1
   applyGpsPrefs();
@@ -1834,6 +1846,55 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
              static_cast<unsigned>(_stats_history.getEventCount()),
              static_cast<unsigned>(_stats_history.getEventCapacity()),
              (_archive != nullptr && _archive->isMounted()) ? "mounted" : "unavailable");
+#endif
+#if defined(TBEAM_1W)
+  } else if (strcmp(command, "get fan") == 0) {
+    auto& tbeam1w_board = static_cast<TBeam1WBoard&>(board);
+    const float temp_c = tbeam1w_board.getLastBoardTemperatureC();
+    if (isnan(temp_c)) {
+      snprintf(reply, 160, "> mode:%s state:%s timeout:%lus temp:unavailable",
+               tbeam1w_board.getFanModeName(),
+               tbeam1w_board.isFanEnabled() ? "on" : "off",
+               static_cast<unsigned long>(tbeam1w_board.getFanPostTxHoldMs() / 1000UL));
+    } else {
+      snprintf(reply, 160, "> mode:%s state:%s timeout:%lus temp:%.2fC",
+               tbeam1w_board.getFanModeName(),
+               tbeam1w_board.isFanEnabled() ? "on" : "off",
+               static_cast<unsigned long>(tbeam1w_board.getFanPostTxHoldMs() / 1000UL),
+               temp_c);
+    }
+  } else if (memcmp(command, "set fan ", 8) == 0) {
+    auto& tbeam1w_board = static_cast<TBeam1WBoard&>(board);
+    const char* mode = &command[8];
+    if (memcmp(mode, "auto", 4) == 0) {
+      _prefs.fan_mode = static_cast<uint8_t>(TBeam1WBoard::FanMode::Auto);
+      tbeam1w_board.setFanMode(TBeam1WBoard::FanMode::Auto);
+      savePrefs();
+      strcpy(reply, "OK - fan auto");
+    } else if (memcmp(mode, "on", 2) == 0) {
+      _prefs.fan_mode = static_cast<uint8_t>(TBeam1WBoard::FanMode::On);
+      tbeam1w_board.setFanMode(TBeam1WBoard::FanMode::On);
+      savePrefs();
+      strcpy(reply, "OK - fan on");
+    } else if (memcmp(mode, "off", 3) == 0) {
+      _prefs.fan_mode = static_cast<uint8_t>(TBeam1WBoard::FanMode::Off);
+      tbeam1w_board.setFanMode(TBeam1WBoard::FanMode::Off);
+      savePrefs();
+      strcpy(reply, "OK - fan off");
+    } else if (memcmp(mode, "timeout ", 8) == 0) {
+      char* end = nullptr;
+      const unsigned long timeout_s = strtoul(&mode[8], &end, 10);
+      while (end != nullptr && *end == ' ') end++;
+      if (end != nullptr && *end == 's' && *(end + 1) == 0 && tbeam1w_board.setFanPostTxHoldMs(static_cast<uint32_t>(timeout_s * 1000UL))) {
+        _prefs.fan_timeout_secs = static_cast<uint16_t>(timeout_s);
+        savePrefs();
+        snprintf(reply, 160, "OK - fan timeout %lus", timeout_s);
+      } else {
+        strcpy(reply, "Err - use 0s..600s");
+      }
+    } else {
+      strcpy(reply, "Err - use auto|on|off|timeout <Ns>");
+    }
 #endif
 #if defined(ESP_PLATFORM)
   } else if (memcmp(command, "get wifi.status", 15) == 0) {

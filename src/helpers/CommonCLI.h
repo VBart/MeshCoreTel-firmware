@@ -62,6 +62,8 @@ struct NodePrefs { // persisted to file
   uint8_t rx_boosted_gain; // power settings
   uint8_t path_hash_mode;   // which path mode to use when sending
   uint8_t loop_detect;
+  uint8_t fan_mode;
+  uint16_t fan_timeout_secs;
 };
 
 class CommonCLICallbacks {

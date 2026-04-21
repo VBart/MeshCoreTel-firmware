@@ -55,5 +55,6 @@ private:
 
 #if defined(ESP32)
   SPIClass* _spi;
+  bool _owns_spi;
 #endif
 };

@@ -10,6 +10,10 @@ TBeam1WBoard board;
 
 static SPIClass spi;
 
+SPIClass* getBoardSharedArchiveSPI() {
+  return &spi;
+}
+
 RADIO_CLASS radio = new Module(P_LORA_NSS, P_LORA_DIO_1, P_LORA_RESET, P_LORA_BUSY, spi);
 
 WRAPPER_CLASS radio_driver(radio, board);
@@ -62,4 +66,3 @@ mesh::LocalIdentity radio_new_identity() {
   RadioNoiseListener rng(radio);
   return mesh::LocalIdentity(&rng);
 }
-

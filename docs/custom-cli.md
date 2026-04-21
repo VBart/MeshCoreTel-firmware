@@ -89,6 +89,31 @@ Legacy dotted aliases are also accepted:
 - `get battery.reporting`: shows whether board battery reporting is enabled. Support is board-dependent.
 - `set battery.reporting on|off`: enables or disables battery voltage reporting on supported boards. This is currently useful for Heltec V3 boards where USB-only power can produce misleading battery readings. If your board needs this too, open an issue and support can be added board-by-board.
 
+### T-Beam 1W Fan Control
+
+These commands are only available on `LilyGo_TBeam_1W_*` repeater builds.
+
+- `get fan`: shows the current fan mode, current fan state, and the last NTC-based board temperature when available.
+- `set fan auto`: returns the fan to automatic control and persists that mode across reboot.
+- `set fan on`: forces the fan on and persists that mode across reboot.
+- `set fan off`: forces the fan off and persists that mode across reboot.
+- `set fan timeout <Ns>`: changes the automatic post-TX hold window in seconds and persists it across reboot, for example `set fan timeout 45s`.
+
+Auto mode behavior:
+
+- forces the fan on during TX and keeps it on for the configured timeout afterward
+- otherwise turns the fan on at `48C`
+- turns it back off at `42C`
+- keeps the fan on if the NTC reading is unavailable
+
+Notes:
+
+- default repeater fan mode is `auto`
+- default post-TX timeout is `30s`
+- fan mode and timeout are stored in repeater prefs and survive reboot
+- only `LilyGo_TBeam_1W_*` repeater builds use these persisted fan settings
+- accepted range is `0s` to `600s`
+
 ## Web Panel CLI Access
 
 When the repeater web panel is enabled and you are authenticated, the browser CLI panel can run the same CLI commands accepted by the repeater.
