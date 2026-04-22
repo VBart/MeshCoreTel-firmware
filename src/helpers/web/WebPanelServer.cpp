@@ -1472,7 +1472,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           : pctRange(core.battery_mv, batteryMin, batteryMax);
       const queuePct = pctRange(core.queue_len, 0, 12);
       const errorsPct = core.errors > 0 ? 100 : 0;
-      const batteryDetail = batteryMin < batteryMax
+      const usesBoardBatteryPercent = Number.isFinite(core.battery_pct) && core.battery_pct >= 0;
+      const batteryDetail = !usesBoardBatteryPercent && batteryMin < batteryMax
           ? (core.battery_mv || 0) + " mV (" + batteryMin + "-" + batteryMax + " mV)"
           : (core.battery_mv || 0) + " mV";
       return `<section class="hud-card">
