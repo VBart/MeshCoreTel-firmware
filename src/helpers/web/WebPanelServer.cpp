@@ -576,6 +576,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           <span class="label">MQTT</span>
           <div class="quick">
             <button data-cmd="get mqtt.status">mqtt.status</button>
+            <button data-cmd="get mqtt.client_version">mqtt.client_version</button>
             <button data-cmd="get mqtt.iata">mqtt.iata</button>
             <button data-cmd="get mqtt.owner">mqtt.owner</button>
             <button data-cmd="get mqtt.email">mqtt.email</button>
@@ -599,18 +600,15 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       <div class="stack">
         <div class="row">
           <div class="field-card">
-            <label class="label" for="roleValue">Role</label>
+            <label class="label" for="versionValue">Version</label>
             <div class="fieldline">
-              <input id="roleValue" readonly disabled>
-              <span class="placeholder-slot" aria-hidden="true"></span>
+              <input id="versionValue" readonly disabled>
             </div>
           </div>
           <div class="field-card">
-            <label class="label" for="clockUtc">Clock UTC</label>
-            <div class="inline-actions">
-              <input id="clockUtc" readonly disabled>
-              <button class="iconbtn" data-load-cmd="clock" data-load-input="clockUtc" title="Refresh clock UTC">&#8635;</button>
-              <button id="syncClockBtn" class="savebtn">Sync</button>
+            <label class="label" for="clientVersionValue">Client Version</label>
+            <div class="fieldline">
+              <input id="clientVersionValue" readonly disabled>
             </div>
           </div>
         </div>
@@ -629,12 +627,22 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       <div class="stack">
         <div class="section-group">
           <h3>Repeater Settings</h3>
-          <div class="field-card">
-            <label class="label" for="nodeName">Device Name</label>
-            <div class="inline-actions">
-              <input id="nodeName" placeholder="MeshCore-HOWL">
-              <button class="iconbtn" data-load-cmd="get name" data-load-input="nodeName" title="Refresh device name">&#8635;</button>
-              <button class="savebtn" data-prefix="set name " data-input="nodeName">Save</button>
+          <div class="row">
+            <div class="field-card">
+              <label class="label" for="nodeName">Device Name</label>
+              <div class="inline-actions">
+                <input id="nodeName" placeholder="MeshCore-HOWL">
+                <button class="iconbtn" data-load-cmd="get name" data-load-input="nodeName" title="Refresh device name">&#8635;</button>
+                <button class="savebtn" data-prefix="set name " data-input="nodeName">Save</button>
+              </div>
+            </div>
+            <div class="field-card">
+              <label class="label" for="clockUtc">Clock UTC</label>
+              <div class="inline-actions">
+                <input id="clockUtc" readonly disabled>
+                <button class="iconbtn" data-load-cmd="clock" data-load-input="clockUtc" title="Refresh clock UTC">&#8635;</button>
+                <button id="syncClockBtn" class="savebtn">Sync</button>
+              </div>
             </div>
           </div>
           <div class="row">
@@ -2531,7 +2539,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const quiet = { recordHistory:false, updateInput:false };
       try {
         await loadSection("Loading info...", [
-          () => loadField("get role", "roleValue", null, quiet),
+          () => loadField("ver", "versionValue", null, quiet),
+          () => loadField("get mqtt.client_version", "clientVersionValue", null, quiet),
           () => loadField("clock", "clockUtc", null, quiet),
           () => loadField("get public.key", "publicKey", "uppercase", quiet)
         ]);

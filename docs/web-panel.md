@@ -130,7 +130,7 @@ This section runs common read-only commands for:
 - Wi-Fi
 - MQTT
 
-These are useful for quick checks without typing into the CLI field.
+These are useful for quick checks without typing into the CLI field. The MQTT quick actions include `mqtt.status`, `mqtt.client_version`, `mqtt.iata`, `mqtt.owner`, and `mqtt.email`.
 
 ## Run CLI Command
 
@@ -149,6 +149,7 @@ This makes it easy to see exactly what the panel sent to the repeater.
 This section includes:
 
 - Device Name
+- Clock UTC
 - Latitude
 - Longitude
 - Guest Password
@@ -164,6 +165,14 @@ Notes:
 - changing the private key requires a reboot to apply
 - the refresh buttons load the current value from the repeater
 - the save buttons send the matching CLI command immediately
+
+## Info
+
+This section shows:
+
+- `Version`: firmware version with build date
+- `Client Version`: MQTT client version string
+- `Public Key`
 
 ## Ghost Node Mode
 
@@ -303,7 +312,7 @@ On mobile:
 
 1. Press `Start OTA`.
 2. Confirm the action.
-3. The local repeater web panel is suspended until reboot so OTA can take over HTTP on port `80`.
+3. The local HTTP redirect listener on port `80` is released so OTA can take over that port.
 4. Continue with your normal OTA workflow.
 
 ### Use Historical Stats

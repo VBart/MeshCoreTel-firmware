@@ -2056,9 +2056,6 @@ void MyMesh::clearStats() {
 }
 
 void MyMesh::prepareForOTAStart() {
-#if defined(ESP_PLATFORM) && WITH_WEB_PANEL
-  web.suspendForOTA();
-#endif
 }
 
 void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply) {
@@ -2288,6 +2285,8 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     sprintf(reply, "> %s", mqtt.isStatusEnabled() ? "on" : "off");
   } else if (strcmp(command, "get mqtt.status") == 0) {
     mqtt.formatStatusReply(reply, 160);
+  } else if (strcmp(command, "get mqtt.client_version") == 0) {
+    sprintf(reply, "> %s", mqtt.getClientVersion());
   } else if (memcmp(command, "get mqtt.iata", 13) == 0) {
     sprintf(reply, "> %s", mqtt.getIata());
   } else if (memcmp(command, "get mqtt.owner", 14) == 0) {

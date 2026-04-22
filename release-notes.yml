@@ -442,7 +442,16 @@ releases:
       - type: fixed
         area: web-panel
         text: "Corrected `/stats` packet activity and GPS satellites bar charts so restored zero values no longer draw phantom bars and the final bar uses the same spacing as the rest of the series."
+      - type: added
+        area: mqtt
+        text: "Added a `get mqtt.client_version` repeater CLI command and exposed the same value in the `/app` quick MQTT command buttons."
+      - type: changed
+        area: web-panel
+        text: "Reworked the `/app` Info panel to show `Version` and `Client Version`, and moved `Clock UTC` into Repeater Settings beside Device Name."
+      - type: fixed
+        area: web-panel
+        text: "Narrowed `start ota` handling so the repeater only releases the local HTTP redirect listener on port `80`, allowing ElegantOTA to start without unnecessarily stopping the rest of the repeater services."
       - type: docs
         area: docs
-        text: "Updated the web panel and API docs to describe the board-aware battery percentage display fields used by the repeater stats UI."
+        text: "Updated the web panel, API, and custom CLI docs to describe the board-aware battery display, the new MQTT client-version command, and the revised `/app` layout."
     breaking_changes: []
