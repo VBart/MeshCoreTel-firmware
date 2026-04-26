@@ -229,6 +229,8 @@ The `/stats` page currently shows:
 - `Neighbours`: current neighbour table with ID, SNR, heard age, and advert age
 - `Events`: current boot/session events
 
+Planned MQTT JWT rotations are shown as `mqtt_token_refreshed` events instead of a short `mqtt_disconnected` / `mqtt_connected` pair.
+
 For boards that expose extra telemetry, the optional `Environment` summary card can show current values such as GPS fix state, latitude, longitude, GPS altitude, voltage, sensor temperature, humidity, barometer, pressure-derived altitude, and MCU temperature.
 
 Metrics with no current value are hidden rather than showing placeholder rows, so the cards vary by board and by current sensor state.
