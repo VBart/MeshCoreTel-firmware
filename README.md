@@ -1,114 +1,34 @@
-# MeshCore-EastMesh
+# MeshCore-EastMesh-MeshCoreTel
 
-MeshCore-EastMesh originates from the upstream MeshCore project:
+This is a fork of MeshCore-EastMesh firmware with MeshCoreTel broker support.
 
-- <https://github.com/meshcore-dev/MeshCore>
+Original firmware (credits to Jared Dohrman, Scott Powell / Ripple Radios and the MeshCore contributors):
 
-Credits to Scott Powell / Ripple Radios and the MeshCore contributors for the original firmware and project foundation.
+- <https://github.com/xJARiD/MeshCore-EastMesh>
+
+MeshCoreTel:
+
+- <https://meshcoretel.ru/>
 
 EastMesh firmware builds for MeshCore, with MQTT repeaters, WiFi companions, and simple release downloads for supported boards.
 
 This repository keeps the upstream MeshCore firmware intact and adds an EastMesh layer on top for packaging, release automation, WiFi-enabled companion builds, and MQTT-enabled repeater builds.
 
+Additinally, the MeshCoreTel broker added in this fork.
+
 ## What This Repo Adds
 
 - `*_repeater_mqtt` firmware targets with:
   - native WiFi
-  - MQTT over WSS with JWT auth
+  - MQTT over WSS with JWT auth or over plain TCP (for MeshCoreTel support)
   - optional local HTTPS config panel on supported ESP32 targets
 - `*_companion_radio_wifi` firmware targets for WiFi-connected companion devices
 - EastMesh-specific release workflows and versioning on top of upstream MeshCore releases
 - docs and release guidance for EastMesh users instead of the full upstream MeshCore docs set
 
-## Releases
+## Status
 
-Prebuilt firmware is published on GitHub Releases:
-
-- <https://github.com/xJARiD/MeshCore-EastMesh/releases>
-
-For flashing guidance, including when to use `.bin` vs `-merged.bin`, see:
-
-- [docs/releases.md](./docs/releases.md)
-
-The custom firmware flasher site is:
-
-- <https://flasher.eastmesh.au/>
-
-## Install uv
-
-This repo uses `uv` for Python tooling and runs PlatformIO through `uv run`.
-
-Official install docs:
-
-- <https://docs.astral.sh/uv/getting-started/installation/>
-
-Common install methods:
-
-macOS and Linux:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Homebrew:
-
-```bash
-brew install uv
-```
-
-Windows PowerShell:
-
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-## Common Repo Usage
-
-Install tooling:
-
-```bash
-uv sync
-```
-
-List available build targets:
-
-```bash
-bash build.sh list
-```
-
-Build a single target:
-
-```bash
-uv run pio run -e heltec_v4_repeater_mqtt
-uv run pio run -e heltec_v4_companion_radio_wifi
-```
-
-Build with release-style version metadata:
-
-```bash
-export FIRMWARE_VERSION=v1.14.1
-export EASTMESH_VERSION=v1.0.1
-bash build.sh build-firmware heltec_v4_repeater_mqtt
-```
-
-Flash a target:
-
-```bash
-uv run pio run -e heltec_v4_repeater_mqtt -t upload --upload-port /dev/tty.usbmodemXXXX
-```
-
-Open a serial monitor:
-
-```bash
-uv run pio device monitor --port /dev/tty.usbmodemXXXX --baud 115200
-```
-
-Build docs locally:
-
-```bash
-uv run --group docs zensical serve
-uv run --group docs zensical build
-```
+I've tested it only with my Heltec V4.
 
 ## Key Files
 
@@ -137,6 +57,7 @@ uv run --group docs zensical build
 ### MQTT Repeater Additions
 
 - hardcoded broker support for:
+  - `meshcoretel`
   - `eastmesh-au`
   - `letsmesh-eu`
   - `letsmesh-us`
