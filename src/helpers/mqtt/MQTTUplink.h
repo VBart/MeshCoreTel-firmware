@@ -74,6 +74,9 @@ private:
     const char* host;
     const char* uri;
     uint8_t bit;
+    bool plain_tcp;
+    const char* username;
+    const char* password;
   };
 
   struct BrokerState {
@@ -110,11 +113,12 @@ private:
   static constexpr uint8_t kEastmeshBit = 0x01;
   static constexpr uint8_t kLetsmeshEuBit = 0x02;
   static constexpr uint8_t kLetsmeshUsBit = 0x04;
+  static constexpr uint8_t kMeshcoretelBit = 0x08;
   static constexpr uint8_t kMaxEnabledBrokers = 2;
-  static const BrokerSpec kBrokerSpecs[3];
+  static const BrokerSpec kBrokerSpecs[4];
   static bool isUnsetIataValue(const char* iata);
 
-  BrokerState _brokers[3];
+  BrokerState _brokers[4];
 
   static void handleMqttEvent(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
   bool hasEnabledBroker() const;

@@ -67,7 +67,7 @@ bool MQTTPrefsStore::load(FILESYSTEM* fs, MQTTPrefs& prefs) {
     StrHelper::strncpy(prefs.iata, MQTT_DEFAULT_IATA, sizeof(prefs.iata));
   }
   prefs.status_interval_ms = kFixedStatusIntervalMs;
-  prefs.enabled_mask &= 0x07;
+  prefs.enabled_mask &= 0x0F;
   return true;
 }
 

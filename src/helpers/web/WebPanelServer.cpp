@@ -828,6 +828,35 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
               <optgroup label="Configuration">
                 <option value="UNSET">UNSET - To be configured</option>
               </optgroup>
+              <optgroup label="Russia">
+                <option value="BSK">BSK - Biysk</option>
+                <option value="CEE">CEE - Cherepovets</option>
+                <option value="CEK">CEK - Chelyabinsk</option>
+                <option value="GOJ">GOJ - Nizhny Novgorod</option>
+                <option value="IKT">IKT - Irkutsk</option>
+                <option value="IWA">IWA - Ivanovo</option>
+                <option value="KHV">KHV - Khabarovsk</option>
+                <option value="KLD">KLD - Tver</option>
+                <option value="KLF">KLF - Kaluga</option>
+                <option value="KVX">KVX - Kirov</option>
+                <option value="KZN">KZN - Kazan</option>
+                <option value="LPK">LPK - Lipetsk</option>
+                <option value="MOW">MOW - Moscow</option>
+                <option value="OVB">OVB - Novosibirsk</option>
+                <option value="ROV">ROV - Rostov-on-Don</option>
+                <option value="RZN">RZN - Ryazan</option>
+                <option value="SVX">SVX - Yekaterinburg</option>
+                <option value="TBW">TBW - Tambov</option>
+                <option value="TYA">TYA - Tula</option>
+                <option value="UFA">UFA - Ufa</option>
+                <option value="VOG">VOG - Volgograd</option>
+                <option value="VOZ">VOZ - Voronezh</option>
+                <option value="VSG">VSG - Lugansk</option>
+                <option value="VVO">VVO - Vladivostok</option>
+              </optgroup>
+              <optgroup label="France">
+                <option value="CHR">CHR - Chateauroux</option>
+              </optgroup>
               <optgroup label="ACT">
                 <option value="CBR">CBR - Canberra</option>
               </optgroup>
@@ -913,7 +942,30 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        </div>
 	        <div class="field-card">
 	          <label class="label">MQTT Servers</label>
-	          <div class="broker-stack">
+	          <div class="broker-stack" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
+	            <div class="broker-group">
+	              <div class="broker-group-title">Meshcoretel</div>
+	              <div class="broker-grid single">
+	                <div class="broker-card">
+	                  <div class="broker-mode">
+	                    <div class="broker-row">
+	                      <div class="broker-copy">
+	                        <div class="broker-title">Meshcoretel RU</div>
+	                        <div class="broker-state" id="mqttMeshcoretelState">Off</div>
+	                      </div>
+	                    </div>
+	                    <div class="mode-slider">
+	                      <input id="mqttMeshcoretelMode" type="range" min="0" max="1" step="1" value="0" aria-label="Meshcoretel mode">
+	                      <div class="mode-labels two" aria-hidden="true">
+	                        <div class="mode-label" data-meshcoretel-label="off">Off</div>
+	                        <div class="mode-label" data-meshcoretel-label="on">On</div>
+	                      </div>
+	                    </div>
+	                    <input id="mqttMeshcoretel" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	                  </div>
+	                </div>
+	              </div>
+	            </div>
 	            <div class="broker-group">
 	              <div class="broker-group-title">EastMesh</div>
 		              <div class="broker-grid single">
@@ -964,7 +1016,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	              </div>
 	            </div>
 	          </div>
-	          <div class="panel-note">If EastMesh is enabled, use only one LetsMesh broker. Enable both LetsMesh brokers only when EastMesh is off.</div>
+	          <div class="panel-note">Only two brokers can be enabled at the same time.</div>
 	          <div id="mqttBrokerWarning" class="panel-warning"></div>
 	        </div>
 	      </div>
@@ -2074,7 +2126,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       if (inlineWarning) {
         inlineWarning.textContent = showWarning
-          ? "MQTT IATA is unset. Set it before enabling EastMesh or LetsMesh brokers."
+          ? "MQTT IATA is unset. Set it before enabling any MQTT brokers."
           : "";
       }
     }
@@ -2223,13 +2275,25 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    function clampLetsmeshModeIndex(index) {
 	      const eastmesh = document.getElementById("mqttEastmeshAu");
 	      const eastmeshEnabled = !!(eastmesh && eastmesh.checked);
+	      const meshcoretel = document.getElementById("mqttMeshcoretel");
+	      const meshcoretelEnabled = !!(meshcoretel && meshcoretel.checked);
 	      const bounded = Math.max(0, Math.min(3, index));
-	      return eastmeshEnabled && bounded === 3 ? 1 : bounded;
+	      if ((eastmeshEnabled || meshcoretelEnabled) && bounded === 3) {
+	        return 1;
+	      }
+	      if (eastmeshEnabled && meshcoretelEnabled && bounded > 0) {
+	        return 0;
+	      }
+	      return bounded;
 	    }
 	    function refreshLetsmeshModeUi() {
 	      const mode = getLetsmeshMode();
 	      const eastmesh = document.getElementById("mqttEastmeshAu");
 	      const eastmeshEnabled = !!(eastmesh && eastmesh.checked);
+	      const meshcoretel = document.getElementById("mqttMeshcoretel");
+	      const meshcoretelEnabled = !!(meshcoretel && meshcoretel.checked);
+	      const bothBlocked = eastmeshEnabled || meshcoretelEnabled;
+	      const allBlocked = eastmeshEnabled && meshcoretelEnabled;
 	      const state = document.getElementById("mqttLetsmeshModeState");
 	      const labels = { off:"Off", eu:"EU", us:"US", both:"Both" };
 	      if (state) {
@@ -2240,11 +2304,15 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (slider) {
 	        slider.max = "3";
 	        slider.value = String(clampLetsmeshModeIndex(getLetsmeshModeIndex(mode)));
+	        slider.disabled = allBlocked;
 	      }
 	      document.querySelectorAll("[data-letsmesh-label]").forEach((label) => {
 	        const labelMode = label.dataset.letsmeshLabel;
 	        label.classList.toggle("active", labelMode === mode);
-	        label.classList.toggle("disabled", eastmeshEnabled && labelMode === "both");
+	        label.classList.toggle("disabled",
+	          (bothBlocked && labelMode === "both") ||
+	          (allBlocked && labelMode !== "off")
+	        );
 	      });
 	    }
 	    function setBrokerToggle(inputId, state) {
@@ -2262,6 +2330,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      } else if (inputId === "mqttEastmeshAu") {
 	        refreshEastmeshModeUi();
 	        refreshLetsmeshModeUi();
+	      } else if (inputId === "mqttMeshcoretel") {
+	        refreshMeshcoretelModeUi();
 	      }
 	    }
     async function loadBrokerState(cmd, inputId, options = {}) {
@@ -2380,8 +2450,14 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      mqttIataSelect.addEventListener("change", refreshMqttIataWarning);
 	    }
 	    async function setEastmeshMode(enabled) {
-	      if (enabled && getLetsmeshMode() === "both") {
-	        await setLetsmeshMode("eu");
+	      if (enabled) {
+	        if (getLetsmeshMode() === "both") {
+	          await setLetsmeshMode("eu");
+	        }
+	        const meshcoretel = document.getElementById("mqttMeshcoretel");
+	        if (meshcoretel && meshcoretel.checked && getLetsmeshMode() !== "off") {
+	          await setLetsmeshMode("off");
+	        }
 	      }
 	      const result = await runCommand(enabled ? "set mqtt.eastmesh-au on" : "set mqtt.eastmesh-au off");
 	      if (!result.ok) {
@@ -2392,6 +2468,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      setBrokerToggle("mqttEastmeshAu", enabled ? "on" : "off");
 	      refreshEastmeshModeUi();
 	      refreshLetsmeshModeUi();
+	      refreshMeshcoretelModeUi();
 	    }
 	    const eastmeshModeSlider = document.getElementById("mqttEastmeshMode");
 	    if (eastmeshModeSlider) {
@@ -2404,9 +2481,22 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    }
 	    async function setLetsmeshMode(mode) {
 	      const eastmesh = document.getElementById("mqttEastmeshAu");
-	      if (mode === "both" && eastmesh && eastmesh.checked) {
-	        refreshLetsmeshModeUi();
-	        return;
+	      const eastmeshEnabled = !!(eastmesh && eastmesh.checked);
+	      const meshcoretel = document.getElementById("mqttMeshcoretel");
+	      const meshcoretelEnabled = !!(meshcoretel && meshcoretel.checked);
+	      if (mode === "both") {
+	        if (eastmeshEnabled) {
+	          refreshLetsmeshModeUi();
+	          return;
+	        }
+	        if (meshcoretelEnabled) {
+	          refreshLetsmeshModeUi();
+	          return;
+	        }
+	      }
+	      if (mode !== "off" && meshcoretelEnabled && eastmeshEnabled) {
+	          refreshLetsmeshModeUi();
+	          return;
 	      }
 	      const desired = {
 	        eu: mode === "eu" || mode === "both",
@@ -2438,6 +2528,49 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        const modes = ["off", "eu", "us", "both"];
 	        const index = clampLetsmeshModeIndex(Number.parseInt(letsmeshModeSlider.value, 10) || 0);
 	        setLetsmeshMode(modes[index] || "off");
+	      });
+	    }
+	    function refreshMeshcoretelModeUi() {
+	      const input = document.getElementById("mqttMeshcoretel");
+	      const enabled = !!(input && input.checked);
+	      const slider = document.getElementById("mqttMeshcoretelMode");
+	      if (slider) slider.value = enabled ? "1" : "0";
+	      const state = document.getElementById("mqttMeshcoretelState");
+	      if (state) {
+	        state.textContent = enabled ? "On" : "Off";
+	        state.classList.toggle("on", enabled);
+	      }
+	      document.querySelectorAll("[data-meshcoretel-label]").forEach((label) => {
+	        label.classList.toggle("active", label.dataset.meshcoretelLabel === (enabled ? "on" : "off"));
+	      });
+	    }
+	    async function setMeshcoretelMode(enabled) {
+	      if (enabled) {
+	        if (getLetsmeshMode() === "both") {
+	          await setLetsmeshMode("eu");
+	        }
+	        const eastmesh = document.getElementById("mqttEastmeshAu");
+	        if (eastmesh && eastmesh.checked && getLetsmeshMode() !== "off") {
+	          await setLetsmeshMode("off");
+	        }
+	      }
+	      const result = await runCommand(enabled ? "set mqtt.meshcoretel on" : "set mqtt.meshcoretel off");
+	      if (!result.ok) {
+	        refreshMeshcoretelModeUi();
+	        return;
+	      }
+	      setBrokerToggle("mqttMeshcoretel", enabled ? "on" : "off");
+	      refreshMeshcoretelModeUi();
+	      refreshLetsmeshModeUi();
+	      refreshEastmeshModeUi();
+	    }
+	    const meshcoretelModeSlider = document.getElementById("mqttMeshcoretelMode");
+	    if (meshcoretelModeSlider) {
+	      meshcoretelModeSlider.addEventListener("input", () => {
+	        meshcoretelModeSlider.value = (Number.parseInt(meshcoretelModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
+	      });
+	      meshcoretelModeSlider.addEventListener("change", () => {
+	        setMeshcoretelMode((Number.parseInt(meshcoretelModeSlider.value, 10) || 0) >= 1);
 	      });
 	    }
 	    document.getElementById("saveOwnerInfo").onclick = () => {
@@ -2568,7 +2701,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get mqtt.email", "mqttEmail", null, quiet),
           () => loadBrokerState("get mqtt.eastmesh-au", "mqttEastmeshAu", quiet),
           () => loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu", quiet),
-          () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet)
+          () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet),
+          () => loadBrokerState("get mqtt.meshcoretel", "mqttMeshcoretel", quiet)
         ]);
         statusEl.textContent = "Ready";
       } catch (error) {
@@ -2581,6 +2715,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    }
 	    refreshEastmeshModeUi();
 	    refreshLetsmeshModeUi();
+	    refreshMeshcoretelModeUi();
 	    initApp();
   </script>
 </body>

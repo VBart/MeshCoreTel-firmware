@@ -14,7 +14,7 @@ These commands are available on `*_repeater_mqtt` firmware targets.
 - `get mqtt.statuscfg`: shows whether periodic status messages are enabled as a simple `on` or `off` value. Most users can just use `get mqtt.status`.
 - `get mqtt.client_version`: shows the MQTT `client_version` string published by the repeater.
 - `get mqtt.iata`: shows the IATA/location code used in MQTT topics.
-- `set mqtt.iata <code>`: sets the IATA/location code, for example `MEL`.
+- `set mqtt.iata <code>`: sets the IATA/location code, for example `MOW`.
 - `set mqtt.iata UNSET`: marks MQTT IATA as not configured yet. While it is `UNSET`, enabled MQTT brokers stay disconnected until a real code is saved.
 
 ### MQTT Identity
@@ -38,6 +38,9 @@ These commands are available on `*_repeater_mqtt` firmware targets.
 
 ### MQTT Endpoints
 
+- `set mqtt.meshcoretel on|off`
+- `get mqtt.meshcoretel`
+- `set mqtt.letsmesh-us on|off`
 - `get mqtt.eastmesh-au`
 - `set mqtt.eastmesh-au on|off`
 - `get mqtt.letsmesh-eu`
@@ -49,7 +52,7 @@ Notes:
 
 - new repeater MQTT installs default `mqtt.iata` to `UNSET`
 - `letsmesh-eu` and `letsmesh-us` remain off by default unless already configured in saved prefs
-- if `mqtt.iata` is `UNSET`, `eastmesh-au`, `letsmesh-eu`, and `letsmesh-us` will not connect even if they are toggled on
+- if `mqtt.iata` is `UNSET`, `meshcoretel`, `eastmesh-au`, `letsmesh-eu`, and `letsmesh-us` will not connect even if they are toggled on
 
 Legacy dotted aliases are also accepted:
 
