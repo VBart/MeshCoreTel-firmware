@@ -854,71 +854,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
                 <option value="VSG">VSG - Lugansk</option>
                 <option value="VVO">VVO - Vladivostok</option>
               </optgroup>
-              <optgroup label="France">
-                <option value="CHR">CHR - Chateauroux</option>
-              </optgroup>
-              <optgroup label="ACT">
-                <option value="CBR">CBR - Canberra</option>
-              </optgroup>
-              <optgroup label="New South Wales">
-                <option value="ABX">ABX - Albury</option>
-                <option value="ARM">ARM - Armidale</option>
-                <option value="BHQ">BHQ - Broken Hill</option>
-                <option value="BNK">BNK - Ballina</option>
-                <option value="CFS">CFS - Coffs Harbour</option>
-                <option value="DBO">DBO - Dubbo</option>
-                <option value="GFF">GFF - Griffith</option>
-                <option value="GFN">GFN - Grafton</option>
-                <option value="LDH">LDH - Lord Howe Island</option>
-                <option value="LSY">LSY - Lismore</option>
-                <option value="MIM">MIM - Merimbula</option>
-                <option value="MRZ">MRZ - Moree</option>
-                <option value="MYA">MYA - Moruya</option>
-                <option value="NTL">NTL - Newcastle</option>
-                <option value="OAG">OAG - Orange</option>
-                <option value="PQQ">PQQ - Port Macquarie</option>
-                <option value="SYD">SYD - Sydney</option>
-                <option value="WGA">WGA - Wagga Wagga</option>
-              </optgroup>
-              <optgroup label="Queensland">
-                <option value="ABM">ABM - Bamaga</option>
-                <option value="BNE">BNE - Brisbane</option>
-                <option value="CNS">CNS - Cairns</option>
-                <option value="HTI">HTI - Hamilton Island</option>
-                <option value="HVB">HVB - Hervey Bay</option>
-                <option value="ISA">ISA - Mount Isa</option>
-                <option value="LRE">LRE - Longreach</option>
-                <option value="MCY">MCY - Sunshine Coast</option>
-                <option value="MKY">MKY - Mackay</option>
-                <option value="OOL">OOL - Gold Coast</option>
-                <option value="PPP">PPP - Proserpine</option>
-                <option value="ROK">ROK - Rockhampton</option>
-                <option value="TSV">TSV - Townsville</option>
-                <option value="WEI">WEI - Weipa</option>
-                <option value="WTB">WTB - Toowoomba Wellcamp</option>
-              </optgroup>
-              <optgroup label="South Australia">
-                <option value="ADL">ADL - Adelaide</option>
-                <option value="KGC">KGC - Kingscote</option>
-                <option value="MGB">MGB - Mount Gambier</option>
-                <option value="PLO">PLO - Port Lincoln</option>
-                <option value="WYA">WYA - Whyalla</option>
-              </optgroup>
-              <optgroup label="Tasmania">
-                <option value="BWT">BWT - Burnie</option>
-                <option value="DPO">DPO - Devonport</option>
-                <option value="FLS">FLS - Flinders Island</option>
-                <option value="HBA">HBA - Hobart</option>
-                <option value="KNS">KNS - King Island</option>
-                <option value="LST">LST - Launceston</option>
-              </optgroup>
-              <optgroup label="Victoria">
-                <option value="AVV">AVV - Avalon</option>
-                <option value="GEX">GEX - Geelong West</option>
-                <option value="MEB">MEB - Essendon Fields</option>
-                <option value="MEL">MEL - Melbourne</option>
-                <option value="MQL">MQL - Mildura</option>
-              </optgroup>
             </select>
             <button class="iconbtn" data-load-cmd="get mqtt.iata" data-load-input="mqttIata" title="Refresh MQTT IATA">&#8635;</button>
             <button class="savebtn" data-prefix="set mqtt.iata " data-input="mqttIata">Save</button>
@@ -942,15 +877,15 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        </div>
 	        <div class="field-card">
 	          <label class="label">MQTT Servers</label>
-	          <div class="broker-stack" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
+	          <div class="broker-stack">
 	            <div class="broker-group">
-	              <div class="broker-group-title">Meshcoretel</div>
+	              <div class="broker-group-title">MeshCoreTel</div>
 	              <div class="broker-grid single">
 	                <div class="broker-card">
 	                  <div class="broker-mode">
 	                    <div class="broker-row">
 	                      <div class="broker-copy">
-	                        <div class="broker-title">Meshcoretel RU</div>
+	                        <div class="broker-title">MeshCoreTel RU</div>
 	                        <div class="broker-state" id="mqttMeshcoretelState">Off</div>
 	                      </div>
 	                    </div>
@@ -962,29 +897,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	                      </div>
 	                    </div>
 	                    <input id="mqttMeshcoretel" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
-	                  </div>
-	                </div>
-	              </div>
-	            </div>
-	            <div class="broker-group">
-	              <div class="broker-group-title">EastMesh</div>
-		              <div class="broker-grid single">
-	                <div class="broker-card">
-	                  <div class="broker-mode">
-	                    <div class="broker-row">
-	                      <div class="broker-copy">
-	                        <div class="broker-title">EastMesh AU</div>
-	                        <div class="broker-state" id="mqttEastmeshAuState">Off</div>
-	                      </div>
-	                    </div>
-	                    <div class="mode-slider">
-	                      <input id="mqttEastmeshMode" type="range" min="0" max="1" step="1" value="0" aria-label="EastMesh mode">
-	                      <div class="mode-labels two" aria-hidden="true">
-	                        <div class="mode-label" data-eastmesh-label="off">Off</div>
-	                        <div class="mode-label" data-eastmesh-label="on">On</div>
-	                      </div>
-	                    </div>
-	                    <input id="mqttEastmeshAu" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
 	                  </div>
 	                </div>
 	              </div>
@@ -1731,12 +1643,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       const renderNeighbourId = (neighbour) => {
         const shortId = escapeHtml(neighbour.id || "--");
-        const fullId = typeof neighbour.full_id === "string" ? neighbour.full_id.trim() : "";
-        if (!/^[0-9A-Fa-f]{64}$/.test(fullId)) {
-          return shortId;
-        }
-        const href = "https://core.eastmesh.au/#/nodes/" + encodeURIComponent(fullId.toLowerCase());
-        return `<a href="${href}" target="_blank" rel="noopener noreferrer">${shortId}</a>`;
+        return shortId;
       };
       const rows = neighbours.map((neighbour) => `<tr>
         <td>${renderNeighbourId(neighbour)}</td>
@@ -2126,7 +2033,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       if (inlineWarning) {
         inlineWarning.textContent = showWarning
-          ? "MQTT IATA is unset. Set it before enabling any MQTT brokers."
+          ? "MQTT IATA is unset. Set it before enabling MeshCoreTel or LetsMesh brokers."
           : "";
       }
     }
@@ -2257,15 +2164,15 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (usOn) return "us";
 	      return "off";
 	    }
-	    function refreshEastmeshModeUi() {
-	      const input = document.getElementById("mqttEastmeshAu");
+	    function refreshMeshcoretelModeUi() {
+	      const input = document.getElementById("mqttMeshcoretel");
 	      const enabled = !!(input && input.checked);
-	      const slider = document.getElementById("mqttEastmeshMode");
+	      const slider = document.getElementById("mqttMeshcoretelMode");
 	      if (slider) {
 	        slider.value = enabled ? "1" : "0";
 	      }
-	      document.querySelectorAll("[data-eastmesh-label]").forEach((label) => {
-	        label.classList.toggle("active", label.dataset.eastmeshLabel === (enabled ? "on" : "off"));
+	      document.querySelectorAll("[data-meshcoretel-label]").forEach((label) => {
+	        label.classList.toggle("active", label.dataset.meshcoretelLabel === (enabled ? "on" : "off"));
 	      });
 	    }
 	    function getLetsmeshModeIndex(mode) {
@@ -2273,27 +2180,15 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      return Object.prototype.hasOwnProperty.call(order, mode) ? order[mode] : 0;
 	    }
 	    function clampLetsmeshModeIndex(index) {
-	      const eastmesh = document.getElementById("mqttEastmeshAu");
-	      const eastmeshEnabled = !!(eastmesh && eastmesh.checked);
 	      const meshcoretel = document.getElementById("mqttMeshcoretel");
 	      const meshcoretelEnabled = !!(meshcoretel && meshcoretel.checked);
 	      const bounded = Math.max(0, Math.min(3, index));
-	      if ((eastmeshEnabled || meshcoretelEnabled) && bounded === 3) {
-	        return 1;
-	      }
-	      if (eastmeshEnabled && meshcoretelEnabled && bounded > 0) {
-	        return 0;
-	      }
-	      return bounded;
+	      return meshcoretelEnabled && bounded === 3 ? 1 : bounded;
 	    }
 	    function refreshLetsmeshModeUi() {
 	      const mode = getLetsmeshMode();
-	      const eastmesh = document.getElementById("mqttEastmeshAu");
-	      const eastmeshEnabled = !!(eastmesh && eastmesh.checked);
 	      const meshcoretel = document.getElementById("mqttMeshcoretel");
 	      const meshcoretelEnabled = !!(meshcoretel && meshcoretel.checked);
-	      const bothBlocked = eastmeshEnabled || meshcoretelEnabled;
-	      const allBlocked = eastmeshEnabled && meshcoretelEnabled;
 	      const state = document.getElementById("mqttLetsmeshModeState");
 	      const labels = { off:"Off", eu:"EU", us:"US", both:"Both" };
 	      if (state) {
@@ -2304,15 +2199,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (slider) {
 	        slider.max = "3";
 	        slider.value = String(clampLetsmeshModeIndex(getLetsmeshModeIndex(mode)));
-	        slider.disabled = allBlocked;
 	      }
 	      document.querySelectorAll("[data-letsmesh-label]").forEach((label) => {
 	        const labelMode = label.dataset.letsmeshLabel;
 	        label.classList.toggle("active", labelMode === mode);
-	        label.classList.toggle("disabled",
-	          (bothBlocked && labelMode === "both") ||
-	          (allBlocked && labelMode !== "off")
-	        );
+	        label.classList.toggle("disabled", meshcoretelEnabled && labelMode === "both");
 	      });
 	    }
 	    function setBrokerToggle(inputId, state) {
@@ -2327,11 +2218,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      }
 	      if (inputId === "mqttLetsmeshEu" || inputId === "mqttLetsmeshUs") {
 	        refreshLetsmeshModeUi();
-	      } else if (inputId === "mqttEastmeshAu") {
-	        refreshEastmeshModeUi();
-	        refreshLetsmeshModeUi();
 	      } else if (inputId === "mqttMeshcoretel") {
 	        refreshMeshcoretelModeUi();
+	        refreshLetsmeshModeUi();
 	      }
 	    }
     async function loadBrokerState(cmd, inputId, options = {}) {
@@ -2449,54 +2338,34 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	    if (mqttIataSelect) {
 	      mqttIataSelect.addEventListener("change", refreshMqttIataWarning);
 	    }
-	    async function setEastmeshMode(enabled) {
-	      if (enabled) {
-	        if (getLetsmeshMode() === "both") {
-	          await setLetsmeshMode("eu");
-	        }
-	        const meshcoretel = document.getElementById("mqttMeshcoretel");
-	        if (meshcoretel && meshcoretel.checked && getLetsmeshMode() !== "off") {
-	          await setLetsmeshMode("off");
-	        }
+	    async function setMeshcoretelMode(enabled) {
+	      if (enabled && getLetsmeshMode() === "both") {
+	        await setLetsmeshMode("eu");
 	      }
-	      const result = await runCommand(enabled ? "set mqtt.eastmesh-au on" : "set mqtt.eastmesh-au off");
+	      const result = await runCommand(enabled ? "set mqtt.meshcoretel on" : "set mqtt.meshcoretel off");
 	      if (!result.ok) {
-	        refreshEastmeshModeUi();
+	        refreshMeshcoretelModeUi();
 	        refreshLetsmeshModeUi();
 	        return;
 	      }
-	      setBrokerToggle("mqttEastmeshAu", enabled ? "on" : "off");
-	      refreshEastmeshModeUi();
-	      refreshLetsmeshModeUi();
+	      setBrokerToggle("mqttMeshcoretel", enabled ? "on" : "off");
 	      refreshMeshcoretelModeUi();
+	      refreshLetsmeshModeUi();
 	    }
-	    const eastmeshModeSlider = document.getElementById("mqttEastmeshMode");
-	    if (eastmeshModeSlider) {
-	      eastmeshModeSlider.addEventListener("input", () => {
-	        eastmeshModeSlider.value = (Number.parseInt(eastmeshModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
+	    const meshcoretelModeSlider = document.getElementById("mqttMeshcoretelMode");
+	    if (meshcoretelModeSlider) {
+	      meshcoretelModeSlider.addEventListener("input", () => {
+	        meshcoretelModeSlider.value = (Number.parseInt(meshcoretelModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
 	      });
-	      eastmeshModeSlider.addEventListener("change", () => {
-	        setEastmeshMode((Number.parseInt(eastmeshModeSlider.value, 10) || 0) >= 1);
+	      meshcoretelModeSlider.addEventListener("change", () => {
+	        setMeshcoretelMode((Number.parseInt(meshcoretelModeSlider.value, 10) || 0) >= 1);
 	      });
 	    }
 	    async function setLetsmeshMode(mode) {
-	      const eastmesh = document.getElementById("mqttEastmeshAu");
-	      const eastmeshEnabled = !!(eastmesh && eastmesh.checked);
 	      const meshcoretel = document.getElementById("mqttMeshcoretel");
-	      const meshcoretelEnabled = !!(meshcoretel && meshcoretel.checked);
-	      if (mode === "both") {
-	        if (eastmeshEnabled) {
-	          refreshLetsmeshModeUi();
-	          return;
-	        }
-	        if (meshcoretelEnabled) {
-	          refreshLetsmeshModeUi();
-	          return;
-	        }
-	      }
-	      if (mode !== "off" && meshcoretelEnabled && eastmeshEnabled) {
-	          refreshLetsmeshModeUi();
-	          return;
+	      if (mode === "both" && meshcoretel && meshcoretel.checked) {
+	        refreshLetsmeshModeUi();
+	        return;
 	      }
 	      const desired = {
 	        eu: mode === "eu" || mode === "both",
@@ -2528,49 +2397,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        const modes = ["off", "eu", "us", "both"];
 	        const index = clampLetsmeshModeIndex(Number.parseInt(letsmeshModeSlider.value, 10) || 0);
 	        setLetsmeshMode(modes[index] || "off");
-	      });
-	    }
-	    function refreshMeshcoretelModeUi() {
-	      const input = document.getElementById("mqttMeshcoretel");
-	      const enabled = !!(input && input.checked);
-	      const slider = document.getElementById("mqttMeshcoretelMode");
-	      if (slider) slider.value = enabled ? "1" : "0";
-	      const state = document.getElementById("mqttMeshcoretelState");
-	      if (state) {
-	        state.textContent = enabled ? "On" : "Off";
-	        state.classList.toggle("on", enabled);
-	      }
-	      document.querySelectorAll("[data-meshcoretel-label]").forEach((label) => {
-	        label.classList.toggle("active", label.dataset.meshcoretelLabel === (enabled ? "on" : "off"));
-	      });
-	    }
-	    async function setMeshcoretelMode(enabled) {
-	      if (enabled) {
-	        if (getLetsmeshMode() === "both") {
-	          await setLetsmeshMode("eu");
-	        }
-	        const eastmesh = document.getElementById("mqttEastmeshAu");
-	        if (eastmesh && eastmesh.checked && getLetsmeshMode() !== "off") {
-	          await setLetsmeshMode("off");
-	        }
-	      }
-	      const result = await runCommand(enabled ? "set mqtt.meshcoretel on" : "set mqtt.meshcoretel off");
-	      if (!result.ok) {
-	        refreshMeshcoretelModeUi();
-	        return;
-	      }
-	      setBrokerToggle("mqttMeshcoretel", enabled ? "on" : "off");
-	      refreshMeshcoretelModeUi();
-	      refreshLetsmeshModeUi();
-	      refreshEastmeshModeUi();
-	    }
-	    const meshcoretelModeSlider = document.getElementById("mqttMeshcoretelMode");
-	    if (meshcoretelModeSlider) {
-	      meshcoretelModeSlider.addEventListener("input", () => {
-	        meshcoretelModeSlider.value = (Number.parseInt(meshcoretelModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
-	      });
-	      meshcoretelModeSlider.addEventListener("change", () => {
-	        setMeshcoretelMode((Number.parseInt(meshcoretelModeSlider.value, 10) || 0) >= 1);
 	      });
 	    }
 	    document.getElementById("saveOwnerInfo").onclick = () => {
@@ -2699,10 +2525,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get mqtt.iata", "mqttIata", null, quiet),
           () => loadField("get mqtt.owner", "mqttOwner", null, quiet),
           () => loadField("get mqtt.email", "mqttEmail", null, quiet),
-          () => loadBrokerState("get mqtt.eastmesh-au", "mqttEastmeshAu", quiet),
+          () => loadBrokerState("get mqtt.meshcoretel", "mqttMeshcoretel", quiet),
           () => loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu", quiet),
-          () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet),
-          () => loadBrokerState("get mqtt.meshcoretel", "mqttMeshcoretel", quiet)
+          () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet)
         ]);
         statusEl.textContent = "Ready";
       } catch (error) {
@@ -2713,9 +2538,8 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       loadRadioPresets();
 	    }
-	    refreshEastmeshModeUi();
-	    refreshLetsmeshModeUi();
 	    refreshMeshcoretelModeUi();
+	    refreshLetsmeshModeUi();
 	    initApp();
   </script>
 </body>

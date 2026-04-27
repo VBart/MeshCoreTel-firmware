@@ -1,6 +1,6 @@
 # Custom CLI Commands
 
-This page covers the EastMesh-specific CLI commands added in this repository.
+This page covers the MeshCoreTel-specific CLI commands added in this repository.
 
 It does not try to repeat the full upstream MeshCore CLI surface.
 
@@ -38,11 +38,8 @@ These commands are available on `*_repeater_mqtt` firmware targets.
 
 ### MQTT Endpoints
 
-- `set mqtt.meshcoretel on|off`
 - `get mqtt.meshcoretel`
-- `set mqtt.letsmesh-us on|off`
-- `get mqtt.eastmesh-au`
-- `set mqtt.eastmesh-au on|off`
+- `set mqtt.meshcoretel on|off`
 - `get mqtt.letsmesh-eu`
 - `set mqtt.letsmesh-eu on|off`
 - `get mqtt.letsmesh-us`
@@ -52,11 +49,10 @@ Notes:
 
 - new repeater MQTT installs default `mqtt.iata` to `UNSET`
 - `letsmesh-eu` and `letsmesh-us` remain off by default unless already configured in saved prefs
-- if `mqtt.iata` is `UNSET`, `meshcoretel`, `eastmesh-au`, `letsmesh-eu`, and `letsmesh-us` will not connect even if they are toggled on
+- if `mqtt.iata` is `UNSET`, `meshcoretel`, `letsmesh-eu`, and `letsmesh-us` will not connect even if they are toggled on
 
 Legacy dotted aliases are also accepted:
 
-- `mqtt.eastmesh.au`
 - `mqtt.letsmesh.eu`
 - `mqtt.letsmesh.us`
 

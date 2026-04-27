@@ -110,15 +110,14 @@ private:
   NetworkStateProvider* _network;
 
 #if defined(ESP_PLATFORM)
-  static constexpr uint8_t kEastmeshBit = 0x01;
+  static constexpr uint8_t kMeshcoretelBit = 0x01;
   static constexpr uint8_t kLetsmeshEuBit = 0x02;
   static constexpr uint8_t kLetsmeshUsBit = 0x04;
-  static constexpr uint8_t kMeshcoretelBit = 0x08;
   static constexpr uint8_t kMaxEnabledBrokers = 2;
-  static const BrokerSpec kBrokerSpecs[4];
+  static const BrokerSpec kBrokerSpecs[3];
   static bool isUnsetIataValue(const char* iata);
 
-  BrokerState _brokers[4];
+  BrokerState _brokers[3];
 
   static void handleMqttEvent(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
   bool hasEnabledBroker() const;
