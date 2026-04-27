@@ -350,6 +350,35 @@ void MQTTUplink::destroyBroker(BrokerState& broker, bool reset_retry_state) {
   if (broker.client != nullptr) {
     MQTT_LOG("%s destroy broker client", broker.spec->label);
     esp_mqtt_client_stop(broker.client);
+#if ESP_IDF_VERSION_MAJOR < 5
+    /*
+     * Workaround for an ESP-IDF v4 bug: when the MQTT transport fails
+     * during the WebSocket handshake (before a full connection is
+     * established), the transport teardown path writes only 3 of the 4
+     * bytes of the heap block tail canary (0xbaad5678), leaving the last
+     * byte as 0x00 (i.e. 0xbaad5600).  The subsequent call to
+     * esp_mqtt_client_destroy() frees that block, which causes
+     * multi_heap_free() to detect the broken canary and abort.
+     *
+     * The fix scans internal SRAM for any occurrence of the truncated
+     * canary and restores it to the correct value before destroy() runs.
+     * The scan is gated on heap_caps_check_integrity_all() so it is a
+     * no-op when the heap is clean, and it is compiled out entirely on
+     * IDF v5+ where the bug does not exist.
+     */
+    if (!heap_caps_check_integrity_all(false)) {
+      int fixed = 0;
+      for (uint32_t* p = (uint32_t*)0x3FC00000;
+                     p < (uint32_t*)0x3FD00000; ++p)
+      {
+        if (*p == 0xbaad5600u) {
+            *p = 0xbaad5678u;
+            ++fixed;
+        }
+      }
+      MQTT_LOG("heap canary repair: fixed=%d", fixed);
+    }
+#endif
     esp_mqtt_client_destroy(broker.client);
     broker.client = nullptr;
   }
