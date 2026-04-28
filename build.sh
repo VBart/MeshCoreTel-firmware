@@ -164,15 +164,15 @@ build_firmware() {
   fi
 
   # set artifact version string
-  # e.g: v1.2.3-eastmesh-v1.0.1-abcdef
+  # e.g: v1.2.3-meshcoretel-v1.0.1-abcdef
   FIRMWARE_VERSION_BASE="${FIRMWARE_VERSION}"
-  if [ -n "$EASTMESH_VERSION" ]; then
-    FIRMWARE_VERSION_BASE="${FIRMWARE_VERSION_BASE}-eastmesh-${EASTMESH_VERSION}"
+  if [ -n "$MESHCORETEL_VERSION" ]; then
+    FIRMWARE_VERSION_BASE="${FIRMWARE_VERSION_BASE}-vbart-meshcoretel-${MESHCORETEL_VERSION}"
   fi
   FIRMWARE_VERSION_STRING="${FIRMWARE_VERSION_BASE}-${COMMIT_HASH}"
-  CLIENT_VERSION_STRING="eastmesh-${COMMIT_HASH}"
-  if [ -n "$EASTMESH_VERSION" ]; then
-    CLIENT_VERSION_STRING="eastmesh-${EASTMESH_VERSION}-${COMMIT_HASH}"
+  CLIENT_VERSION_STRING="meshcoretel-${COMMIT_HASH}"
+  if [ -n "$MESHCORETEL_VERSION" ]; then
+    CLIENT_VERSION_STRING="vbart-meshcoretel-${MESHCORETEL_VERSION}-${COMMIT_HASH}"
   fi
 
   # craft filename
@@ -180,7 +180,7 @@ build_firmware() {
   FIRMWARE_FILENAME="$1-${FIRMWARE_VERSION_STRING}"
 
   # add build metadata to end of existing platformio build flags in environment vars
-  export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -DFIRMWARE_BUILD_DATE='\"${FIRMWARE_BUILD_DATE}\"' -DFIRMWARE_VERSION='\"${FIRMWARE_VERSION}\"' -DCLIENT_VERSION='\"${CLIENT_VERSION_STRING}\"'"
+  export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -DFIRMWARE_BUILD_DATE='\"${FIRMWARE_BUILD_DATE}\"' -DFIRMWARE_VERSION='\"${FIRMWARE_VERSION_STRING}\"' -DCLIENT_VERSION='\"${CLIENT_VERSION_STRING}\"'"
 
   # disable debug flags if requested
   disable_debug_flags
