@@ -1,4 +1,4 @@
-# Прошивка MeshCore-репитеров с MQTT и веб-панелью
+# Прошивка MeshCore-репитеров с веб-панелью и MQTT
 
 Это форк прошивки [MeshCore-EastMesh](https://github.com/meshcore-dev/MeshCore), в котором поддержка австралийского сервиса телеметрии EastMesh AU заменена на поддержку сервиса [MeshCoreTel](https://meshcoretel.ru/), а также выполнен ряд других доработок и адаптация.
 
