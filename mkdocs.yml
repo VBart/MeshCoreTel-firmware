@@ -8,8 +8,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  logo: _assets/xjarid.svg
-  favicon: _assets/xjarid.svg
+  logo: _assets/vbart.svg
+  favicon: _assets/vbart.svg
   features:
     - content.action.edit
     - content.code.copy
