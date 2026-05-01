@@ -319,7 +319,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+      <a href="../migration.md" class="md-nav__link">
         
   
   
@@ -1001,7 +1001,7 @@
 
 
 <h1 id="repeater-web-api">Repeater Web API<a class="headerlink" href="#repeater-web-api" title="Permanent link">&para;</a></h1>
-<p>This page documents the local HTTPS API exposed by EastMesh <code>*_repeater_mqtt</code> builds that support the web panel.</p>
+<p>This page documents the local HTTPS API exposed by MeshCoreTel-firmware <code>*_repeater_mqtt</code> builds that support the web panel.</p>
 <p>It is intended for:</p>
 <ul>
 <li>lightweight automation on your local network</li>
@@ -1046,7 +1046,7 @@
 </ul>
 <h2 id="performance-guidance">Performance Guidance<a class="headerlink" href="#performance-guidance" title="Permanent link">&para;</a></h2>
 <p>The API runs on the repeater itself, so polling frequency matters.</p>
-<p>If the repeater is also running two MQTT connections, avoid frequent API polling. The current EastMesh usage pattern is:</p>
+<p>If the repeater is also running two MQTT connections, avoid frequent API polling. The current MeshCoreTel-firmware usage pattern is:</p>
 <ul>
 <li><code>60</code> second polling for stats</li>
 <li>on-demand requests for everything else</li>
@@ -1207,12 +1207,12 @@
 </span></code></pre></div>
 <h3 id="5-remote-configuration-helpers">5. Remote Configuration Helpers<a class="headerlink" href="#5-remote-configuration-helpers" title="Permanent link">&para;</a></h3>
 <p>The web panel saves settings by generating CLI commands and sending them through <code>/api/command</code>.</p>
-<p>That means your own tools can do the same for EastMesh-specific settings such as:</p>
+<p>That means your own tools can do the same for MeshCoreTel-firmware specific settings such as:</p>
 <ul>
 <li>repeater identity fields</li>
 <li>owner info</li>
 <li>MQTT broker toggles</li>
-<li>EastMesh MQTT owner metadata</li>
+<li>MQTT owner metadata</li>
 <li>radio settings supported by the repeater CLI</li>
 </ul>
 <p>This is a practical way to automate setup while preserving existing CLI semantics.</p>

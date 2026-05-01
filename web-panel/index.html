@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://xjarid.github.io/MeshCore-EastMesh/web-panel/">
       
       
-        <link rel="prev" href="../migration/">
+        <link rel="prev" href="../migration.md">
       
       
         <link rel="next" href="../api/">
@@ -319,7 +319,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+      <a href="../migration.md" class="md-nav__link">
         
   
   
@@ -1389,7 +1389,7 @@
 
 
 <h1 id="repeater-web-panel">Repeater Web Panel<a class="headerlink" href="#repeater-web-panel" title="Permanent link">&para;</a></h1>
-<p>This page is for end users running an EastMesh <code>*_repeater_mqtt</code> build with the local web panel enabled.</p>
+<p>This page is for end users running an MeshCoreTel-firmware <code>*_repeater_mqtt</code> build with the local web panel enabled.</p>
 <p>It covers how to reach the panel, what each section does, and what to expect when using it on desktop or mobile.</p>
 <h2 id="what-it-is">What It Is<a class="headerlink" href="#what-it-is" title="Permanent link">&para;</a></h2>
 <p>The repeater web panel is a local HTTPS configuration page served directly by the repeater over WiFi.</p>
@@ -1561,7 +1561,7 @@
 <li><code>mqtt.iata</code>: selected from a curated east-coast/south-east list.</li>
 <li><code>mqtt.owner</code>: owner public key.</li>
 <li><code>mqtt.email</code>: owner contact email.</li>
-<li>MQTT server toggles: <code>eastmesh-au</code>, <code>letsmesh-eu</code>, and <code>letsmesh-us</code>.</li>
+<li>MQTT server toggles: <code>meshcoretel</code>, <code>letsmesh-eu</code>, and <code>letsmesh-us</code>.</li>
 </ul>
 <p><code>UNSET - To be configured</code> is the default for new repeater MQTT installs until a real saved value exists.</p>
 <p>Notes:</p>
@@ -1636,7 +1636,7 @@
 </tbody>
 </table>
 <p>On boards with roughly <code>2 MB</code> PSRAM or more, stats history starts capturing from boot when <code>web.stats</code> is enabled, even if <code>/stats</code> has not been opened yet.</p>
-<p>Archive-backed restore requires <code>web.stats</code> enabled plus a mounted SD card on boards that support the EastMesh archive path.</p>
+<p>Archive-backed restore requires <code>web.stats</code> enabled plus a mounted SD card on boards that support the MeshCoreTel-firmware archive path.</p>
 <p>The main purpose of the SD card is to let the repeater retain and restore stats history for <code>/stats</code>. The archive keeps fast <code>.latest</code> snapshot files for quick restore and UTC-dated daily <code>.log</code> files for longer-term history. As a secondary option, those files can also be removed and inspected on a computer for deeper manual review.</p>
 <p>On no-PSRAM boards, <code>/stats</code> can still show recent graphs while the stats view is active, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.</p>
 <p>Useful CLI commands:</p>
@@ -1682,7 +1682,6 @@
 <li>The local HTTP redirect listener on port <code>80</code> is released so OTA can take over that port.</li>
 <li>Continue with your normal OTA workflow.</li>
 </ol>
-<p>If an older build sends you through a strange redirect after <code>start ota</code>, use the web <code>Start OTA</code> button to begin the upgrade. This redirect issue is fixed in <code>repeater-mqtt-eastmesh-v1.3.11</code>.</p>
 <h3 id="use-historical-stats">Use Historical Stats<a class="headerlink" href="#use-historical-stats" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Enable stats if needed with <code>set web.stats on</code>.</li>

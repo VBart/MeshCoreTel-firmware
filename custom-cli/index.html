@@ -317,7 +317,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+      <a href="../migration.md" class="md-nav__link">
         
   
   
@@ -833,7 +833,7 @@
 
 
 <h1 id="custom-cli-commands">Custom CLI Commands<a class="headerlink" href="#custom-cli-commands" title="Permanent link">&para;</a></h1>
-<p>This page covers the EastMesh-specific CLI commands added in this repository.</p>
+<p>This page covers the MeshCoreTel-specific CLI commands added in this repository.</p>
 <p>It does not try to repeat the full upstream MeshCore CLI surface.</p>
 <h2 id="repeater-mqtt-commands">Repeater MQTT Commands<a class="headerlink" href="#repeater-mqtt-commands" title="Permanent link">&para;</a></h2>
 <p>These commands are available on <code>*_repeater_mqtt</code> firmware targets.</p>
@@ -843,7 +843,7 @@
 <li><code>get mqtt.statuscfg</code>: shows whether periodic status messages are enabled as a simple <code>on</code> or <code>off</code> value. Most users can just use <code>get mqtt.status</code>.</li>
 <li><code>get mqtt.client_version</code>: shows the MQTT <code>client_version</code> string published by the repeater.</li>
 <li><code>get mqtt.iata</code>: shows the IATA/location code used in MQTT topics.</li>
-<li><code>set mqtt.iata &lt;code&gt;</code>: sets the IATA/location code, for example <code>MEL</code>.</li>
+<li><code>set mqtt.iata &lt;code&gt;</code>: sets the IATA/location code, for example <code>MOW</code>.</li>
 <li><code>set mqtt.iata UNSET</code>: marks MQTT IATA as not configured yet. While it is <code>UNSET</code>, enabled MQTT brokers stay disconnected until a real code is saved.</li>
 </ul>
 <h3 id="mqtt-identity">MQTT Identity<a class="headerlink" href="#mqtt-identity" title="Permanent link">&para;</a></h3>
@@ -867,8 +867,8 @@
 </ul>
 <h3 id="mqtt-endpoints">MQTT Endpoints<a class="headerlink" href="#mqtt-endpoints" title="Permanent link">&para;</a></h3>
 <ul>
-<li><code>get mqtt.eastmesh-au</code></li>
-<li><code>set mqtt.eastmesh-au on|off</code></li>
+<li><code>get mqtt.meshcoretel</code></li>
+<li><code>set mqtt.meshcoretel on|off</code></li>
 <li><code>get mqtt.letsmesh-eu</code></li>
 <li><code>set mqtt.letsmesh-eu on|off</code></li>
 <li><code>get mqtt.letsmesh-us</code></li>
@@ -878,11 +878,10 @@
 <ul>
 <li>new repeater MQTT installs default <code>mqtt.iata</code> to <code>UNSET</code></li>
 <li><code>letsmesh-eu</code> and <code>letsmesh-us</code> remain off by default unless already configured in saved prefs</li>
-<li>if <code>mqtt.iata</code> is <code>UNSET</code>, <code>eastmesh-au</code>, <code>letsmesh-eu</code>, and <code>letsmesh-us</code> will not connect even if they are toggled on</li>
+<li>if <code>mqtt.iata</code> is <code>UNSET</code>, <code>meshcoretel</code>, <code>letsmesh-eu</code>, and <code>letsmesh-us</code> will not connect even if they are toggled on</li>
 </ul>
 <p>Legacy dotted aliases are also accepted:</p>
 <ul>
-<li><code>mqtt.eastmesh.au</code></li>
 <li><code>mqtt.letsmesh.eu</code></li>
 <li><code>mqtt.letsmesh.us</code></li>
 </ul>
