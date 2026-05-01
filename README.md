@@ -1,4 +1,4 @@
-# Прошивка для MeshCore-репитеров с MQTT и веб-панелью
+# Прошивка MeshCore-репитеров с MQTT и веб-панелью
 
 Это форк прошивки [MeshCore-EastMesh](https://github.com/meshcore-dev/MeshCore), в котором поддержка австралийского сервиса телеметрии EastMesh AU заменена на поддержку сервиса [MeshCoreTel](https://meshcoretel.ru/), а также выполнен ряд других доработок и адаптация.
 
@@ -50,12 +50,17 @@
 
 - <https://github.com/VBart/MeshCoreTel-firmware/releases>
 
-А также доступны в веб-прошивальщике от MeshCoreTel (под заголовком _Прошивки наблюдателя от VBart_):
+А также доступны в веб-прошивальщике от MeshCoreTel:
 
-- <https://meshcoretel.ru/ru/flasher>
+- <https://meshcoretel.ru/ru/flasher>  (под заголовком _Прошивки наблюдателя от VBart_)
 
 ## Документация (TODO: перевод и адаптация)
 
+Опубликованный сайт документации:
+
+- <https://vbart.github.io/MeshCoreTel-firmware/>
+
+Текущие страницы документации на GitHub:
 - [Home](./docs/index.md)
 - [Download and Flash Releases](./docs/releases.md)
 - [Build Locally With uv](./docs/local-builds.md)
