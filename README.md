@@ -1,6 +1,6 @@
 # Прошивка MeshCore-репитеров с веб-панелью и MQTT
 
-Это форк прошивки [MeshCore-EastMesh](https://github.com/meshcore-dev/MeshCore), в котором поддержка австралийского сервиса телеметрии EastMesh AU заменена на поддержку сервиса [MeshCoreTel](https://meshcoretel.ru/), а также выполнен ряд других доработок и адаптация.
+Это форк прошивки [MeshCore-EastMesh](https://github.com/xJARiD/MeshCore-EastMesh), в котором поддержка австралийского сервиса телеметрии EastMesh AU заменена на поддержку сервиса [MeshCoreTel](https://meshcoretel.ru/), а также выполнен ряд других доработок и адаптация.
 
 В остальном прошивка базируется на официальных версиях прошивок МеshCore. Благодарность Scott Powell / Ripple Radios и всем контрибьюторам MeshCore за оригинальную прошивку и основу проекта, а также Jared Dohrman за доработки, выполненные в рамках EastMesh.
 
