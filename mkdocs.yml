@@ -1,9 +1,9 @@
-site_name: MeshCore EastMesh Docs
-site_url: https://xjarid.github.io/MeshCore-EastMesh/
-site_description: Documentation for the EastMesh layer on top of MeshCore, including WiFi, MQTT, and release workflows
+site_name: MeshCoreTel-firmware Docs
+site_url: https://vbart.github.io/MeshCoreTel-firmware/
+site_description: Documentation for the MeshCoreTel-firmware layer on top of MeshCore, including WiFi, MQTT, and release workflows
 
-repo_name: xJARiD/MeshCore-EastMesh
-repo_url: https://github.com/xJARiD/MeshCore-EastMesh
+repo_name: VBart/MeshCoreTel-firmware
+repo_url: https://github.com/VBart/MeshCoreTel-firmware
 edit_uri: edit/main/docs/
 
 theme:
@@ -38,7 +38,6 @@ nav:
   - Home: index.md
   - Boards: boards.md
   - Releases: releases.md
-  - Migration: migration.md
   - Web Panel: web-panel.md
   - Repeater API: api.md
   - Local Builds: local-builds.md
