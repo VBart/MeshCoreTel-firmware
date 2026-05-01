@@ -1,8 +1,8 @@
 # Download And Flash Releases
 
-EastMesh release assets are published on:
+MeshCoreTel-firmware release assets are published on:
 
-- <https://github.com/xJARiD/MeshCore-EastMesh/releases>
+- <https://github.com/VBart/MeshCoreTel-firmware/releases>
 
 There are currently two release tracks in this repo:
 
@@ -16,8 +16,8 @@ Download the asset that matches your board and firmware type.
 Examples:
 
 - `heltec_v4_companion_radio_wifi-v1.14.1-abcdef.bin`
-- `heltec_v4_repeater_mqtt-v1.14.1-eastmesh-v1.0.1-abcdef.bin`
-- `heltec_v4_repeater_mqtt-v1.14.1-eastmesh-v1.0.1-abcdef-merged.bin`
+- `heltec_v4_repeater_mqtt-v1.14.1-vbart-meshcoretel-v1.0.1-abcdef.bin`
+- `heltec_v4_repeater_mqtt-v1.14.1-vbart-meshcoretel-v1.0.1-abcdef-merged.bin`
 
 The important part is the board/env prefix:
 
@@ -46,7 +46,7 @@ Practical rule:
 
 The recommended flasher is:
 
-- <https://flasher.eastmesh.au/>
+- <https://meshcoretel.ru/ru/flasher>
 
 It includes native support for:
 
@@ -61,9 +61,9 @@ Recommended usage:
 
 ## Beginner Setup
 
-If this is your first time flashing EastMesh firmware, the easiest path is:
+If this is your first time flashing MeshCoreTel-firmware, the easiest path is:
 
-1. Open <https://flasher.eastmesh.au/>.
+1. Open <https://meshcoretel.ru/ru/flasher>.
 2. Select the firmware type you want: `Companion WiFi`, `Repeater MQTT`, or `Custom`.
 3. Flash the correct firmware for your board.
 4. Use the built-in setup tools in the flasher site to finish first-time configuration.
@@ -106,7 +106,7 @@ This applies to:
 
 ## Repeater MQTT Notes
 
-`repeater_mqtt` builds include the EastMesh MQTT additions. Depending on the board, they may also include the local web panel.
+`repeater_mqtt` builds include the MeshCoreTel-firmware MQTT additions. Depending on the board, they may also include the local web panel.
 
 Typical first steps after flashing:
 

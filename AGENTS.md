@@ -2,7 +2,7 @@
 
 ## Purpose
 
-EastMesh layer on top of upstream MeshCore.
+MeshCoreTel-firmware layer on top of upstream MeshCore.
 
 **Default:** preserve upstream behavior.  
 Only modify code for clearly scoped EastMesh features:
@@ -97,7 +97,7 @@ Build with release-style metadata:
 
 ```bash
 export FIRMWARE_VERSION=v1.14.1
-export EASTMESH_VERSION=v1.0.1
+export MESHCORETEL_VERSION=v1.0.1
 bash build.sh build-firmware heltec_v4_repeater_mqtt
 bash build.sh build-firmware T_Beam_S3_Supreme_SX1262_repeater_mqtt
 ```
@@ -163,7 +163,7 @@ Current tag formats:
 
 ```bash
 git tag companion-wifi-v1.2.3
-git tag repeater-mqtt-eastmesh-v1.0.1
+git tag repeater-mqtt-meshcoretel-v1.0.1
 ```
 
 Rules:

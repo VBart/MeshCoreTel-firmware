@@ -1,6 +1,6 @@
 # Repeater Web API
 
-This page documents the local HTTPS API exposed by EastMesh `*_repeater_mqtt` builds that support the web panel.
+This page documents the local HTTPS API exposed by MeshCoreTel-firmware `*_repeater_mqtt` builds that support the web panel.
 
 It is intended for:
 
@@ -65,7 +65,7 @@ Notes:
 
 The API runs on the repeater itself, so polling frequency matters.
 
-If the repeater is also running two MQTT connections, avoid frequent API polling. The current EastMesh usage pattern is:
+If the repeater is also running two MQTT connections, avoid frequent API polling. The current MeshCoreTel-firmware usage pattern is:
 
 - `60` second polling for stats
 - on-demand requests for everything else
@@ -288,12 +288,12 @@ curl -sk https://<repeater-ip>/api/command \
 
 The web panel saves settings by generating CLI commands and sending them through `/api/command`.
 
-That means your own tools can do the same for EastMesh-specific settings such as:
+That means your own tools can do the same for MeshCoreTel-firmware specific settings such as:
 
 - repeater identity fields
 - owner info
 - MQTT broker toggles
-- EastMesh MQTT owner metadata
+- MQTT owner metadata
 - radio settings supported by the repeater CLI
 
 This is a practical way to automate setup while preserving existing CLI semantics.

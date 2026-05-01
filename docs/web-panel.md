@@ -1,6 +1,6 @@
 # Repeater Web Panel
 
-This page is for end users running an EastMesh `*_repeater_mqtt` build with the local web panel enabled.
+This page is for end users running an MeshCoreTel-firmware `*_repeater_mqtt` build with the local web panel enabled.
 
 It covers how to reach the panel, what each section does, and what to expect when using it on desktop or mobile.
 
@@ -205,7 +205,7 @@ This section includes:
 - `mqtt.iata`: selected from a curated east-coast/south-east list.
 - `mqtt.owner`: owner public key.
 - `mqtt.email`: owner contact email.
-- MQTT server toggles: `eastmesh-au`, `letsmesh-eu`, and `letsmesh-us`.
+- MQTT server toggles: `meshcoretel`, `letsmesh-eu`, and `letsmesh-us`.
 
 `UNSET - To be configured` is the default for new repeater MQTT installs until a real saved value exists.
 
@@ -263,7 +263,7 @@ Current in-memory history caps are:
 
 On boards with roughly `2 MB` PSRAM or more, stats history starts capturing from boot when `web.stats` is enabled, even if `/stats` has not been opened yet.
 
-Archive-backed restore requires `web.stats` enabled plus a mounted SD card on boards that support the EastMesh archive path.
+Archive-backed restore requires `web.stats` enabled plus a mounted SD card on boards that support the MeshCoreTel-firmware archive path.
 
 The main purpose of the SD card is to let the repeater retain and restore stats history for `/stats`. The archive keeps fast `.latest` snapshot files for quick restore and UTC-dated daily `.log` files for longer-term history. As a secondary option, those files can also be removed and inspected on a computer for deeper manual review.
 
@@ -314,8 +314,6 @@ On mobile:
 2. Confirm the action.
 3. The local HTTP redirect listener on port `80` is released so OTA can take over that port.
 4. Continue with your normal OTA workflow.
-
-If an older build sends you through a strange redirect after `start ota`, use the web `Start OTA` button to begin the upgrade. This redirect issue is fixed in `repeater-mqtt-eastmesh-v1.3.11`.
 
 ### Use Historical Stats
 

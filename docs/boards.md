@@ -16,7 +16,7 @@ The tables below are built from the repo's PlatformIO board metadata and variant
 - `RAM` is the MCU's built-in RAM.
 - `PSRAM` is extra memory on some boards. More PSRAM usually means more headroom for UI, MQTT, and future features.
 - `GPS` uses `✅` when present and is blank when absent.
-- `SD` uses `✅` when the board is currently known to support the SD-backed archive path in EastMesh, `🧪` when the hardware likely supports TF/microSD but the board-specific integration still needs validation, and is blank when there is no current SD/archive support note.
+- `SD` uses `✅` when the board is currently known to support the SD-backed archive path in MeshCoreTel-firmware, `🧪` when the hardware likely supports TF/microSD but the board-specific integration still needs validation, and is blank when there is no current SD/archive support note.
 
 ## Start Here
 
@@ -122,8 +122,8 @@ This table includes all repeater MQTT targets currently defined in `variants/eas
 
 SD notes:
 
-- `✅` means the board is currently known to work with the SD-backed archive path in EastMesh.
-- `🧪` means the board hardware likely supports TF/microSD, but the EastMesh board-specific integration still needs validation before it should be treated as supported.
+- `✅` means the board is currently known to work with the SD-backed archive path in MeshCoreTel-firmware.
+- `🧪` means the board hardware likely supports TF/microSD, but the MeshCoreTel-firmware board-specific integration still needs validation before it should be treated as supported.
 - For the current stats archive, a `4 GB` `FAT32` microSD card is more than sufficient. Larger cards are also supported.
 
 ## `companion_radio_wifi` Boards With A Display

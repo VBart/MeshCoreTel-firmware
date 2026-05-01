@@ -4,13 +4,13 @@ This page covers migrating from the previous firmware published at:
 
 - `https://github.com/xJARiD/MeshCore`
 
-to the EastMesh firmware published at:
+to the MeshCoreTel-firmware published at:
 
-- `https://github.com/xJARiD/MeshCore-EastMesh`
+- `https://github.com/VBart/MeshCoreTel-firmware`
 
-These steps are intended for existing repeater users moving to the new EastMesh `*_repeater_mqtt` firmware.
+These steps are intended for existing repeater users moving to the new `*_repeater_mqtt` MeshCoreTel-firmware.
 
-Start by downloading the correct EastMesh release for your board from:
+Start by downloading the correct MeshCoreTel-firmware release for your board from:
 
 - [Download and Flash Releases](./releases.md)
 
@@ -76,11 +76,11 @@ Notes:
 
 ## Legacy MQTT Commands
 
-Some MQTT CLI commands from the previous firmware do not apply in EastMesh and should not be migrated.
+Some MQTT CLI commands from the previous firmware do not apply in MeshCoreTel-firmware and should not be migrated.
 
-EastMesh stores its current Wi-Fi and MQTT uplink settings separately from the older firmware, so older broker and analyzer settings do not carry forward in a useful way. After flashing, re-enter the settings you still use now, rather than expecting the old MQTT bridge configuration to map across.
+MeshCoreTel-firmware stores its current Wi-Fi and MQTT uplink settings separately from the older firmware, so older broker and analyzer settings do not carry forward in a useful way. After flashing, re-enter the settings you still use now, rather than expecting the old MQTT bridge configuration to map across.
 
-These previous MQTT CLI commands no longer apply in EastMesh:
+These previous MQTT CLI commands no longer apply in MeshCoreTel-firmware:
 
 - `get mqtt.server`
 - `get mqtt.port`
@@ -89,11 +89,11 @@ These previous MQTT CLI commands no longer apply in EastMesh:
 - `get mqtt.analyzer.eu`
 - `get mqtt.config.valid`
 
-If you flash without erase first, some old values may still remain in flash in the background. The important point is that EastMesh does not use those old MQTT bridge values for its current uplink configuration, so users should not expect them to carry forward or have any effect.
+If you flash without erase first, some old values may still remain in flash in the background. The important point is that MeshCoreTel-firmware does not use those old MQTT bridge values for its current uplink configuration, so users should not expect them to carry forward or have any effect.
 
 ## Recommended Migration Flow
 
-1. Flash the new EastMesh firmware without erasing.
+1. Flash the new MeshCoreTel-firmware without erasing.
 2. Open the serial CLI or companion app.
 3. Set `wifi.ssid`, `wifi.pwd`, `mqtt.iata`, and `mqtt.status on`.
 4. Optionally set `mqtt.owner` and `mqtt.email`.
