@@ -15,7 +15,6 @@ If you are just trying to pick a board or download firmware, start with:
 
 - [Compare Boards](./boards.md)
 - [Download and Flash Releases](./releases.md)
-- [Migration From xJARiD/MeshCore](./migration.md)
 - [Use the Repeater Web Panel](./web-panel.md)
 - [Use the Repeater Web API](./api.md)
 - [Custom CLI Commands](./custom-cli.md)
