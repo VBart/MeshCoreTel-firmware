@@ -1,78 +1,62 @@
-# MeshCoreTel Firmware
+# Прошивка для MeshCore-репитеров с MQTT и веб-панелью
 
-This is a fork of MeshCore-EastMesh firmware with MeshCoreTel broker support instead of EastMesh.
+Это форк прошивки [MeshCore-EastMesh](https://github.com/meshcore-dev/MeshCore), в котором поддержка австралийского сервиса телеметрии EastMesh AU заменена на поддержку сервиса [MeshCoreTel](https://meshcoretel.ru/), а также выполнен ряд других доработок и адаптация.
 
-MeshCoreTel:
+В остальном прошивка базируется на официальных версиях прошивок МеshCore. Благодарность Scott Powell / Ripple Radios и всем контрибьюторам MeshCore за оригинальную прошивку и основу проекта, а также Jared Dohrman за доработки, выполненные в рамках EastMesh.
 
-- <https://meshcoretel.ru/>
+## Ключевые особенности прошивки
 
-Original firmware (credits to Jared Dohrman, Scott Powell / Ripple Radios and the MeshCore contributors):
+### Дополнения ретранслятора
 
-- <https://github.com/xJARiD/MeshCore-EastMesh>
-
-MeshCoreTel firmware builds for MeshCore, with MQTT repeaters, WiFi companions, and simple release downloads for supported boards.
-
-This repository keeps the upstream MeshCore firmware intact and adds an MeshCoreTel layer on top for packaging, release automation, WiFi-enabled companion builds, and MQTT-enabled repeater builds.
-
-## Key MeshCoreTel Features
-
-### MQTT Repeater Additions
-
-- hardcoded broker support for:
+- поддержка Wi-Fi в клиентском режиме
+- автонастройка сети через DHCP
+- синхронизация времени по NTP
+- жёстко заданная поддержка MQTT-брокеров:
   - `meshcoretel`
   - `letsmesh-eu`
   - `letsmesh-us`
-- WSS transport at `/mqtt`
-- JWT auth using the device identity
-- CLI controls for:
-  - WiFi credentials
-  - WiFi powersaving
-  - board battery reporting on supported targets
-  - MQTT endpoint enablement
-  - MQTT packet and raw publishing
-  - owner public key and email
-  - local web panel enablement
+- транспорт plain TCP и WSS по пути `/mqtt`
+- JWT-аутентификация с использованием идентификации устройства для WSS
+- CLI-команды для:
+  - учётных данных WiFi
+  - энергосбережения WiFi
+  - отчётов о заряде батареи на поддерживаемых платформах
+  - включения конечной точки MQTT
+  - отправки пакетов MQTT и публикации сырых данных
+  - публичного ключа владельца и адреса электронной почты
+  - включения локальной веб-панели
 
-### Local Web Panel
+### Локальная веб-панель
 
-On supported `*_repeater_mqtt` ESP32 targets, the repeater can expose a local HTTPS config panel over WiFi.
+Дополнительно на поддерживаемых устройствах (с достаточным количеством памяти) ретранслятор может предоставлять локальную панель конфигурации по HTTPS через WiFi.
 
-Features include:
+Возможности:
 
-- password-gated access using the existing repeater admin password
-- allowlisted CLI execution
-- grouped quick actions
-- light and dark themes
-- optional disable via `set web off`
+- доступ по паролю, используя существующий административный пароль ретранслятора
+- выполнение CLI-команд из белого списка
+- сгруппированные быстрые действия
+- светлая и тёмная темы
+- возможность отключения командой `set web off`
+- изменение основных настроек репитера и MQTT через веб-интерфейс
+- вся ключевая статистика по репитеру с историей за последние 3 часа 
 
-Recommended use is initial setup and occasional troubleshooting. On MQTT repeater deployments, disable the panel again when finished if you want maximum MQTT heap headroom.
+Для входа в адресной строке браузера введите `https://ip-адрес-репитера` и согласитесь с предупреждением принять самоподписной SSL-сертификат.  Узнать IP-адрес можно на экране устройства или панели управления вашего роутера).
 
-### Companion WiFi Additions
+Рекомендуется для начальной настройки и периодической диагностики. На развернутых MQTT-ретрансляторах отключайте панель после завершения настройки, если требуется максимальный запас памяти для MQTT.
 
-`*_companion_radio_wifi` targets now support persisted WiFi rescue commands:
+## Релизы
 
-- open a serial monitor at `115200` baud
-- reboot the device
-- long-press the user button within the first 8 seconds after boot to enter `CLI Rescue`
-- wait for `========= CLI Rescue =========`
-- send the commands from the serial monitor
+Готовые прошивки публикуются на GitHub Releases:
 
-These rescue commands are only available after entering `CLI Rescue`:
+- <https://github.com/VBart/MeshCoreTel-firmware/releases>
 
-- `get wifi.status`
-- `get wifi.ssid`
-- `get wifi.powersaving`
-- `set wifi.ssid <ssid>`
-- `set wifi.pwd <password>`
-- `set wifi.powersaving none|min|max`
+А также доступны в веб-прошивальщике от MeshCoreTel (под заголовком _Прошивки наблюдателя от VBart_):
 
-## Status
+- <https://meshcoretel.ru/ru/flasher>
 
-Tested with my Heltec V4 OLED.
-
-## Documentation
-
-Current docs pages:
+## Документация (TODO: перевод и адаптация)
 
 - [Home](./docs/index.md)
+- [Download and Flash Releases](./docs/releases.md)
+- [Build Locally With uv](./docs/local-builds.md)
 - [Custom CLI Commands](./docs/custom-cli.md)
