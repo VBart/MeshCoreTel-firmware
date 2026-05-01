@@ -6,17 +6,17 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Documentation for the EastMesh layer on top of MeshCore, including WiFi, MQTT, and release workflows">
+        <meta name="description" content="Documentation for the MeshCoreTel-firmware layer on top of MeshCore, including WiFi, MQTT, and release workflows">
       
       
       
-        <link rel="canonical" href="https://xjarid.github.io/MeshCore-EastMesh/releases/">
+        <link rel="canonical" href="https://vbart.github.io/MeshCoreTel-firmware/releases/">
       
       
         <link rel="prev" href="../boards/">
       
       
-        <link rel="next" href="../migration.md">
+        <link rel="next" href="../web-panel/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Download And Flash Releases - MeshCore EastMesh Docs</title>
+        <title>Download And Flash Releases - MeshCoreTel-firmware Docs</title>
       
     
     
@@ -101,9 +101,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="./.." title="MeshCore EastMesh Docs" class="md-header__button md-logo" aria-label="MeshCore EastMesh Docs" data-md-component="logo">
+    <a href="./.." title="MeshCoreTel-firmware Docs" class="md-header__button md-logo" aria-label="MeshCoreTel-firmware Docs" data-md-component="logo">
       
-  <img src="../_assets/xjarid.svg" alt="MeshCore EastMesh Docs">
+  <img src="../_assets/xjarid.svg" alt="MeshCoreTel-firmware Docs">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
@@ -114,7 +114,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            MeshCore EastMesh Docs
+            MeshCoreTel-firmware Docs
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -173,13 +173,13 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/xJARiD/MeshCore-EastMesh" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/VBart/MeshCoreTel-firmware" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
-    xJARiD/MeshCore-EastMesh
+    VBart/MeshCoreTel-firmware
   </div>
 </a>
       
@@ -209,22 +209,22 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="./.." title="MeshCore EastMesh Docs" class="md-nav__button md-logo" aria-label="MeshCore EastMesh Docs" data-md-component="logo">
+    <a href="./.." title="MeshCoreTel-firmware Docs" class="md-nav__button md-logo" aria-label="MeshCoreTel-firmware Docs" data-md-component="logo">
       
-  <img src="../_assets/xjarid.svg" alt="MeshCore EastMesh Docs">
+  <img src="../_assets/xjarid.svg" alt="MeshCoreTel-firmware Docs">
 
     </a>
-    MeshCore EastMesh Docs
+    MeshCoreTel-firmware Docs
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/xJARiD/MeshCore-EastMesh" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/VBart/MeshCoreTel-firmware" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
-    xJARiD/MeshCore-EastMesh
+    VBart/MeshCoreTel-firmware
   </div>
 </a>
     </div>
@@ -461,33 +461,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../migration.md" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Migration
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -760,7 +733,7 @@
                 
                   
   
-    <a href="https://github.com/xJARiD/MeshCore-EastMesh/edit/main/docs/releases.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/VBart/MeshCoreTel-firmware/edit/main/docs/releases.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
