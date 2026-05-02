@@ -30,6 +30,6 @@
 
 - [meshcore-dev/MeshCore](https://github.com/meshcore-dev/MeshCore)
 
-За конкретными настройками для вашего региона, а также просмотра информации MeshCore-сети, обращайтесь на сайте MeshCoreTel:
+За настройками для вашего региона, а также просмотра информации о MeshCore-сети, обращайтесь на сайт MeshCoreTel:
 
 - <https://meshcoretel.ru/>

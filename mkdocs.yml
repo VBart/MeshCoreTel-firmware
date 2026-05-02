@@ -35,10 +35,10 @@ extra_css:
   - _stylesheets/extra.css
 
 nav:
-  - Home: index.md
-  - Boards: boards.md
-  - Releases: releases.md
-  - Web Panel: web-panel.md
-  - Repeater API: api.md
-  - Local Builds: local-builds.md
-  - Custom CLI: custom-cli.md
+  - Введение: index.md
+  - Устройства: boards.md
+  - Прошивка: releases.md
+  - CLI-команды: custom-cli.md
+  - Веб-панель: web-panel.md
+  - Веб-API: api.md
+  - Локальная сборка: local-builds.md
