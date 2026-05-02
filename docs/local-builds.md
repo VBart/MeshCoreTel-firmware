@@ -1,68 +1,68 @@
-# Build Locally With uv
+# Локальная сборка с помощью uv
 
-This repo uses `uv` for Python tooling and runs PlatformIO through `uv run`.
+В этом репозитории для инструментов Python используется `uv`, а PlatformIO запускается через `uv run`.
 
-This page is for building from source. If you just want firmware to flash, start with [Download and Flash Releases](./releases.md) instead.
+Эта страница предназначена для сборки из исходников. Если вам нужна готовая прошивка, начните с [Загрузка и прошивка релизов](./releases.md).
 
-## Setup
+## Настройка
 
-From the repo root:
+Из корневого каталога репозитория:
 
 ```bash
 uv sync
 ```
 
-## Useful Commands
+## Полезные команды
 
-List build targets:
+Список вариантов сборки:
 
 ```bash
 bash build.sh list
 ```
 
-Plain PlatformIO build for a single target:
+Обычная сборка PlatformIO для одного варианта:
 
 ```bash
 uv run pio run -e heltec_v4_repeater_mqtt
 uv run pio run -e heltec_v4_companion_radio_wifi
 ```
 
-Flash a target:
+Прошивка сборки:
 
 ```bash
 uv run pio run -e heltec_v4_repeater_mqtt -t upload --upload-port /dev/tty.usbmodemXXXX
 ```
 
-Serial monitor:
+Монитор последовательного порта:
 
 ```bash
 uv run pio device monitor --port /dev/tty.usbmodemXXXX --baud 115200
 ```
 
-## Release-Style Local Builds
+## Локальные сборки в стиле релизов
 
-If you want the same version metadata used by the release workflows, export the version variables first.
+Если вам нужны те же метаданные версий, что и в рабочих процессах релизов, сначала экспортируйте переменные версий.
 
 Companion WiFi:
 
 ```bash
-export FIRMWARE_VERSION=v1.14.1
+export FIRMWARE_VERSION=v1.15.0
 bash build.sh build-firmware heltec_v4_companion_radio_wifi
 ```
 
 Repeater MQTT:
 
 ```bash
-export FIRMWARE_VERSION=v1.14.1
-export EASTMESH_VERSION=v1.0.1
+export FIRMWARE_VERSION=v1.15.0
+export MESHCORETEL_VERSION=v1.0.0
 bash build.sh build-firmware heltec_v4_repeater_mqtt
 ```
 
-This produces versioned artifacts in `out/`.
+В результате в `out/` появятся версионированные артефакты.
 
-## Supported `repeater_mqtt` Boards
+## Поддерживаемые устройства `repeater_mqtt`
 
-These are the full PlatformIO env names used for local source builds and release artifact naming.
+Это полные имена окружений PlatformIO, используемые для локальных сборок из исходников и для имён релизных файлов.
 
 ```text
 Generic_E22_sx1262_repeater_mqtt
@@ -97,45 +97,4 @@ Tbeam_SX1276_repeater_mqtt
 WHY2025_badge_repeater_mqtt
 Xiao_C6_repeater_mqtt
 Xiao_S3_WIO_repeater_mqtt
-```
-
-## Supported `companion_radio_wifi` Boards
-
-These are the full PlatformIO env names used for local source builds and release artifact naming.
-
-```text
-heltec_tracker_v2_companion_radio_wifi
-Heltec_v2_companion_radio_wifi
-Heltec_v3_companion_radio_wifi
-heltec_v4_companion_radio_wifi
-heltec_v4_tft_companion_radio_wifi
-Heltec_WSL3_companion_radio_wifi
-LilyGo_TBeam_1W_companion_radio_wifi
-LilyGo_TLora_V2_1_1_6_companion_radio_wifi
-nibble_screen_connect_companion_radio_wifi
-RAK_3112_companion_radio_wifi
-Station_G2_companion_radio_wifi
-T_Beam_S3_Supreme_SX1262_companion_radio_wifi
-ThinkNode_M2_companion_radio_wifi
-ThinkNode_M5_companion_radio_wifi
-Xiao_S3_WIO_companion_radio_wifi
-```
-
-## Companion WiFi CLI
-
-Current companion WiFi builds support persisted WiFi rescue commands:
-
-- open a serial monitor at `115200` baud
-- reboot the device
-- long-press the user button within the first 8 seconds after boot to enter `CLI Rescue`
-- wait for `========= CLI Rescue =========`
-- then run the WiFi rescue commands below from the serial monitor
-
-```text
-get wifi.status
-get wifi.ssid
-get wifi.powersaving
-set wifi.ssid <ssid>
-set wifi.pwd <password>
-set wifi.powersaving none|min|max
 ```

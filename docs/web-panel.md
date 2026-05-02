@@ -1,384 +1,382 @@
-# Repeater Web Panel
+# Веб-панель ретранслятора
 
-This page is for end users running an MeshCoreTel-firmware `*_repeater_mqtt` build with the local web panel enabled.
+Эта страница предназначена для конечных пользователей, использующих сборку MeshCoreTel-firmware с включённой локальной веб-панелью.
 
-It covers how to reach the panel, what each section does, and what to expect when using it on desktop or mobile.
+Здесь описано, как открыть панель, за что отвечает каждый раздел и чего ожидать при использовании на компьютере или мобильном устройстве.
 
-## What It Is
+## Что это такое
 
-The repeater web panel is a local HTTPS configuration page served directly by the repeater over WiFi.
+Веб-панель ретранслятора — это локальная страница конфигурации по HTTPS, обслуживаемая непосредственно самим ретранслятором через Wi-Fi.
 
-It gives you:
+Она предоставляет:
 
-- a password-gated local admin page at `/app`
-- a dedicated stats and trends page at `/stats`
-- quick `get` commands for common repeater and MQTT checks
-- a terminal-style CLI panel for full repeater CLI access
-- editable repeater settings
-- editable MQTT settings
-- a historical stats view with trends, neighbours, and recent events
+- защищённую паролем страницу локального администратора по адресу `/app`
+- отдельную страницу статистики и трендов по адресу `/stats`
+- быстрые команды `get` для типовых проверок ретранслятора и MQTT
+- панель CLI в стиле терминала для полного доступа к командной строке ретранслятора
+- редактируемые настройки ретранслятора
+- редактируемые настройки MQTT
+- исторический обзор статистики с трендами, соседями и недавними событиями
 
-Operational guidance:
+Рекомендации по использованию:
 
-- use it for initial setup, occasional configuration changes, and troubleshooting
-- when you are finished, prefer `set web off` on MQTT repeaters that need maximum headroom
-- this leaves more internal heap available for MQTT/WSS activity, especially on dual-broker setups
+- используйте панель для первоначальной настройки, эпизодических изменений конфигурации и устранения неполадок
+- после завершения работы отдавайте предпочтение команде `set web off` на MQTT-ретрансляторах, где важен максимальный запас ресурсов
+- это оставляет больше памяти, доступной для работы MQTT/WSS, особенно в конфигурациях с двумя WSS-брокерами
 
-## Screenshot Overview
+## Обзор скриншотов
 
-The screenshots below show the current split between the lighter `/app` admin page and the dedicated `/stats` status page.
+Скриншоты ниже показывают текущее разделение на облегчённую страницу администратора `/app` и отдельную страницу статуса `/stats`.
 
-### `/app` screenshot
+### Скриншот `/app`
 
-![Repeater web panel `/app` overview](./_assets/repeater_web_panel_app_light.webp#only-light)
-![Repeater web panel `/app` overview](./_assets/repeater_web_panel_app_dark.webp#only-dark)
+![Обзор веб-панели ретранслятора `/app`](./_assets/repeater_web_panel_app_light.webp#only-light)
+![Обзор веб-панели ретранслятора `/app`](./_assets/repeater_web_panel_app_dark.webp#only-dark)
 
-### `/stats` screenshot
+### Скриншот `/stats`
 
-![Repeater web panel `/stats` overview](./_assets/repeater_web_panel_stats_light.webp#only-light)
-![Repeater web panel `/stats` overview](./_assets/repeater_web_panel_stats_dark.webp#only-dark)
+![Обзор веб-панели ретранслятора `/stats`](./_assets/repeater_web_panel_stats_light.webp#only-light)
+![Обзор веб-панели ретранслятора `/stats`](./_assets/repeater_web_panel_stats_dark.webp#only-dark)
 
-## Requirements
+## Требования
 
-You need:
+Вам потребуется:
 
-- a supported `*_repeater_mqtt` firmware build
-- WiFi configured on the repeater
-- the repeater connected to your local network
-- the repeater admin password
+- поддерживаемая сборка прошивки MeshCoreTel
+- настроенный Wi-Fi на ретрансляторе
+- ретранслятор, подключённый к вашей локальной сети
+- пароль администратора ретранслятора
 
-Some constrained targets disable the web panel to stay within flash limits. If your board does not support it, `get web.status` will not show it as available.
+На некоторых платформах с ограниченными ресурсами веб-панель отключена, чтобы уложиться в лимиты флеш-памяти. Если ваше устройство её не поддерживает, `get web.status` не покажет её как доступную.
 
-## How To Open It
+## Как открыть панель
 
-1. Connect the repeater to WiFi.
-2. Find its IP address.
-3. Open `https://<repeater-ip>/` in a browser.
-4. Accept the browser warning for the self-signed certificate.
-5. Enter the repeater admin password.
+1. Подключите ретранслятор к Wi-Fi.
+2. Узнайте его IP-адрес.
+3. Откройте `https://<IP-репитера>/` в браузере.
+4. Примите предупреждение браузера о самоподписанном сертификате.
+5. Введите пароль администратора ретранслятора.
 
-Useful CLI commands:
+Полезные команды CLI:
 
-- `get wifi.status`: shows WiFi state and IP address when connected.
-- `get web.status`: shows whether the web panel is up and which URL to use.
+- `get wifi.status`: показывает состояние Wi-Fi и IP-адрес при подключении.
+- `get web.status`: показывает, запущена ли веб-панель и по какому URL она доступна.
 
-Example:
+Пример:
 
 - `https://10.33.135.208/`
 
-## Login And Security
+## Вход и безопасность
 
-- the panel uses the same admin password as the repeater CLI
-- the connection is HTTPS, but the certificate is self-signed
-- browsers will warn the first time you connect
-- the panel exposes the repeater CLI after login
+- панель использует тот же пароль администратора, что и CLI ретранслятора
+- соединение по HTTPS, но сертификат самоподписанный
+- браузеры будут выдавать предупреждение при первом подключении
+- после входа панель открывает доступ к CLI ретранслятора
 
-This is intended for local admin use on a trusted network, not for open internet exposure.
+Панель предназначена для локального администрирования в доверенной сети и не рассчитана на использование в открытом интернете.
 
-## Performance Notes
+## Замечания по производительности
 
-The panel is designed to load more gently than earlier versions. On login it now fetches sections in sequence instead of requesting one large bootstrap payload up front.
+Панель использует HTTPS и расходует память. На устройствах, работающих с одним или двумя WSS MQTT-брокерами, открытие панели уменьшает запас ресурсов для MQTT, пока сессия активна.
 
-Even with that change, the panel still uses HTTPS and internal heap. On boards running one or two WSS MQTT brokers, opening the panel reduces MQTT headroom while the session is active.
+Рекомендуемая практика для развёртывания ретрансляторов:
 
-Recommended practice for repeater deployments:
+- включайте панель для первоначальной настройки
+- используйте её снова для периодических проверок или устранения неполадок
+- отключайте командой `set web off` после завершения, чтобы у MQTT был максимальный запас ресурсов
 
-- enable the panel for initial configuration
-- use it again for occasional checks or troubleshooting
-- disable it with `set web off` when finished so MQTT has the most headroom available
+## Навигация и действия
 
-## Navigation And Actions
+Веб-панель состоит из двух основных страниц:
 
-The web console now has two main pages:
+- `/app`: облегчённый вид для управления и конфигурации
+- `/stats`: текущий статус, тренды, соседи и недавние события
 
-- `/app`: lighter-weight control and configuration view
-- `/stats`: current status, trends, neighbours, and recent events
-
-Both pages share the same top navigation and utility actions.
+Обе страницы имеют одинаковую верхнюю навигацию и служебные действия.
 
 ### `/app`
 
-The `/app` page is the main admin and configuration surface.
+Страница `/app` — это основной интерфейс администратора и конфигурации.
 
-It includes:
+Она включает:
 
-- navigation to `App` and `Stats`
-- `Advert`
-- `Start OTA`
-- `Reboot`
-- theme toggle
-- `Logout`
+- навигацию: `App` и `Stats`
+- `Advert` (Объявление)
+- `Start OTA` (Запустить OTA)
+- `Reboot` (Перезагрузка)
+- переключатель темы
+- `Logout` (Выход)
 
-Use `Start OTA` only when you intend to update firmware.
+Используйте `Start OTA` только тогда, когда намереваетесь обновить прошивку дистанционно.
 
 ### `/stats`
 
-The `/stats` page is the home for current status and historical visibility.
+Страница `/stats` — это раздел для текущего статуса и хронологии данных.
 
-It includes:
+Она включает:
 
-- navigation to `App` and `Stats`
-- `Refresh`
-- `Reboot`
-- theme toggle
-- `Logout`
+- навигацию: `App` и `Stats`
+- `Refresh` (Обновить)
+- `Reboot` (Перезагрузка)
+- переключатель темы
+- `Logout` (Выход)
 
-## Quick "get" Commands
+## Быстрые команды "get"
 
-This section runs common read-only commands for:
+Этот раздел выполняет стандартные команды только для чтения для:
 
 - Wi-Fi
 - MQTT
 
-These are useful for quick checks without typing into the CLI field. The MQTT quick actions include `mqtt.status`, `mqtt.client_version`, `mqtt.iata`, `mqtt.owner`, and `mqtt.email`.
+Они удобны для быстрых проверок без ввода команд в поле CLI. Быстрые действия MQTT включают `mqtt.status`, `mqtt.client_version`, `mqtt.iata`, `mqtt.owner` и `mqtt.email`.
 
-## Run CLI Command
+## Выполнение команд CLI
 
-This is a small terminal for the repeater CLI.
+Это мини-терминал для CLI ретранслятора.
 
-- press `Enter` to run the command
-- command history is shown in the terminal box below
-- save buttons elsewhere in the page also show the generated command and the reply here
-- `clock` is available here if you want to check the repeater's current board time
-- authenticated sessions can run the same CLI commands accepted by the repeater
+- нажмите `Enter`, чтобы выполнить команду
+- история команд отображается в окне терминала ниже
+- кнопки сохранения в других местах страницы также показывают сгенерированную команду и ответ здесь
+- здесь доступна команда `clock`, если нужно узнать текущее время платы ретранслятора
+- авторизованные сессии могут выполнять те же команды CLI, которые принимает ретранслятор
 
-This makes it easy to see exactly what the panel sent to the repeater.
+Это позволяет легко увидеть, что именно панель отправила ретранслятору.
 
-## Repeater Settings
+## Настройки ретранслятора
 
-This section includes:
+Этот раздел включает:
 
-- Device Name
-- Clock UTC
-- Latitude
-- Longitude
-- Guest Password
-- Private Key
-- Advert Interval
-- Flood Interval
-- Flood Max
-- Owner Info
+- Имя устройства (Device Name)
+- UTC часы (Clock UTC)
+- Широта (Latitude)
+- Долгота (Longitude)
+- Гостевой пароль (Guest Password)
+- Приватный ключ (Private Key)
+- Интервал объявлений (Advert Interval)
+- Интервал массовой рассылки (Flood Interval)
+- Макс. массовых сообщений (Flood Max)
+- Информация о владельце (Owner Info)
 
-Notes:
+Примечания:
 
-- `Latitude` and `Longitude` default to `0.0` as placeholders
-- changing the private key requires a reboot to apply
-- the refresh buttons load the current value from the repeater
-- the save buttons send the matching CLI command immediately
+- `Latitude` и `Longitude` по умолчанию равны `0.0` как заполнители
+- изменение приватного ключа требует перезагрузки для применения
+- кнопки обновления загружают текущее значение с ретранслятора
+- кнопки сохранения немедленно отправляют соответствующую команду CLI
 
-## Info
+## Информация
 
-This section shows:
+В этом разделе отображается:
 
-- `Version`: firmware version with build date
-- `Client Version`: MQTT client version string
-- `Public Key`
+- `Version`: версия прошивки с датой сборки
+- `Client Version`: строка версии MQTT-клиента
+- `Public Key` (Публичный ключ)
 
-## Ghost Node Mode
+## Режим скрытого узла (Ghost Node Mode)
 
-Ghost Node Mode is a convenience control on `/app` for a repeater that should stay on Wi-Fi and MQTT, but should not actively behave like another nearby repeater.
+Режим скрытого узла — это удобный элемент управления на `/app` для ретранслятора, который должен оставаться в Wi-Fi и MQTT, но не должен активно вести себя как ещё один близлежащий ретранслятор.
 
-Typical use case:
+Типичный сценарий использования:
 
-- an indoor or colocated MQTT observer where another repeater nearby is already doing the RF relay work
-- a node you want feeding MQTT, web status, and troubleshooting data without also adding extra repeat traffic or adverts
+- комнатный или расположенный рядом MQTT-наблюдатель, когда другой ретранслятор поблизости уже выполняет радио-ретрансляцию
+- узел, который должен передавать данные MQTT, веб-статус и диагностику, не добавляя лишнего ретрансляционного трафика или объявлений
 
-When enabled, Ghost Node Mode:
+При включении Режим скрытого узла:
 
-- turns `repeat` off
-- sets `advert.interval` to `0`
-- sets `flood.advert.interval` to `0`
-- leaves the local web panel and MQTT features running
+- выключает `repeat`
+- устанавливает `advert.interval` в `0`
+- устанавливает `flood.advert.interval` в `0`
+- оставляет локальную веб-панель и функции MQTT работающими
 
-When disabled, the panel restores the prior repeat and advert settings if it still knows them from the current browser session. If not, it falls back to:
+При отключении панель восстанавливает предыдущие настройки повтора и объявлений, если они ещё известны из текущей сессии браузера. Если нет, она возвращается к:
 
 - `repeat on`
 - `advert.interval 60`
 - `flood.advert.interval 12`
 
-This mode is useful when you want the device to observe and publish, not to act as an additional RF repeater. It does not create a separate firmware role; it is just a grouped web-panel shortcut for those existing settings.
+Этот режим полезен, когда нужно, чтобы устройство наблюдало и публиковало данные, а не действовало как дополнительный передающий ретранслятор. Он не создаёт отдельную роль прошивки; это просто сгруппированное сокращение в веб-панели для существующих настроек.
 
-## MQTT Settings
+## Настройки MQTT
 
-This section includes:
+Этот раздел включает:
 
-- `mqtt.iata`: selected from a curated east-coast/south-east list.
-- `mqtt.owner`: owner public key.
-- `mqtt.email`: owner contact email.
-- MQTT server toggles: `meshcoretel`, `letsmesh-eu`, and `letsmesh-us`.
+- `mqtt.iata`: выбирается из подготовленного списка.
+- `mqtt.owner`: публичный ключ владельца.
+- `mqtt.email`: контактный email владельца.
+- Переключатели MQTT-брокеров: `meshcoretel`, `letsmesh-eu` и `letsmesh-us`.
 
-`UNSET - To be configured` is the default for new repeater MQTT installs until a real saved value exists.
+`UNSET - To be configured` — значение по умолчанию для новых установок MQTT ретранслятора, пока не появится реальное сохранённое значение.
 
-Notes:
+Примечания:
 
-- when `mqtt.iata` is `UNSET`, the panel shows a banner at the top reminding you to set it under MQTT Settings
-- while `mqtt.iata` is `UNSET`, enabled MQTT brokers do not attempt to connect
-- the current MQTT server states are loaded when the page opens
-- you can toggle each MQTT server on or off from this panel
-- if all three servers are enabled at once, the panel shows a warning recommending two at most
+- если `mqtt.iata` имеет значение `UNSET`, панель показывает баннер вверху с напоминанием задать его в разделе MQTT Settings
+- пока `mqtt.iata` имеет значение `UNSET`, включённые MQTT-брокеры не пытаются подключиться
+- состояние MQTT-брокер загружается при открытии страницы
+- вы можете включать или выключать каждый MQTT-брокер из этой панели
+- включить можно не более двух MQTT-брокеров одновременно
 
-## `/stats` Overview
+## Обзор `/stats`
 
-The stats page is loaded separately from `/app` and is intended to keep the main admin page lighter.
+Страница статистики загружается отдельно от `/app` и предназначена для того, чтобы основная страница администратора оставалась легче.
 
-The `/stats` page currently shows:
+Страница `/stats` в настоящее время показывает:
 
-- `Services`: MQTT, web, archive, neighbour count, and, when mounted, card and archive capacity
-- optional full-width `Environment` summary card on boards that report GPS or environmental telemetry
-- `Trends`: battery, heap free, packet activity, signal, noise floor, and, when GPS is enabled, satellites
-- `Neighbours`: current neighbour table with ID, SNR, heard age, and advert age
-- `Events`: current boot/session events
+- `Services`: MQTT, web, архив, количество соседей и, если SD-карта смонтирована, ёмкость карты и архива
+- опциональную полноширинную сводную карточку `Environment` на платах, передающих GPS или данные телеметрии окружающей среды
+- `Trends`: заряд батареи, свободная куча, пакетная активность, сигнал, уровень шума и, если включён GPS, спутники
+- `Neighbours`: текущая таблица соседей с ID, SNR, возрастом последнего приёма и возрастом объявления
+- `Events`: события текущей загрузки/сессии
 
-For boards that expose extra telemetry, the optional `Environment` summary card can show current values such as GPS fix state, latitude, longitude, GPS altitude, voltage, sensor temperature, humidity, barometer, pressure-derived altitude, and MCU temperature.
+Для устройств, передающих дополнительную телеметрию, опциональная сводная карточка `Environment` может показывать текущие значения, такие как состояние GPS-фиксации, широту, долготу, высоту по GPS, напряжение, температуру с датчика, влажность, давление, высоту по давлению и температуру MCU.
 
-Metrics with no current value are hidden rather than showing placeholder rows, so the cards vary by board and by current sensor state.
+Метрики, не имеющие текущего значения, скрываются, а не показывают строки-заполнители, поэтому карточки меняются в зависимости от устройства и текущего состояния датчиков.
 
-The `Core` battery meter prefers a board-reported battery percentage when the target exposes one. On those boards, the meter detail shows the live battery millivolt reading only. Otherwise it scales the displayed percentage from the board's configured battery voltage range and shows that range in the detail text rather than assuming a fixed single-cell `3000-4200 mV` pack.
+Индикатор батареи `Core` предпочитает отображаемый устройством процент заряда, если устройство его предоставляет. На таких устройствах детализация показывает только текущее напряжение батареи в милливольтах. В противном случае отображаемый процент вычисляется из настроенного диапазона напряжения батареи устройства, и этот диапазон показывается в детализации, а не предполагается фиксированный одноэлементный диапазон `3000-4200 мВ`.
 
-The trend graphs load sequentially rather than as one large payload:
+Графики трендов загружаются последовательно, а не одним большим пакетом:
 
-1. summary/status
-2. battery
-3. memory
-4. packet activity
-5. signal
-6. satellites when GPS is enabled
+1. сводка / статус
+2. батарея
+3. память
+4. пакетная активность
+5. сигнал
+6. спутники, когда GPS включён
 
-This keeps browser-side and device-side memory use lower than the previous in-page stats view.
+Это позволяет снизить потребление памяти как на стороне браузера, так и на устройстве по сравнению с предыдущим внутристраничным просмотром статистики.
 
-If `web.stats` is enabled and an SD archive is mounted, trends can restore archived summary points after reboot from the latest SD snapshot. Recent live points are still added from in-memory history.
+Если `web.stats` включён и SD-архив смонтирован, тренды могут восстанавливать архивные сводные точки после перезагрузки из последнего снимка на SD. Недавние актуальные точки по-прежнему добавляются из истории в памяти.
 
-### Stats History Capacity
+### Объём истории статистики
 
-Stats samples are collected once per minute.
+Сэмплы статистики собираются раз в минуту.
 
-Current in-memory history caps are:
+Текущие лимиты истории в памяти:
 
-| Board class                      | Sample cap | Event cap | Approx. sampled history  |
-| -------------------------------- | ---------: | --------: | ------------------------ |
-| No PSRAM                         |       `24` |       `8` | Live-only recent history |
-| Less than `4 MB` PSRAM           |      `240` |      `96` | About `4` hours          |
-| `4 MB` to less than `8 MB` PSRAM |      `480` |     `192` | About `8` hours          |
-| `8 MB` PSRAM or more             |      `720` |     `288` | About `12` hours         |
+| Класс устройства                 | Лимит сэмплов | Лимит событий | Период истории       |
+| -------------------------------- | ------------: | ------------: | -------------------------- |
+| Без PSRAM                        |           `24` |            `8` | Только недавняя оперативная история |
+| Менее `4 Мб` PSRAM               |          `240` |           `96` | Примерно `4` часа          |
+| От `4 Мб` до менее `8 Мб` PSRAM  |          `480` |          `192` | Примерно `8` часов         |
+| `8 Мб` PSRAM или больше          |          `720` |          `288` | Примерно `12` часов        |
 
-On boards with roughly `2 MB` PSRAM or more, stats history starts capturing from boot when `web.stats` is enabled, even if `/stats` has not been opened yet.
+На устройствах с объёмом PSRAM примерно от `2 Мб` и выше история статистики начинает записываться с момента загрузки, когда `web.stats` включён, даже если `/stats` ещё не открывали.
 
-Archive-backed restore requires `web.stats` enabled plus a mounted SD card on boards that support the MeshCoreTel-firmware archive path.
+Для восстановления из архива требуется включённый `web.stats` и смонтированная SD-карта на платах, которые поддерживают архивацию на MeshCoreTel-firmware.
 
-The main purpose of the SD card is to let the repeater retain and restore stats history for `/stats`. The archive keeps fast `.latest` snapshot files for quick restore and UTC-dated daily `.log` files for longer-term history. As a secondary option, those files can also be removed and inspected on a computer for deeper manual review.
+Основное назначение SD-карты — позволить ретранслятору сохранять и восстанавливать историю для `/stats`. Архив хранит файлы снимков `.latest` для быстрого восстановления и ежедневные файлы `.log` с датой по UTC для долгосрочной истории. В качестве дополнительной опции эти файлы также можно извлечь и проанализировать на компьютере для более глубокого ручного анализа.
 
-On no-PSRAM boards, `/stats` can still show recent graphs while the stats view is active, but the history is smaller and does not provide the same archive-backed behaviour as PSRAM-capable boards.
+На устройствах без PSRAM `/stats` всё ещё может показывать недавние графики, пока активен просмотр статистики, но история меньше и не поддерживает такое же поведение с резервным копированием в архив, как на платах с PSRAM.
 
-Useful CLI commands:
+Полезные команды CLI:
 
 - `set web.stats on`
 - `set web.stats off`
 - `get web.stats.status`
 
-## Mobile Use
+## Использование на мобильных устройствах
 
-The page is responsive and should work cleanly on a phone.
+Страница адаптивна и должна корректно работать на телефоне.
 
-On mobile:
+На мобильных устройствах:
 
-- quick command buttons collapse into a two-column layout
-- top navigation and action groups stay compact and touch-friendly
-- input rows stay usable for touch interaction
-- trend cards reorganize into single-column sections where needed
+- кнопки быстрых команд сворачиваются в двухколоночный макет
+- верхняя навигация и группы действий остаются компактными и удобными для касаний
+- строки ввода остаются пригодными для сенсорного взаимодействия
+- карточки трендов перестраиваются в одноколоночные секции, где это необходимо
 
-## Common Tasks
+## Типовые задачи
 
-### Check WiFi And MQTT
+### Проверка Wi-Fi и MQTT
 
-1. Open the panel.
-2. Press `wifi.status` in Quick `get` Commands.
-3. Press `mqtt.status` in Quick `get` Commands.
-4. Open `/stats` from the top navigation for the historical stats view.
+1. Откройте панель.
+2. Нажмите `wifi.status` в быстрых командах `get`.
+3. Нажмите `mqtt.status` в быстрых командах `get`.
+4. Откройте `/stats` из верхней навигации для просмотра истории статистики.
 
-### Change Device Name
+### Изменение имени устройства
 
-1. Edit `Device Name`.
-2. Press `Save`.
-3. Confirm the generated command and reply in the CLI terminal box.
+1. Отредактируйте `Device Name`.
+2. Нажмите `Save`.
+3. Проверьте сгенерированную команду и ответ в окне терминала CLI.
 
-### Update MQTT Owner Or Email
+### Обновление MQTT Owner или Email
 
-1. Go to `MQTT Settings`.
-2. Enter the new value.
-3. Press `Save`.
-4. Use the refresh button if you want to re-read the stored value from the repeater.
+1. Перейдите в `MQTT Settings`.
+2. Введите новое значение.
+3. Нажмите `Save`.
+4. Используйте кнопку обновления, если хотите перечитать сохранённое значение с ретранслятора.
 
-### Start OTA
+### Запуск OTA
 
-1. Press `Start OTA`.
-2. Confirm the action.
-3. The local HTTP redirect listener on port `80` is released so OTA can take over that port.
-4. Continue with your normal OTA workflow.
+1. Нажмите `Start OTA`.
+2. Подтвердите действие.
+3. Локальный HTTP-редирект на порту `80` освобождается, чтобы OTA мог занять этот порт.
+4. Продолжите стандартную процедуру OTA.
 
-### Use Historical Stats
+### Использование истории статистики
 
-1. Enable stats if needed with `set web.stats on`.
-2. Open `/stats` from the top navigation.
-3. Review `Services` for archive and runtime state.
-4. Review `Trends` for recent graph history.
-5. Use `Refresh` to reload the stats page.
+1. При необходимости включите статистику командой `set web.stats on`.
+2. Откройте `/stats` из верхней навигации.
+3. Проверьте `Services` на предмет состояния архива и среды выполнения.
+4. Просмотрите `Trends` для недавней истории графиков.
+5. Используйте `Refresh` для перезагрузки страницы статистики.
 
-## Troubleshooting
+## Устранение неполадок
 
-### The browser warns about the certificate
+### Браузер предупреждает о сертификате
 
-That is expected. The panel uses a self-signed certificate generated for local use.
+Это ожидаемо. Панель использует самоподписанный сертификат, сгенерированный для локального использования.
 
-### I cannot reach the page
+### Не могу открыть страницу
 
-Check:
+Проверьте:
 
-- the repeater is on WiFi
-- the IP address from `get wifi.status`
-- `get web.status` reports the panel as up
-- your board/firmware target supports the web panel
+- подключён ли ретранслятор к Wi-Fi
+- IP-адрес из `get wifi.status`
+- `get web.status` сообщает, что панель запущена
+- ваше устройство / сборка прошивки поддерживает веб-панель
 
-### The panel opens but login fails
+### Панель открывается, но не удаётся войти
 
-Use the repeater admin password, not the guest password.
+Используйте пароль администратора ретранслятора, а не гостевой пароль.
 
-### MQTT becomes unstable when I log in
+### MQTT становится нестабильным при входе
 
-The web panel now loads settings section-by-section to reduce startup pressure, but HTTPS still consumes internal heap.
+Веб-панель загружает настройки посекционно, чтобы снизить нагрузку при запуске, но HTTPS всё ещё потребляет внутреннюю память.
 
-Check:
+Проверьте:
 
-- whether one or two MQTT brokers are enabled
-- `memory` before and after login
-- whether stability improves after `set web off`
+- сколько MQTT-брокеров включено (один или два)
+- `memory` до и после входа
+- улучшается ли стабильность после `set web off`
 
-For fixed installations where MQTT uptime matters more than browser access, use the panel briefly and then disable it again.
+Для стационарных установок, где время безотказной работы MQTT важнее доступа через браузер, используйте панель кратковременно, а затем снова отключайте её.
 
-### HTTP opens instead of HTTPS
+### Открывается HTTP вместо HTTPS
 
-The repeater now redirects plain `http://` requests to the local `https://` panel URL. If the browser still shows a connection problem after redirecting, open `https://<repeater-ip>/` directly and accept the self-signed certificate warning first.
+Ретранслятор перенаправляет простые запросы `http://` на локальный URL панели `https://`. Если браузер всё ещё показывает проблему с подключением после перенаправления, откройте `https://<repeater-ip>/` напрямую и сначала примите предупреждение о самоподписанном сертификате.
 
-### Stats or settings do not refresh
+### Статистика или настройки не обновляются
 
-Try:
+Попробуйте:
 
-- refreshing the browser tab
-- using `Refresh` on `/stats`
-- logging out and back in
-- checking WiFi stability with `get wifi.status`
+- обновить вкладку браузера
+- использовать `Refresh` на `/stats`
+- выйти и войти снова
+- проверить стабильность Wi-Fi с помощью `get wifi.status`
 
-### `/stats` is unavailable
+### `/stats` недоступна
 
-Check:
+Проверьте:
 
 - `get web.status`
 - `get web.stats.status`
-- whether `set web.stats on` has been applied
+- была ли применена команда `set web.stats on`
 
-If `web.stats` is off, `/stats` will stay disabled and the historical graph requests will not run.
+Если `web.stats` выключен, `/stats` останется отключённой, и запросы истории графиков выполняться не будут.
 
-## Related Docs
+## Связанная документация
 
-- [Custom CLI Commands](./custom-cli.md)
-- [Download and Flash Releases](./releases.md)
-- [Build Locally With uv](./local-builds.md)
+- [Пользовательские команды CLI](./custom-cli.md)
+- [Загрузка и прошивка релизов](./releases.md)
+- [Локальная сборка с помощью uv](./local-builds.md)

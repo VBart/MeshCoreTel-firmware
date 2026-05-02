@@ -1,128 +1,91 @@
-# Download And Flash Releases
+# Загрузка и прошивка релизов
 
-MeshCoreTel-firmware release assets are published on:
+Релизные файлы прошивки MeshCoreTel-firmware публикуются здесь:
 
 - <https://github.com/VBart/MeshCoreTel-firmware/releases>
 
-There are currently two release tracks in this repo:
+## Выбор нужного файла
 
-- `companion-wifi`
-- `repeater-mqtt`
+Скачайте файл, соответствующий вашему устройству и типу прошивки.
 
-## Pick The Right Asset
+Примеры:
 
-Download the asset that matches your board and firmware type.
+- `heltec_v4_repeater_mqtt-v1.15.0-vbart-meshcoretel-v1.0.0-79550a7f.bin`
+- `heltec_v4_repeater_mqtt-v1.15.0-vbart-meshcoretel-v1.0.0-79550a7f-merged.bin`
 
-Examples:
+## Какой файл прошивать
 
-- `heltec_v4_companion_radio_wifi-v1.14.1-abcdef.bin`
-- `heltec_v4_repeater_mqtt-v1.14.1-vbart-meshcoretel-v1.0.1-abcdef.bin`
-- `heltec_v4_repeater_mqtt-v1.14.1-vbart-meshcoretel-v1.0.1-abcdef-merged.bin`
+Используйте обычный `.bin`-файл при обновлении существующего устройства того же типа и той же раскладкой разделов.
 
-The important part is the board/env prefix:
+Используйте `-merged.bin`-файл, когда нужна чистая установка после полной очистки флеш-памяти. Это полный образ ESP32, предназначенный для прошивки с адреса `0x0`.
 
-- `*_companion_radio_wifi`
-- `*_repeater_mqtt`
+Практическое правило:
 
-## Which File To Flash
+- `.bin` = инкрементальное обновление
+- `-merged.bin` = очистка и чистая прошивка
 
-Use the standard `.bin` file when you are updating an existing device with the same target and partition layout.
+## Порядок прошивки
 
-Use the `-merged.bin` file when you want a clean install after erasing flash. This is the full ESP32 image and is intended to be flashed from address `0x0`.
+1. Откройте страницу релиза и скачайте файл для вашего устройства.
+2. Убедитесь, что название в имени файла соответствует вашему устройству.
+3. Выберите один из вариантов: обновить существующую прошивку обычным `.bin`-файлом, либо сначала полностью очистить устройство и прошить `-merged.bin`.
+4. Перезагрузите устройство и завершите настройку после прошивки (Wi-Fi, MQTT, радио и т.п.).
 
-Practical rule:
+## Рекомендуемый прошивальщик
 
-- `.bin` = incremental update
-- `-merged.bin` = erase and clean flash
-
-## Flashing Flow
-
-1. Open the release page and download the file for your board.
-2. Confirm the board name in the filename matches your hardware.
-3. Choose one of the following: update existing firmware with the normal `.bin`, or erase the device first and flash the `-merged.bin`.
-4. Reboot the device and complete any post-flash setup such as WiFi, MQTT, or radio settings.
-
-## Recommended Flasher
-
-The recommended flasher is:
+Рекомендуемый инструмент для прошивки:
 
 - <https://meshcoretel.ru/ru/flasher>
 
-It includes native support for:
+Он уже содержит каталог прошивок под заголовком _Прошивки наблюдателя от VBart_.
 
-- `companion_radio_wifi` firmware
-- `repeater_mqtt` firmware
-- custom firmware files
+Рекомендации по использованию:
 
-Recommended usage:
+- применяйте обычный `.bin` при обновлении существующего устройства
+- используйте `-merged.bin` после очистки, когда нужна чистая прошивка с нуля
 
-- use the normal `.bin` there when you are updating an existing device
-- use the `-merged.bin` there after an erase when you want a clean flash
+## Начальная настройка для новичков
 
-## Beginner Setup
+Если вы прошиваете MeshCoreTel-firmware впервые, самый простой путь:
 
-If this is your first time flashing MeshCoreTel-firmware, the easiest path is:
+1. Откройте <https://meshcoretel.ru/ru/flasher>.
+2. Выберите подходящую прошивку для вашего устройства из раздела _Прошивки наблюдателя от VBart_.
+3. Отметьте пункт _Очистить устройство_, если устанавливаете новую прошивку впервые
+4. Используйте встроенные инструменты настройки, такие как _Настройка репитера_ и _Консоль_ на сайте прошивальщика для завершения первоначальной конфигурации.
 
-1. Open <https://meshcoretel.ru/ru/flasher>.
-2. Select the firmware type you want: `Companion WiFi`, `Repeater MQTT`, or `Custom`.
-3. Flash the correct firmware for your board.
-4. Use the built-in setup tools in the flasher site to finish first-time configuration.
+### Настройка репитера
 
-The flasher site includes two especially useful actions after flashing:
+_Настройка репитера_ — это пошаговый мастер первой настройки ретранслятора.
 
-- `Repeater Setup`
-- `Console`
+Это традиционный способ сконфигурировать ретранслятор после прошивки, включая:
 
-### Repeater Setup
+- имя устройства
+- широту и долготу
+- пароли администратора и гостя
+- настройки радио, в том числе выбор пресета
+- интервал объявлений (advert interval)
+- интервал массовых объявлений (flood advert interval)
+- максимальное количество массовых сообщений (flood max)
+- некоторые расширенные настройки ретранслятора
 
-`Repeater Setup` is the guided first-time repeater flow.
+[Локальная веб-панель](./web-panel.md) прошивки MeshCoreTel-firmware также содержит те же самые основные настройки, поэтому пользователи могут выполнить начальную настройку там, а к мастеру возвращаться лишь для диагностики или эпизодических изменений. На MQTT-ретрансляторах, где важен максимальный запас ресурсов, всё же лучше отключить веб-панель после завершения настройки, особенно если у вас на устройстве мало памяти.
 
-It is the traditional way to configure a repeater after flashing, including:
+### Консоль
 
-- device name
-- latitude and longitude
-- admin and guest passwords
-- radio settings, including preset selection
-- advert interval
-- flood advert interval
-- flood max
-- some advanced repeater settings
+_Консоль_ — это прямой интерфейс командной строки (CLI).
 
-As of `v1.2.1`, the local repeater web panel also includes the same common repeater settings, so users can complete initial setup there and return for occasional troubleshooting or configuration changes. On MQTT repeaters that need maximum headroom, it is still best to disable the panel again when you are finished.
+Он особенно полезен, а часто и необходим, для первичной настройки Wi-Fi:
 
-### Console
+- `set wifi.ssid <ваш-ssid>`
+- `set wifi.pwd <ваш-пароль>`
 
-`Console` is the raw CLI interface.
+Прошивки MeshCoreTel-firmware включает MQTT-дополнения. В зависимости от устройства, они также могут включать [локальную веб-панель](./web-panel.md).
 
-It is especially useful, and often required, for the initial Wi-Fi setup on both firmware tracks:
+Типичные первые шаги после прошивки:
 
-- `set wifi.ssid <your-ssid>`
-- `set wifi.pwd <your-password>`
-
-This applies to:
-
-- `companion_radio_wifi`
-- `repeater_mqtt`
-
-## Repeater MQTT Notes
-
-`repeater_mqtt` builds include the MeshCoreTel-firmware MQTT additions. Depending on the board, they may also include the local web panel.
-
-Typical first steps after flashing:
-
-- set `wifi.ssid`
-- set `wifi.pwd`
-- set `mqtt.iata`
-- confirm `get mqtt.status`
-- optionally set `mqtt.owner` and `mqtt.email`
-- optionally enable `letsmesh-eu` or `letsmesh-us`
-
-## Companion WiFi Notes
-
-`companion_radio_wifi` builds are for companion devices that expose the app interface over WiFi instead of BLE or USB.
-
-Typical first steps after flashing:
-
-- set WiFi credentials
-- confirm `get wifi.status`
-- connect your client app to the companion over WiFi
+- задать `wifi.ssid`
+- задать `wifi.pwd`
+- задать `mqtt.iata`
+- проверить `get mqtt.status`
+- опционально задать `mqtt.owner` и `mqtt.email`
+- опционально включить `letsmesh-eu` или `letsmesh-us`

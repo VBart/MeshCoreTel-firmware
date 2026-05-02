@@ -1,32 +1,32 @@
-# MeshCoreTel-firmware Docs
+# Документация по прошивке MeshCoreTel
 
-MeshCoreTel-firmware keeps the upstream MeshCore firmware intact and adds an additional layer on top for:
+Прошивка MeshCoreTel сохраняет исходную прошивку MeshCore нетронутой и добавляет поверх неё дополнительный слой для:
 
-- `repeater_mqtt` builds with native WiFi, MQTT, and the optional local web panel
-- `companion_radio_wifi` builds for Wi-Fi-connected companion devices
-- MeshCoreTel-firmware release automation and versioning on top of upstream MeshCore releases
+- сборок `repeater_mqtt` со встроенной поддержкой Wi-Fi, MQTT и опциональной локальной веб-панелью
+- сборок `companion_radio_wifi` для подключаемых по Wi-Fi сопутствующих устройств
+- автоматизации выпусков и версионирования прошивки MeshCoreTel поверх релизов исходного MeshCore
 
-If you are just trying to pick a board or download firmware, start with:
+Если вам нужно просто выбрать устройство или скачать прошивку, начните с:
 
-- [Compare Boards](./boards.md)
-- [Download and Flash Releases](./releases.md)
+- [Сравнение устройств](./boards.md)
+- [Загрузка и прошивка релизов](./releases.md)
 
-## End User Guides
+## Руководства для пользователей
 
-- [Compare Boards](./boards.md)
-- [Download and Flash Releases](./releases.md)
-- [Use the Repeater Web Panel](./web-panel.md)
-- [Use the Repeater Web API](./api.md)
-- [Custom CLI Commands](./custom-cli.md)
+- [Сравнение устройств](./boards.md)
+- [Загрузка и прошивка релизов](./releases.md)
+- [Использование веб-панели ретранслятора](./web-panel.md)
+- [Использование веб-API ретранслятора](./api.md)
+- [Пользовательские команды CLI](./custom-cli.md)
 
-## Developer Notes
+## Заметки для разработчиков
 
-- [Build Locally With uv](./local-builds.md)
+- [Локальная сборка с помощью uv](./local-builds.md)
 
-## Current Scope
+## Текущий охват
 
-This docs site only covers the MeshCoreTel-firmware specific pieces in this repository.
+Данный сайт документации охватывает только специфичные для MeshCoreTel-firmware части этого репозитория.
 
-For general MeshCore behavior, radio operation, and upstream firmware concepts, refer to the upstream project:
+За общей информацией о поведении MeshCore, работе радио и концепциях исходной прошивки обращайтесь к исходному проекту:
 
 - [meshcore-dev/MeshCore](https://github.com/meshcore-dev/MeshCore)

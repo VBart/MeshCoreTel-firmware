@@ -1,42 +1,42 @@
-# Custom CLI Commands
+# Пользовательские команды CLI
 
-This page covers the MeshCoreTel-specific CLI commands added in this repository.
+На этой странице описаны толко специфичные для MeshCoreTel-firmware команды CLI, добавленные в этой прошивке.
 
-It does not try to repeat the full upstream MeshCore CLI surface.
+Она не пытается повторить весь интерфейс CLI оригинального MeshCore.  Документацией по остальным командам смотрите на официальном сайте MeshCore:
 
-## Repeater MQTT Commands
+ - <https://docs.meshcore.io/cli_commands/>
 
-These commands are available on `*_repeater_mqtt` firmware targets.
+## Команды Repeater MQTT
 
-### MQTT Status And Routing
+### Статус MQTT и маршрутизация
 
-- `get mqtt.status`: shows WiFi, NTP, IATA, endpoint status, status publishing state, and TX state.
-- `get mqtt.statuscfg`: shows whether periodic status messages are enabled as a simple `on` or `off` value. Most users can just use `get mqtt.status`.
-- `get mqtt.client_version`: shows the MQTT `client_version` string published by the repeater.
-- `get mqtt.iata`: shows the IATA/location code used in MQTT topics.
-- `set mqtt.iata <code>`: sets the IATA/location code, for example `MOW`.
-- `set mqtt.iata UNSET`: marks MQTT IATA as not configured yet. While it is `UNSET`, enabled MQTT brokers stay disconnected until a real code is saved.
+- `get mqtt.status`: показывает состояние Wi-Fi, NTP, код IATA, статус конечных точек, статус публикации состояния и статус отправки.
+- `get mqtt.statuscfg`: показывает, включена ли периодическая отправка сообщений о состоянии, в виде простого значения `on` или `off`. Большинству пользователей достаточно `get mqtt.status`.
+- `get mqtt.client_version`: показывает строку `client_version` MQTT, публикуемую ретранслятором.
+- `get mqtt.iata`: показывает код IATA/локации, используемый в топиках MQTT.
+- `set mqtt.iata <code>`: устанавливает код IATA/локации, например `MOW`.
+- `set mqtt.iata UNSET`: помечает код IATA как ещё не настроенный. Пока он `UNSET`, включённые MQTT брокеры не подключаются, пока не будет сохранён реальный код.
 
-### MQTT Identity
+### Идентификация в MQTT
 
-- `get mqtt.owner`: shows the configured owner public key.
-- `set mqtt.owner <64-hex-char-public-key>`: sets the owner public key used in JWT metadata.
-- `mqtt.owner <64-hex-char-public-key>`: shorthand for setting the owner public key.
-- `get mqtt.email`: shows the configured owner email.
-- `set mqtt.email <email>`: sets the owner email used in JWT metadata.
-- `mqtt.email <email>`: shorthand for setting the owner email.
+- `get mqtt.owner`: показывает сохранённый публичный ключ владельца.
+- `set mqtt.owner <64-символьный-шестнадцатеричный-публичный-ключ>`: задаёт публичный ключ владельца, используемый в метаданных JWT.
+- `mqtt.owner <64-символьный-шестнадцатеричный-публичный-ключ>`: краткая форма для установки публичного ключа владельца.
+- `get mqtt.email`: показывает сохранённый email владельца.
+- `set mqtt.email <email>`: задаёт email владельца, используемый в метаданных JWT.
+- `mqtt.email <email>`: краткая форма для установки email владельца.
 
-### MQTT Message Controls
+### Управление сообщениями MQTT
 
-- `get mqtt.packets`: shows whether packet messages are published.
-- `set mqtt.packets on|off`: enables or disables packet publishing.
-- `get mqtt.raw`: shows whether raw packet payloads are published.
-- `set mqtt.raw on|off`: enables or disables the separate `raw` MQTT topic.
-- `set mqtt.status on|off`: enables or disables periodic MQTT status publishing.
-- `get mqtt.tx`: shows whether TX packets are included.
-- `set mqtt.tx on|off`: enables or disables TX packet publishing.
+- `get mqtt.packets`: показывает, публикуются ли сообщения о пакетах.
+- `set mqtt.packets on|off`: включает или отключает публикацию пакетов.
+- `get mqtt.raw`: показывает, публикуются ли сырые данные пакетов.
+- `set mqtt.raw on|off`: включает или отключает отдельный топик `raw` в MQTT.
+- `set mqtt.status on|off`: включает или отключает периодическую публикацию статуса MQTT.
+- `get mqtt.tx`: показывает, включены ли передаваемые (TX) пакеты.
+- `set mqtt.tx on|off`: включает или отключает публикацию переданных пакетов.
 
-### MQTT Endpoints
+### Конечные точки MQTT
 
 - `get mqtt.meshcoretel`
 - `set mqtt.meshcoretel on|off`
@@ -45,109 +45,81 @@ These commands are available on `*_repeater_mqtt` firmware targets.
 - `get mqtt.letsmesh-us`
 - `set mqtt.letsmesh-us on|off`
 
-Notes:
+Примечания:
 
-- new repeater MQTT installs default `mqtt.iata` to `UNSET`
-- `letsmesh-eu` and `letsmesh-us` remain off by default unless already configured in saved prefs
-- if `mqtt.iata` is `UNSET`, `meshcoretel`, `letsmesh-eu`, and `letsmesh-us` will not connect even if they are toggled on
+- новые установки MQTT ретранслятора по умолчанию имеют `mqtt.iata = UNSET`
+- `letsmesh-eu` и `letsmesh-us` по умолчанию выключены, если они уже не были настроены в сохранённых настройках
+- если `mqtt.iata` имеет значение `UNSET`, `meshcoretel`, `letsmesh-eu` и `letsmesh-us` не будут подключаться, даже если они включены
 
-Legacy dotted aliases are also accepted:
+Также принимаются устаревшие псевдонимы с точкой:
 
 - `mqtt.letsmesh.eu`
 - `mqtt.letsmesh.us`
 
-### WiFi Settings For MQTT Repeaters
+### Настройки Wi-Fi для MQTT ретрансляторов
 
-- `get wifi.status`: shows SSID, connection state, raw WiFi status code, and IP when connected.
-- `get wifi.ssid`: shows the configured WiFi SSID.
-- `set wifi.ssid <ssid>`: sets the WiFi SSID.
-- `set wifi.pwd <password>`: sets the WiFi password.
-- `get wifi.powersaving`: shows the current WiFi power save mode.
-- `set wifi.powersaving none|min|max`: sets WiFi power saving mode.
+- `get wifi.status`: показывает SSID, состояние подключения, код статуса Wi-Fi и IP-адрес при подключении.
+- `get wifi.ssid`: показывает настроенный SSID Wi-Fi.
+- `set wifi.ssid <ssid>`: задаёт SSID Wi-Fi.
+- `set wifi.pwd <password>`: задаёт пароль Wi-Fi.
+- `get wifi.powersaving`: показывает текущий режим энергосбережения Wi-Fi.
+- `set wifi.powersaving none|min|max`: задаёт режим энергосбережения Wi-Fi.
 
-### Web Panel Controls
+### Управление веб-панелью
 
 - `get web`
-- `get web.status`: shows whether the local HTTPS panel is available.
-- `get web.stats.status`: shows whether the dedicated stats page and history subsystem are enabled, whether recent history is active, whether PSRAM-backed history is available, and whether the SD-backed archive is mounted. When enabled, the history capture now covers supported environment telemetry too, not just the original battery/radio series. GPS-enabled boards also record per-minute satellites samples for the `/stats` history view.
+- `get web.status`: показывает, доступна ли локальная HTTPS панель.
+- `get web.stats.status`: показывает, включены ли страница `/stats` и подсистема истории, активна ли недавняя история, доступна ли история с поддержкой PSRAM и смонтирован ли архив на SD-карте. Если он включён, сбор истории теперь охватывает и поддерживаемую телеметрию окружения, а не только исходные ряды батареи/радио. Устройства с GPS также записывают ежесекундные данные о спутниках для представления истории в `/stats`.
 - `set web on|off`
-- `set.web on|off`: enables or disables the local HTTPS panel.
+- `set.web on|off`: включает или отключает локальную HTTPS панель.
 - `set web.stats on|off`
-- `set.web.stats on|off`: enables or disables the dedicated `/stats` page and historical stats collection.
+- `set.web.stats on|off`: включает или отключает страницу `/stats` и сбор исторической статистики.
 
-### Runtime Diagnostics
+### Диагностика времени выполнения
 
-- `memory`: shows current heap and PSRAM usage.
-- `stats-core`: shows battery, uptime, sticky error count, and outbound queue depth.
-- `stats-radio`: shows radio noise floor, last RSSI, last SNR, and TX/RX airtime.
-- `stats-packets`: shows packet receive/send totals, flood/direct breakdown, and receive errors.
+- `memory`: показывает использование heap и PSRAM.
+- `stats-core`: показывает батарею, время работы, число зафиксированных ошибок и глубину очереди исходящих сообщений.
+- `stats-radio`: показывает уровень собственных шумов радио, последний RSSI, последний SNR и эфирное время TX/RX.
+- `stats-packets`: показывает общее количество принятых/отправленных пакетов, разбивку на лавинные/прямые сообщения и ошибки приёма.
 
-> If `noise_floor` reports `0`, check `get agc.reset.interval`; if it is not `0`, try `set agc.reset.interval 0` and test again.
+> Если `noise_floor` сообщает `0`, проверьте `get agc.reset.interval`; если он не равен `0`, попробуйте выполнить `set agc.reset.interval 0` и проверьте снова.
 
-### Board Battery Reporting
+### Отчёт о батарее устройства
 
-- On repeater MQTT builds, background battery sampling used for MQTT/status history is rate-limited to about once per minute. Explicit status and telemetry requests still refresh the reading immediately.
+- В сборках repeater MQTT фоновый сбор данных о батарее, используемый для истории MQTT/статуса, ограничен примерно одним замером в минуту. Явные запросы статуса и телеметрии по-прежнему обновляют показания немедленно.
 
-### T-Beam 1W Fan Control
+### Управление вентилятором T-Beam 1W
 
-These commands are only available on `LilyGo_TBeam_1W_*` repeater builds.
+Эти команды доступны только в сборках `LilyGo_TBeam_1W_*` ретранслятора.
 
-- `get fan`: shows the current fan mode, current fan state, and the last NTC-based board temperature when available.
-- `set fan auto`: returns the fan to automatic control and persists that mode across reboot.
-- `set fan on`: forces the fan on and persists that mode across reboot.
-- `set fan off`: forces the fan off and persists that mode across reboot.
-- `set fan timeout <Ns>`: changes the automatic post-TX hold window in seconds and persists it across reboot, for example `set fan timeout 45s`.
+- `get fan`: показывает текущий режим вентилятора, его состояние и последнюю температуру устройства с NTC-датчика, если доступна.
+- `set fan auto`: возвращает вентилятор в автоматический режим и сохраняет этот режим после перезагрузки.
+- `set fan on`: принудительно включает вентилятор и сохраняет этот режим после перезагрузки.
+- `set fan off`: принудительно выключает вентилятор и сохраняет этот режим после перезагрузки.
+- `set fan timeout <Ns>`: изменяет время автоматической работы вентилятора после TX (в секундах) и сохраняет его после перезагрузки, например `set fan timeout 45s`.
 
-Auto mode behavior:
+Поведение автоматического режима:
 
-- forces the fan on during TX and keeps it on for the configured timeout afterward
-- otherwise turns the fan on at `48C`
-- turns it back off at `42C`
-- keeps the fan on if the NTC reading is unavailable
+- принудительно включает вентилятор во время передачи и удерживает его включённым в течение заданного тайм-аута после TX
+- в остальное время включает вентилятор при `48°C`
+- выключает при `42°C`
+- оставляет вентилятор включённым, если показания NTC недоступны
 
-Notes:
+Примечания:
 
-- default repeater fan mode is `auto`
-- default post-TX timeout is `30s`
-- fan mode and timeout are stored in repeater prefs and survive reboot
-- only `LilyGo_TBeam_1W_*` repeater builds use these persisted fan settings
-- accepted range is `0s` to `600s`
+- режим вентилятора по умолчанию для ретранслятора: `auto`
+- тайм-аут после TX по умолчанию: `30s`
+- режим и тайм-аут сохраняются в настройках ретранслятора и переживают перезагрузку
+- только сборки `LilyGo_TBeam_1W_*` ретранслятора используют эти сохранённые настройки вентилятора
+- допустимый диапазон: от `0s` до `600s`
 
-## Web Panel CLI Access
+## Доступ к CLI через веб-панель
 
-When the repeater web panel is enabled and you are authenticated, the browser CLI panel can run the same CLI commands accepted by the repeater.
+Когда веб-панель ретранслятора включена и вы аутентифицированы, CLI-панель в браузере может выполнять те же команды, которые принимает ретранслятор.
 
-Notes:
+Примечания:
 
-- the panel still uses the repeater admin password for access
-- commands run with the same care as if you typed them into the repeater CLI directly
-- this is intended for local admin use on a trusted network
-- `start ota` releases the local HTTP redirect listener on port `80` so the OTA HTTP listener can take over without stopping the rest of the repeater services, regardless of whether the command is run from the web panel, serial CLI, or a remote companion/app CLI session
-
-## Companion WiFi Rescue Commands
-
-These commands are available in the serial rescue CLI for `*_companion_radio_wifi` builds.
-
-To enter `CLI Rescue`:
-
-- open a serial monitor at `115200` baud
-- reboot the device
-- long-press the user button within the first 8 seconds after boot
-- wait for `========= CLI Rescue =========`
-
-- `get wifi.status`: shows configured SSID, connection status, raw WiFi status code, and IP when connected.
-- `get wifi.ssid`: shows the configured WiFi SSID.
-- `get wifi.powersaving`: shows the current WiFi power saving mode.
-- `set wifi.ssid <ssid>`: saves a WiFi SSID and immediately retries connection.
-- `set wifi.pwd <password>`: saves a WiFi password and immediately retries connection.
-- `set wifi.powersaving none|min|max`: changes the WiFi power save mode.
-
-Companion WiFi builds also still support the existing rescue commands such as:
-
-- `set pin <6-digit-pin>`
-- `rebuild`
-- `erase`
-- `ls ...`
-- `cat ...`
-- `rm ...`
-- `reboot`
+- панель по-прежнему использует пароль администратора ретранслятора для доступа
+- команды выполняются с той же осторожностью, как если бы вы вводили их непосредственно в CLI ретранслятора
+- это предназначено для локального администрирования в доверенной сети
+- команда `start ota` освобождает локальный HTTP-редирект на порту 80, чтобы HTTP-приёмник OTA мог занять порт, не останавливая остальные службы ретранслятора, независимо от того, выполняется ли команда из веб-панели, последовательного CLI или удалённого компаньона/приложения

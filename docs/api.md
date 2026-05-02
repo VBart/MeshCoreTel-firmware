@@ -1,102 +1,102 @@
-# Repeater Web API
+# Веб-API ретранслятора
 
-This page documents the local HTTPS API exposed by MeshCoreTel-firmware `*_repeater_mqtt` builds that support the web panel.
+На этой странице описывается локальный HTTPS API, предоставляемый сборками MeshCoreTel-firmware, который поддерживает веб-панель.
 
-It is intended for:
+Он предназначен для:
 
-- lightweight automation on your local network
-- dashboards or scripts that need current repeater status
-- remote CLI access through the same authenticated path used by the web panel
+- легковесной автоматизации в вашей локальной сети
+- панелей мониторинга или скриптов, которым требуется текущее состояние ретранслятора
+- удалённого доступа к CLI по тому же аутентифицированному пути, который используется веб-панелью
 
-This is not a cloud API and not a separate backend service. The repeater firmware serves it directly.
+Это не облачный API и не отдельный фоновый сервис. Прошивка ретранслятора предоставляет его напрямую.
 
-## Scope And Availability
+## Область применения и доступность
 
-The API is available only when:
+API доступно только при соблюдении следующих условий:
 
-- you are running a supported `*_repeater_mqtt` firmware build
-- the repeater web panel is enabled and running
-- you can reach the repeater over the local network
-- you have authenticated with the repeater admin password
+- вы используете поддерживаемую сборку прошивки
+- веб-панель ретранслятора включена и работает
+- вы можете связаться с ретранслятором по локальной сети
+- вы аутентифицировались с паролем администратора ретранслятора
 
-The API is intended for trusted local-network administration. Do not expose it directly to the public internet.
+API предназначен для администрирования в доверенной локальной сети. Не открывайте его напрямую в публичный интернет.
 
-## Base URL
+## Базовый URL
 
-Use the repeater's local HTTPS address:
+Используйте локальный HTTPS-адрес ретранслятора:
 
 ```text
 https://<repeater-ip>/
 ```
 
-Example:
+Пример:
 
 ```text
 https://192.168.1.123/
 ```
 
-## Authentication
+## Аутентификация
 
-The API uses the same admin password as the repeater CLI and web panel.
+API использует тот же пароль администратора, что и CLI ретранслятора, и веб-панель.
 
-1. `POST` the password to `/login`
-2. store the returned session token
-3. send that token in the `X-Auth-Token` header on later requests
+1. Отправьте пароль методом `POST` на `/login`
+2. сохраните возвращённый токен сессии
+3. передавайте этот токен в заголовке `X-Auth-Token` при последующих запросах
 
-Example:
+Пример:
 
 ```bash
 TOKEN=$(curl -sk -X POST https://<repeater-ip>/login --data '<admin-password>')
 ```
 
-Use the token:
+Использование токена:
 
 ```bash
 curl -sk https://<repeater-ip>/api/stats -H "X-Auth-Token: $TOKEN"
 ```
 
-Notes:
+Примечания:
 
-- the repeater uses a self-signed certificate, so most tools will need `-k` or equivalent
-- if the session expires or is locked, requests return `401 Unauthorized`
-- logging in again gives you a fresh token
+- ретранслятор использует самоподписанный сертификат, поэтому большинству инструментов потребуется `-k` или аналог
+- если сессия истекает или блокируется, запросы возвращают `401 Unauthorized`
+- повторный вход даст новый токен
 
-## Performance Guidance
+## Рекомендации по производительности
 
-The API runs on the repeater itself, so polling frequency matters.
+API работает на самом ретрансляторе, поэтому частота опроса имеет значение.
 
-If the repeater is also running two MQTT connections, avoid frequent API polling. The current MeshCoreTel-firmware usage pattern is:
+Если ретранслятор также поддерживает два MQTT-соединения, избегайте частого опроса API. Текущая модель использования MeshCoreTel-firmware:
 
-- `60` second polling for stats
-- on-demand requests for everything else
+- опрос статистики раз в `60` секунд
+- запросы по требованию для всего остального
 
-That is the recommended baseline if you want to avoid overloading the board. Keep the request rate low, avoid bursty polling, and prefer manual refresh or event-triggered reads for heavier operations.
+Это рекомендуемый базовый уровень, если вы хотите избежать перегрузки устройства. Держите частоту запросов низкой, избегайте шквального опроса и отдавайте предпочтение ручному обновлению или чтению по событиям для более тяжёлых операций.
 
-Recommended practice:
+Рекомендуемая практика:
 
-- poll `/api/stats` no more than once per minute
-- avoid scraping multiple endpoints in parallel
-- use on-demand calls for configuration reads and CLI actions
-- close out your session when you are finished and stop polling when not actively using the data
+- опрашивайте `/api/stats` не чаще одного раза в минуту
+- избегайте параллельного запроса нескольких конечных точек
+- используйте вызовы по требованию для чтения конфигурации и действий CLI
+- завершайте сессию, когда закончили, и прекращайте опрос, когда данные активно не используются
 
-## Endpoints
+## Конечные точки
 
 ### `POST /login`
 
-Authenticate with the repeater admin password.
+Аутентификация с паролем администратора ретранслятора.
 
-Request body:
+Тело запроса:
 
 ```text
 <admin-password>
 ```
 
-Response:
+Ответ:
 
-- plain-text session token on success
-- `401` on bad password
+- токен сессии в виде обычного текста при успехе
+- `401` при неверном пароле
 
-Example:
+Пример:
 
 ```bash
 curl -sk -X POST https://<repeater-ip>/login --data '<admin-password>'
@@ -104,26 +104,26 @@ curl -sk -X POST https://<repeater-ip>/login --data '<admin-password>'
 
 ### `POST /api/command`
 
-Run a repeater CLI command remotely.
+Удалённое выполнение команды CLI ретранслятора.
 
-Headers:
+Заголовки:
 
 ```text
 X-Auth-Token: <token>
 ```
 
-Request body:
+Тело запроса:
 
 ```text
 get wifi.status
 ```
 
-Response:
+Ответ:
 
-- plain-text CLI output
-- `OK` if a command succeeds without returning text
+- вывод CLI в виде обычного текста
+- `OK`, если команда выполнена успешно и не возвращает текста
 
-Example:
+Пример:
 
 ```bash
 curl -sk https://<repeater-ip>/api/command \
@@ -133,33 +133,33 @@ curl -sk https://<repeater-ip>/api/command \
 
 ### `GET /api/stats`
 
-Fetch the current summary payload used by the dedicated `/stats` page.
+Получить сводные данные, используемые на отдельной странице `/stats`.
 
-Headers:
+Заголовки:
 
 ```text
 X-Auth-Token: <token>
 ```
 
-Example:
+Пример:
 
 ```bash
 curl -sk https://<repeater-ip>/api/stats \
   -H "X-Auth-Token: $TOKEN"
 ```
 
-Notes:
+Примечания:
 
-- this summary view is also what the repo's web panel requests first before loading trend series
-- if `web.stats` is disabled, the endpoint returns `503 Service Unavailable`
-- supported boards may also include an optional `sensors` object in the summary payload for current GPS and environmental telemetry
-- the `core` object includes raw `battery_mv`, board-reported `battery_pct` when available, a UI-ready `battery_display_pct`, and board-specific `battery_min_mv` / `battery_max_mv` range hints used by `/stats` when the board does not expose its own battery percentage
+- это сводное представление также запрашивается веб-панелью в первую очередь перед загрузкой серий трендов
+- если `web.stats` отключён, конечная точка возвращает `503 Service Unavailable`
+- поддерживаемые устройства могут также включать необязательный объект `sensors` в сводных данных с текущей телеметрией GPS и окружающей среды
+- объект `core` включает исходное `battery_mv`, `battery_pct` (если устройство сообщает), готовый для интерфейса `battery_display_pct`, а также специфичные для устройства подсказки диапазона `battery_min_mv` / `battery_max_mv`, используемые `/stats`, когда устройство не предоставляет собственный процент заряда
 
 ### `GET /api/stats?series=<name>`
 
-Fetch one trend series.
+Получить один ряд тренда.
 
-Supported series:
+Поддерживаемые ряды:
 
 - `battery`
 - `memory`
@@ -175,39 +175,26 @@ Supported series:
 - `gps_altitude`
 - `gps_satellites`
 
-Example:
+Пример:
 
 ```bash
 curl -sk "https://<repeater-ip>/api/stats?series=memory" \
   -H "X-Auth-Token: $TOKEN"
 ```
 
-Notes:
+Примечания:
 
-- use `?series=battery`, not just `?series`
-- the built-in web panel loads these series sequentially rather than all at once to keep board memory pressure lower
-- environment series are included only when the board reports those readings; if a series has no captured points yet, it returns an empty `points` array and `current:null`
+- используйте `?series=battery`, а не просто `?series`
+- встроенная веб-панель загружает эти ряды последовательно, а не все сразу, чтобы снизить нагрузку на память платы
+- ряды окружения включаются только когда устройство передаёт эти показания; если ряд еще не накопил точек, он возвращает пустой массив `points` и `current:null`
 
-### `GET /api/stats?view=legacy`
+## Типовые сценарии использования
 
-Fetch the older bundle-style stats payload.
+### 1. Удалённый доступ к CLI
 
-Example:
+`/api/command` — самая гибкая конечная точка. Она позволяет выполнять те же команды CLI, которые принимает ретранслятор.
 
-```bash
-curl -sk "https://<repeater-ip>/api/stats?view=legacy" \
-  -H "X-Auth-Token: $TOKEN"
-```
-
-This exists for compatibility and troubleshooting. For new integrations, prefer the summary endpoint plus specific `series` requests.
-
-## Common Use Cases
-
-### 1. Remote CLI Access
-
-`/api/command` is the most flexible endpoint. It lets you run the same CLI commands accepted by the repeater.
-
-Examples:
+Примеры:
 
 - `get wifi.status`
 - `get mqtt.status`
@@ -216,13 +203,13 @@ Examples:
 - `get repeat`
 - `get radio`
 
-This is useful for:
+Это полезно для:
 
-- remote diagnostics from a laptop or phone
-- simple scripts that collect operational state
-- admin tools that want to reuse existing CLI behavior instead of adding new firmware endpoints
+- удалённой диагностики с ноутбука или телефона
+- простых скриптов, собирающих операционное состояние
+- инструментов администрирования, желающих переиспользовать поведение CLI вместо добавления новых конечных точек в прошивке
 
-Example:
+Пример:
 
 ```bash
 curl -sk https://<repeater-ip>/api/command \
@@ -230,31 +217,31 @@ curl -sk https://<repeater-ip>/api/command \
   --data 'get mqtt.status'
 ```
 
-### 2. Build A Lightweight Status Dashboard
+### 2. Создание легковесной панели статуса
 
-Use `/api/stats` for summary information and one `series` call at a time for trend lines.
+Используйте `/api/stats` для сводной информации и по одному вызову `series` для линий трендов.
 
-Recommended pattern:
+Рекомендуемый шаблон:
 
-1. fetch `/api/stats`
-2. render current service state and summary fields
-3. fetch one trend series only when needed
-4. refresh at `60` second intervals, or slower if the repeater is busy
+1. запросите `/api/stats`
+2. отобразите текущее состояние служб и сводные поля
+3. запрашивайте один ряд тренда только по необходимости
+4. обновляйте с интервалом `60` секунд или реже, если ретранслятор загружен
 
-This is the same basic pattern used by the built-in `/stats` page.
+Это тот же базовый шаблон, что используется встроенной страницей `/stats`.
 
-### 3. Reuse The API For Quick Health Checks
+### 3. Использование API для быстрых проверок работоспособности
 
-Because `/api/command` returns CLI output directly, it works well for small operational checks in scripts or home-lab monitoring.
+Поскольку `/api/command` возвращает вывод CLI напрямую, он хорошо подходит для небольших операционных проверок в скриптах или домашнем мониторинге.
 
-Examples:
+Примеры:
 
-- confirm the repeater still has Wi-Fi
-- check MQTT broker connection state
-- verify that the web panel is enabled before attempting stats reads
-- confirm current radio settings before applying changes
+- убедиться, что у ретранслятора всё ещё есть Wi-Fi
+- проверить состояние подключения к MQTT-брокеру
+- убедиться, что веб-панель включена перед попыткой чтения статистики
+- проверить текущие настройки LoRa перед применением изменений
 
-Example:
+Пример:
 
 ```bash
 curl -sk https://<repeater-ip>/api/command \
@@ -262,11 +249,11 @@ curl -sk https://<repeater-ip>/api/command \
   --data 'get web.status'
 ```
 
-### 4. Remote Admin Actions
+### 4. Удалённые административные действия
 
-The web panel also uses `/api/command` for operator actions, not just read-only queries.
+Веб-панель также использует `/api/command` для действий оператора, не только для запросов только на чтение.
 
-Examples:
+Примеры:
 
 - `advert`
 - `reboot`
@@ -274,9 +261,9 @@ Examples:
 - `time <epoch>`
 - `time.force <epoch>`
 
-These are powerful commands. Treat them the same way you would treat direct serial CLI access.
+Это мощные команды. Обращайтесь с ними так же, как с прямым доступом через последовательный CLI.
 
-Example:
+Пример:
 
 ```bash
 curl -sk https://<repeater-ip>/api/command \
@@ -284,23 +271,23 @@ curl -sk https://<repeater-ip>/api/command \
   --data 'advert'
 ```
 
-### 5. Remote Configuration Helpers
+### 5. Помощники удалённой конфигурации
 
-The web panel saves settings by generating CLI commands and sending them through `/api/command`.
+Веб-панель сохраняет настройки, генерируя CLI-команды и отправляя их через `/api/command`.
 
-That means your own tools can do the same for MeshCoreTel-firmware specific settings such as:
+Это означает, что ваши собственные инструменты могут делать то же самое для специфичных для MeshCoreTel-firmware настроек, таких как:
 
-- repeater identity fields
-- owner info
-- MQTT broker toggles
-- MQTT owner metadata
-- radio settings supported by the repeater CLI
+- поля идентификации ретранслятора
+- информация о владельце
+- переключатели MQTT-брокеров
+- метаданные владельца MQTT
+- LoRa-настройки, поддерживаемые CLI ретранслятора
 
-This is a practical way to automate setup while preserving existing CLI semantics.
+Это практичный способ автоматизировать настройку, сохраняя существующую семантику CLI.
 
-## Example Script
+## Пример скрипта
 
-This shell example logs in, fetches summary stats, fetches one trend series, and runs a CLI command:
+Этот shell-пример выполняет вход, получает сводную статистику, один ряд тренда и выполняет CLI-команду:
 
 ```bash
 #!/usr/bin/env bash
@@ -311,41 +298,41 @@ PASSWORD="your-admin-password"
 
 TOKEN=$(curl -sk -X POST "$BASE_URL/login" --data "$PASSWORD")
 
-echo "Summary:"
+echo "Сводка:"
 curl -sk "$BASE_URL/api/stats" \
   -H "X-Auth-Token: $TOKEN"
 
 echo
-echo "Memory trend:"
+echo "Тренд памяти:"
 curl -sk "$BASE_URL/api/stats?series=memory" \
   -H "X-Auth-Token: $TOKEN"
 
 echo
-echo "MQTT status:"
+echo "Статус MQTT:"
 curl -sk "$BASE_URL/api/command" \
   -H "X-Auth-Token: $TOKEN" \
   --data 'get mqtt.status'
 ```
 
-## Error Cases
+## Варианты ошибок
 
-Common responses:
+Типичные ответы:
 
-- `401 Unauthorized`: missing or expired token
-- `503 Service Unavailable`: stats are disabled
-- `404 No stats data`: requested stats payload could not be built
-- `400 Bad request`: malformed login or command request body
+- `401 Unauthorized`: отсутствует или истёк токен
+- `503 Service Unavailable`: статистика отключена
+- `404 No stats data`: не удалось сформировать запрошенные данные статистики
+- `400 Bad request`: некорректное тело запроса при входе или выполнении команды
 
-If stats requests fail:
+Если запросы статистики не удаются:
 
-1. confirm the web panel is enabled
-2. confirm `web.stats` is enabled
-3. confirm the session token is still valid
-4. reduce polling frequency if the board is under memory pressure
+1. убедитесь, что веб-панель включена
+2. убедитесь, что `web.stats` включён
+3. убедитесь, что токен сессии всё ещё действителен
+4. уменьшите частоту опроса, если устройство испытывает нехватку памяти
 
-## Practical Recommendations
+## Практические рекомендации
 
-- prefer `/api/command` when you need exact CLI parity
-- prefer `/api/stats` for dashboards and trend views
-- keep polling conservative, especially on repeaters with two active MQTT connections
-- if you are finished with troubleshooting, consider disabling the web panel with `set web off` to maximize heap headroom on constrained boards
+- отдавайте предпочтение `/api/command`, когда нужно точное соответствие CLI
+- отдавайте предпочтение `/api/stats` для панелей мониторинга и просмотра трендов
+- делайте опрос консервативным, особенно на ретрансляторах с двумя активными MQTT-соединениями
+- если вы закончили диагностику, рассмотрите отключение веб-панели командой `set web off`, чтобы максимизировать запас памяти на устройствах с ограниченными ресурсами
