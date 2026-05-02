@@ -41,4 +41,4 @@ nav:
   - CLI-команды: custom-cli.md
   - Веб-панель: web-panel.md
   - Веб-API: api.md
-  - Локальная сборка: local-builds.md
+  - Cборка: local-builds.md
