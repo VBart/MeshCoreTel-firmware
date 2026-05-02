@@ -1,6 +1,6 @@
 site_name: MeshCoreTel-firmware Docs
 site_url: https://vbart.github.io/MeshCoreTel-firmware/
-site_description: Documentation for the MeshCoreTel-firmware layer on top of MeshCore, including WiFi, MQTT, and release workflows
+site_description: Документация по специфичным для MeshCoreTel-firmware функциям: Wi-Fi, MQTT, веб-панель и API, также процессу выпуска релизов
 
 repo_name: VBart/MeshCoreTel-firmware
 repo_url: https://github.com/VBart/MeshCoreTel-firmware
@@ -8,6 +8,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  language: ru
   logo: _assets/vbart.svg
   favicon: _assets/vbart.svg
   features:
@@ -22,14 +23,14 @@ theme:
       accent: custom
       toggle:
         icon: material/weather-night
-        name: Switch to dark mode
+        name: Переключить на темную тему
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/weather-sunny
-        name: Switch to light mode
+        name: Переключить на светлую тему
 
 extra_css:
   - _stylesheets/extra.css
