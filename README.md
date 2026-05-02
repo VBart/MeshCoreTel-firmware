@@ -27,8 +27,8 @@
   - включения локальной веб-панели
 
 ### Локальная веб-панель
-<img align="right" width=160 src="docs/_assets/repeater_web_panel_stats_light.png">
-<img align="right" width=160 src="docs/_assets/repeater_web_panel_app_light.png">
+<img align="right" width=160 src="docs/_assets/repeater_web_panel_stats_light.webp">
+<img align="right" width=160 src="docs/_assets/repeater_web_panel_app_light.webp">
 Дополнительно на поддерживаемых устройствах (с достаточным количеством памяти) ретранслятор может предоставлять локальную панель конфигурации по HTTPS через WiFi.
 
 Возможности:
