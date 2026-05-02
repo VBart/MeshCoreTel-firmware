@@ -1,6 +1,6 @@
 site_name: MeshCoreTel-firmware Docs
 site_url: https://vbart.github.io/MeshCoreTel-firmware/
-site_description: Документация по специфичным для MeshCoreTel-firmware функциям: Wi-Fi, MQTT, веб-панель и API, также процессу выпуска релизов
+site_description: "Документация по специфичным для MeshCoreTel-firmware функциям: Wi-Fi, MQTT, веб-панель и API, также процессу выпуска релизов"
 
 repo_name: VBart/MeshCoreTel-firmware
 repo_url: https://github.com/VBart/MeshCoreTel-firmware
