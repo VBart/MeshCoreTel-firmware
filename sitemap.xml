@@ -10,6 +10,9 @@
         <loc>https://vbart.github.io/MeshCoreTel-firmware/releases/</loc>
       </url>
       <url>
+        <loc>https://vbart.github.io/MeshCoreTel-firmware/custom-cli/</loc>
+      </url>
+      <url>
         <loc>https://vbart.github.io/MeshCoreTel-firmware/web-panel/</loc>
       </url>
       <url>
@@ -17,8 +20,5 @@
       </url>
       <url>
         <loc>https://vbart.github.io/MeshCoreTel-firmware/local-builds/</loc>
-      </url>
-      <url>
-        <loc>https://vbart.github.io/MeshCoreTel-firmware/custom-cli/</loc>
       </url>
 </urlset>
