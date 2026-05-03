@@ -54,26 +54,28 @@ runs:
       run: |
         STATIC_OFFICIAL_VERSION="${OFFICIAL_MESHCORE_VERSION:-}"
 
+        echo "DISABLE_DEBUG=1" >> "$GITHUB_ENV"
+
         if [[ "$GITHUB_REF" != refs/tags/* ]]; then
           echo "GIT_TAG_NAME=" >> "$GITHUB_ENV"
           echo "GIT_TAG_VERSION=" >> "$GITHUB_ENV"
           echo "OFFICIAL_MESHCORE_VERSION=$STATIC_OFFICIAL_VERSION" >> "$GITHUB_ENV"
-          echo "EASTMESH_VERSION=" >> "$GITHUB_ENV"
+          echo "MESHCORETEL_VERSION=" >> "$GITHUB_ENV"
           echo "FIRMWARE_VERSION=$STATIC_OFFICIAL_VERSION" >> "$GITHUB_ENV"
           echo "RELEASE_VERSION=$STATIC_OFFICIAL_VERSION" >> "$GITHUB_ENV"
           exit 0
         fi
 
         GIT_TAG_NAME="${GITHUB_REF#refs/tags/}"
-        EASTMESH_VERSION=""
+        MESHCORETEL_VERSION=""
         FIRMWARE_VERSION="$STATIC_OFFICIAL_VERSION"
 
-        if [[ "$GIT_TAG_NAME" =~ ^repeater-mqtt-eastmesh-(v[[:alnum:]._-]+)$ ]]; then
+        if [[ "$GIT_TAG_NAME" =~ ^repeater-mqtt-meshcoretel-(v[[:alnum:]._-]+)$ ]]; then
           if [[ -z "$STATIC_OFFICIAL_VERSION" ]]; then
-            echo "OFFICIAL_MESHCORE_VERSION must be set for EastMesh release tags" >&2
+            echo "OFFICIAL_MESHCORE_VERSION must be set for MeshCoreTel-firmware release tags" >&2
             exit 1
           fi
-          EASTMESH_VERSION="${BASH_REMATCH[1]}"
+          MESHCORETEL_VERSION="${BASH_REMATCH[1]}"
         elif [[ "$GIT_TAG_NAME" =~ ^companion-wifi-(v[[:alnum:]._-]+)$ ]]; then
           FIRMWARE_VERSION="${BASH_REMATCH[1]}"
         else
@@ -87,13 +89,13 @@ runs:
         fi
 
         RELEASE_VERSION="$FIRMWARE_VERSION"
-        if [[ -n "$EASTMESH_VERSION" ]]; then
-          RELEASE_VERSION="${RELEASE_VERSION}-eastmesh-${EASTMESH_VERSION}"
+        if [[ -n "$MESHCORETEL_VERSION" ]]; then
+          RELEASE_VERSION="${RELEASE_VERSION}-vbart-meshcoretel-${MESHCORETEL_VERSION}"
         fi
 
         echo "GIT_TAG_NAME=$GIT_TAG_NAME" >> "$GITHUB_ENV"
         echo "GIT_TAG_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
         echo "OFFICIAL_MESHCORE_VERSION=$FIRMWARE_VERSION" >> "$GITHUB_ENV"
-        echo "EASTMESH_VERSION=$EASTMESH_VERSION" >> "$GITHUB_ENV"
+        echo "MESHCORETEL_VERSION=$MESHCORETEL_VERSION" >> "$GITHUB_ENV"
         echo "FIRMWARE_VERSION=$FIRMWARE_VERSION" >> "$GITHUB_ENV"
         echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
