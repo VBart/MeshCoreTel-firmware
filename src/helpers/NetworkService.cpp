@@ -286,7 +286,7 @@ void NetworkService::updateTimeSync() {
   }
 
   if (!_sntp_started) {
-    configTzTime("UTC0", "au.pool.ntp.org", "time.google.com", "time.cloudflare.com");
+    configTzTime("UTC0", "0.ru.pool.ntp.org", "ntp.ix.ru", "ntp21.vniiftri.ru");
     _sntp_started = true;
   }
 
