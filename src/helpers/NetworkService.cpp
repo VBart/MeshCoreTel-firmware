@@ -14,7 +14,8 @@ namespace {
 #if defined(ESP_PLATFORM)
 constexpr unsigned long kWifiRetryMillis = 15000;
 constexpr unsigned long kWifiConnectTimeoutMillis = 45000;
-constexpr time_t kMinSaneEpoch = 1735689600;  // 2025-01-01T00:00:00Z
+constexpr time_t kMinSaneEpoch = 1767225600;  // 2026-01-01T00:00:00Z
+constexpr time_t kMaxOutOfSync = 86400;  // 24h
 
 int getWifiQualityPercent(int rssi_dbm) {
   if (rssi_dbm <= -100) {
@@ -43,7 +44,7 @@ const char* getWifiQualityLabel(int rssi_dbm) {
 }  // namespace
 
 NetworkService::NetworkService()
-    : _fs(nullptr), _prefs{}, _wifi_started(false), _sntp_started(false), _have_time_sync(false), _last_wifi_attempt(0) {
+    : _fs(nullptr), _prefs{}, _wifi_started(false), _sntp_started(false), _have_time_sync(false), _last_wifi_attempt(0), _last_time_sync(0) {
   NetworkPrefsStore::setDefaults(_prefs);
 }
 
@@ -213,6 +214,16 @@ bool NetworkService::isWifiConnected() const {
 #endif
 }
 
+bool NetworkService::hasTimeSync() const {
+#if defined(ESP_PLATFORM)
+  if (_have_time_sync) return true;
+  time_t now = time(nullptr);
+  return now >= kMinSaneEpoch && now < (_last_time_sync + kMaxOutOfSync);
+#else
+  return false;
+#endif
+}
+
 #if defined(ESP_PLATFORM)
 wifi_ps_type_t NetworkService::toEspPowerSave(uint8_t mode) {
   switch (mode) {
@@ -295,5 +306,7 @@ void NetworkService::updateTimeSync() {
   bool sane_time = now >= kMinSaneEpoch;
   bool sync_ready = sync_status == SNTP_SYNC_STATUS_COMPLETED || sync_status == SNTP_SYNC_STATUS_IN_PROGRESS;
   _have_time_sync = sane_time && (sync_ready || prev_have_time_sync);
+
+  if (_have_time_sync) _last_time_sync = now;
 }
 #endif

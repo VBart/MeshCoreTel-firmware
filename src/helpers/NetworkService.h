@@ -30,7 +30,7 @@ public:
   void reconnectWifi();
 
   bool isWifiConnected() const override;
-  bool hasTimeSync() const override { return _have_time_sync; }
+  bool hasTimeSync() const override;
 
 private:
 #if defined(ESP_PLATFORM)
@@ -47,4 +47,5 @@ private:
   bool _sntp_started;
   bool _have_time_sync;
   unsigned long _last_wifi_attempt;
+  time_t        _last_time_sync;
 };
