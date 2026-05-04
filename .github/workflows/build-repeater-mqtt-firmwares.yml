@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'repeater-mqtt-eastmesh-*'
+      - 'repeater-mqtt-meshcoretel-*'
 
 jobs:
 
