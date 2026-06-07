@@ -23,18 +23,23 @@
       
       
       <link rel="icon" href="../_assets/vbart.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="zensical-0.0.32">
     
     
       
-        <title>Веб-API - Документация MeshCoreTel-firmware</title>
+        <title>Веб-API ретранслятора - Документация MeshCoreTel-firmware</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.53a7feaf.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
       
       
 
@@ -48,14 +53,14 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
       
     
     
       <link rel="stylesheet" href="../_stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
     
       
 
@@ -76,7 +81,7 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Навигация"></label>
     <div data-md-component="skip">
       
         
@@ -96,14 +101,14 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
-    <a href=".." title="Документация MeshCoreTel-firmware" class="md-header__button md-logo" aria-label="Документация MeshCoreTel-firmware" data-md-component="logo">
+    <a href="./.." title="Документация MeshCoreTel-firmware" class="md-header__button md-logo" aria-label="Документация MeshCoreTel-firmware" data-md-component="logo">
       
-  <img src="../_assets/vbart.svg" alt="logo">
+  <img src="../_assets/vbart.svg" alt="Документация MeshCoreTel-firmware">
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Навигация">
       
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -115,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Веб-API
+              Веб-API ретранслятора
             
           </span>
         </div>
@@ -155,59 +160,30 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search">
+        <label class="md-header__button md-icon" for="__search" aria-label="Поиск">
           
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
-        <div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="__search"></label>
-  <div class="md-search__inner" role="search">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Поиск" placeholder="Поиск" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
-      <label class="md-search__icon md-icon" for="__search">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
-      </label>
-      <nav class="md-search__options" aria-label="Поиск">
-        
-        <button type="reset" class="md-search__icon md-icon" title="Очистить" aria-label="Очистить" tabindex="-1">
-          
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
-      </nav>
-      
-        <div class="md-search__suggest" data-md-component="search-suggest"></div>
-      
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="search-result">
-          <div class="md-search-result__meta">
-            Инициализация поиска
-          </div>
-          <ol class="md-search-result__list" role="presentation"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Поиск">
+  <button type="button" class="md-search__button">
+    Поиск
+  </button>
 </div>
       
     
-    
-      <div class="md-header__source">
+    <div class="md-header__source">
+      
         <a href="https://github.com/VBart/MeshCoreTel-firmware" title="Перейти к репозиторию" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
     VBart/MeshCoreTel-firmware
   </div>
 </a>
-      </div>
-    
+      
+    </div>
   </nav>
   
 </header>
@@ -233,9 +209,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Навигация" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Документация MeshCoreTel-firmware" class="md-nav__button md-logo" aria-label="Документация MeshCoreTel-firmware" data-md-component="logo">
+    <a href="./.." title="Документация MeshCoreTel-firmware" class="md-nav__button md-logo" aria-label="Документация MeshCoreTel-firmware" data-md-component="logo">
       
-  <img src="../_assets/vbart.svg" alt="logo">
+  <img src="../_assets/vbart.svg" alt="Документация MeshCoreTel-firmware">
 
     </a>
     Документация MeshCoreTel-firmware
@@ -245,7 +221,7 @@
       <a href="https://github.com/VBart/MeshCoreTel-firmware" title="Перейти к репозиторию" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
     VBart/MeshCoreTel-firmware
@@ -262,7 +238,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="./.." class="md-nav__link">
         
   
   
@@ -400,7 +376,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
       
       
         
@@ -424,7 +400,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="./" class="md-nav__link md-nav__link--active">
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -442,6 +418,7 @@
       </a>
       
         
+
 
 <nav class="md-nav md-nav--secondary" aria-label="Содержание">
   
@@ -711,8 +688,22 @@
               
               <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
                   <div class="md-sidebar__inner">
                     
+
 
 <nav class="md-nav md-nav--secondary" aria-label="Содержание">
   
@@ -951,18 +942,16 @@
               <article class="md-content__inner md-typeset">
                 
                   
-
-
   
     <a href="https://github.com/VBart/MeshCoreTel-firmware/edit/main/meshcoretel-docs/api.md" title="Редактировать страницу" class="md-content__button md-icon" rel="edit">
       
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
   
   
 
 
-<h1 id="-api">Веб-API ретранслятора</h1>
+<h1 id="-api">Веб-API ретранслятора<a class="headerlink" href="#-api" title="Permanent link">&para;</a></h1>
 <p>На этой странице описывается локальный HTTPS API, предоставляемый сборками MeshCoreTel-firmware, который поддерживает веб-панель.</p>
 <p>Он предназначен для:</p>
 <ul>
@@ -971,7 +960,7 @@
 <li>удалённого доступа к CLI по тому же аутентифицированному пути, который используется веб-панелью</li>
 </ul>
 <p>Это не облачный API и не отдельный фоновый сервис. Прошивка ретранслятора предоставляет его напрямую.</p>
-<h2 id="_1">Область применения и доступность</h2>
+<h2 id="_1">Область применения и доступность<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>API доступно только при соблюдении следующих условий:</p>
 <ul>
 <li>вы используете поддерживаемую сборку прошивки</li>
@@ -980,14 +969,14 @@
 <li>вы аутентифицировались с паролем администратора ретранслятора</li>
 </ul>
 <p>API предназначен для администрирования в доверенной локальной сети. Не открывайте его напрямую в публичный интернет.</p>
-<h2 id="url">Базовый URL</h2>
+<h2 id="url">Базовый URL<a class="headerlink" href="#url" title="Permanent link">&para;</a></h2>
 <p>Используйте локальный HTTPS-адрес ретранслятора:</p>
-<pre><code class="language-text">https://&lt;repeater-ip&gt;/
-</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>https://&lt;repeater-ip&gt;/
+</span></code></pre></div>
 <p>Пример:</p>
-<pre><code class="language-text">https://192.168.1.123/
-</code></pre>
-<h2 id="_2">Аутентификация</h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>https://192.168.1.123/
+</span></code></pre></div>
+<h2 id="_2">Аутентификация<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>API использует тот же пароль администратора, что и CLI ретранслятора, и веб-панель.</p>
 <ol>
 <li>Отправьте пароль методом <code>POST</code> на <code>/login</code></li>
@@ -995,18 +984,18 @@
 <li>передавайте этот токен в заголовке <code>X-Auth-Token</code> при последующих запросах</li>
 </ol>
 <p>Пример:</p>
-<pre><code class="language-bash">TOKEN=$(curl -sk -X POST https://&lt;repeater-ip&gt;/login --data '&lt;admin-password&gt;')
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-sk<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://&lt;repeater-ip&gt;/login<span class="w"> </span>--data<span class="w"> </span><span class="s1">&#39;&lt;admin-password&gt;&#39;</span><span class="k">)</span>
+</span></code></pre></div>
 <p>Использование токена:</p>
-<pre><code class="language-bash">curl -sk https://&lt;repeater-ip&gt;/api/stats -H &quot;X-Auth-Token: $TOKEN&quot;
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/stats<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+</span></code></pre></div>
 <p>Примечания:</p>
 <ul>
 <li>ретранслятор использует самоподписанный сертификат, поэтому большинству инструментов потребуется <code>-k</code> или аналог</li>
 <li>если сессия истекает или блокируется, запросы возвращают <code>401 Unauthorized</code></li>
 <li>повторный вход даст новый токен</li>
 </ul>
-<h2 id="_3">Рекомендации по производительности</h2>
+<h2 id="_3">Рекомендации по производительности<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>API работает на самом ретрансляторе, поэтому частота опроса имеет значение.</p>
 <p>Если ретранслятор также поддерживает два MQTT-соединения, избегайте частого опроса API. Текущая модель использования MeshCoreTel-firmware:</p>
 <ul>
@@ -1021,47 +1010,47 @@
 <li>используйте вызовы по требованию для чтения конфигурации и действий CLI</li>
 <li>завершайте сессию, когда закончили, и прекращайте опрос, когда данные активно не используются</li>
 </ul>
-<h2 id="_4">Конечные точки</h2>
-<h3 id="post-login"><code>POST /login</code></h3>
+<h2 id="_4">Конечные точки<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="post-login"><code>POST /login</code><a class="headerlink" href="#post-login" title="Permanent link">&para;</a></h3>
 <p>Аутентификация с паролем администратора ретранслятора.</p>
 <p>Тело запроса:</p>
-<pre><code class="language-text">&lt;admin-password&gt;
-</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&lt;admin-password&gt;
+</span></code></pre></div>
 <p>Ответ:</p>
 <ul>
 <li>токен сессии в виде обычного текста при успехе</li>
 <li><code>401</code> при неверном пароле</li>
 </ul>
 <p>Пример:</p>
-<pre><code class="language-bash">curl -sk -X POST https://&lt;repeater-ip&gt;/login --data '&lt;admin-password&gt;'
-</code></pre>
-<h3 id="post-apicommand"><code>POST /api/command</code></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>https://&lt;repeater-ip&gt;/login<span class="w"> </span>--data<span class="w"> </span><span class="s1">&#39;&lt;admin-password&gt;&#39;</span>
+</span></code></pre></div>
+<h3 id="post-apicommand"><code>POST /api/command</code><a class="headerlink" href="#post-apicommand" title="Permanent link">&para;</a></h3>
 <p>Удалённое выполнение команды CLI ретранслятора.</p>
 <p>Заголовки:</p>
-<pre><code class="language-text">X-Auth-Token: &lt;token&gt;
-</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>X-Auth-Token: &lt;token&gt;
+</span></code></pre></div>
 <p>Тело запроса:</p>
-<pre><code class="language-text">get wifi.status
-</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>get wifi.status
+</span></code></pre></div>
 <p>Ответ:</p>
 <ul>
 <li>вывод CLI в виде обычного текста</li>
 <li><code>OK</code>, если команда выполнена успешно и не возвращает текста</li>
 </ul>
 <p>Пример:</p>
-<pre><code class="language-bash">curl -sk https://&lt;repeater-ip&gt;/api/command \
-  -H &quot;X-Auth-Token: $TOKEN&quot; \
-  --data 'get wifi.status'
-</code></pre>
-<h3 id="get-apistats"><code>GET /api/stats</code></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get wifi.status&#39;</span>
+</span></code></pre></div>
+<h3 id="get-apistats"><code>GET /api/stats</code><a class="headerlink" href="#get-apistats" title="Permanent link">&para;</a></h3>
 <p>Получить сводные данные, используемые на отдельной странице <code>/stats</code>.</p>
 <p>Заголовки:</p>
-<pre><code class="language-text">X-Auth-Token: &lt;token&gt;
-</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>X-Auth-Token: &lt;token&gt;
+</span></code></pre></div>
 <p>Пример:</p>
-<pre><code class="language-bash">curl -sk https://&lt;repeater-ip&gt;/api/stats \
-  -H &quot;X-Auth-Token: $TOKEN&quot;
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/stats<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+</span></code></pre></div>
 <p>Примечания:</p>
 <ul>
 <li>это сводное представление также запрашивается веб-панелью в первую очередь перед загрузкой серий трендов</li>
@@ -1069,7 +1058,7 @@
 <li>поддерживаемые устройства могут также включать необязательный объект <code>sensors</code> в сводных данных с текущей телеметрией GPS и окружающей среды</li>
 <li>объект <code>core</code> включает исходное <code>battery_mv</code>, <code>battery_pct</code> (если устройство сообщает), готовый для интерфейса <code>battery_display_pct</code>, а также специфичные для устройства подсказки диапазона <code>battery_min_mv</code> / <code>battery_max_mv</code>, используемые <code>/stats</code>, когда устройство не предоставляет собственный процент заряда</li>
 </ul>
-<h3 id="get-apistatsseriesname"><code>GET /api/stats?series=&lt;name&gt;</code></h3>
+<h3 id="get-apistatsseriesname"><code>GET /api/stats?series=&lt;name&gt;</code><a class="headerlink" href="#get-apistatsseriesname" title="Permanent link">&para;</a></h3>
 <p>Получить один ряд тренда.</p>
 <p>Поддерживаемые ряды:</p>
 <ul>
@@ -1090,17 +1079,17 @@
 <li><code>gps_satellites</code></li>
 </ul>
 <p>Пример:</p>
-<pre><code class="language-bash">curl -sk &quot;https://&lt;repeater-ip&gt;/api/stats?series=memory&quot; \
-  -H &quot;X-Auth-Token: $TOKEN&quot;
-</code></pre>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;https://&lt;repeater-ip&gt;/api/stats?series=memory&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+</span></code></pre></div>
 <p>Примечания:</p>
 <ul>
 <li>используйте <code>?series=battery</code>, а не просто <code>?series</code></li>
 <li>встроенная веб-панель загружает эти ряды последовательно, а не все сразу, чтобы снизить нагрузку на память платы</li>
 <li>ряды окружения включаются только когда устройство передаёт эти показания; если ряд еще не накопил точек, он возвращает пустой массив <code>points</code> и <code>current:null</code></li>
 </ul>
-<h2 id="_5">Типовые сценарии использования</h2>
-<h3 id="1-cli">1. Удалённый доступ к CLI</h3>
+<h2 id="_5">Типовые сценарии использования<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="1-cli">1. Удалённый доступ к CLI<a class="headerlink" href="#1-cli" title="Permanent link">&para;</a></h3>
 <p><code>/api/command</code> — самая гибкая конечная точка. Она позволяет выполнять те же команды CLI, которые принимает ретранслятор.</p>
 <p>Примеры:</p>
 <ul>
@@ -1118,11 +1107,11 @@
 <li>инструментов администрирования, желающих переиспользовать поведение CLI вместо добавления новых конечных точек в прошивке</li>
 </ul>
 <p>Пример:</p>
-<pre><code class="language-bash">curl -sk https://&lt;repeater-ip&gt;/api/command \
-  -H &quot;X-Auth-Token: $TOKEN&quot; \
-  --data 'get mqtt.status'
-</code></pre>
-<h3 id="2">2. Создание легковесной панели статуса</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get mqtt.status&#39;</span>
+</span></code></pre></div>
+<h3 id="2">2. Создание легковесной панели статуса<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
 <p>Используйте <code>/api/stats</code> для сводной информации и по одному вызову <code>series</code> для линий трендов.</p>
 <p>Рекомендуемый шаблон:</p>
 <ol>
@@ -1132,7 +1121,7 @@
 <li>обновляйте с интервалом <code>60</code> секунд или реже, если ретранслятор загружен</li>
 </ol>
 <p>Это тот же базовый шаблон, что используется встроенной страницей <code>/stats</code>.</p>
-<h3 id="3-api">3. Использование API для быстрых проверок работоспособности</h3>
+<h3 id="3-api">3. Использование API для быстрых проверок работоспособности<a class="headerlink" href="#3-api" title="Permanent link">&para;</a></h3>
 <p>Поскольку <code>/api/command</code> возвращает вывод CLI напрямую, он хорошо подходит для небольших операционных проверок в скриптах или домашнем мониторинге.</p>
 <p>Примеры:</p>
 <ul>
@@ -1142,11 +1131,11 @@
 <li>проверить текущие настройки LoRa перед применением изменений</li>
 </ul>
 <p>Пример:</p>
-<pre><code class="language-bash">curl -sk https://&lt;repeater-ip&gt;/api/command \
-  -H &quot;X-Auth-Token: $TOKEN&quot; \
-  --data 'get web.status'
-</code></pre>
-<h3 id="4">4. Удалённые административные действия</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get web.status&#39;</span>
+</span></code></pre></div>
+<h3 id="4">4. Удалённые административные действия<a class="headerlink" href="#4" title="Permanent link">&para;</a></h3>
 <p>Веб-панель также использует <code>/api/command</code> для действий оператора, не только для запросов только на чтение.</p>
 <p>Примеры:</p>
 <ul>
@@ -1158,11 +1147,11 @@
 </ul>
 <p>Это мощные команды. Обращайтесь с ними так же, как с прямым доступом через последовательный CLI.</p>
 <p>Пример:</p>
-<pre><code class="language-bash">curl -sk https://&lt;repeater-ip&gt;/api/command \
-  -H &quot;X-Auth-Token: $TOKEN&quot; \
-  --data 'advert'
-</code></pre>
-<h3 id="5">5. Помощники удалённой конфигурации</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;repeater-ip&gt;/api/command<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;advert&#39;</span>
+</span></code></pre></div>
+<h3 id="5">5. Помощники удалённой конфигурации<a class="headerlink" href="#5" title="Permanent link">&para;</a></h3>
 <p>Веб-панель сохраняет настройки, генерируя CLI-команды и отправляя их через <code>/api/command</code>.</p>
 <p>Это означает, что ваши собственные инструменты могут делать то же самое для специфичных для MeshCoreTel-firmware настроек, таких как:</p>
 <ul>
@@ -1173,32 +1162,32 @@
 <li>LoRa-настройки, поддерживаемые CLI ретранслятора</li>
 </ul>
 <p>Это практичный способ автоматизировать настройку, сохраняя существующую семантику CLI.</p>
-<h2 id="_6">Пример скрипта</h2>
+<h2 id="_6">Пример скрипта<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>Этот shell-пример выполняет вход, получает сводную статистику, один ряд тренда и выполняет CLI-команду:</p>
-<pre><code class="language-bash">#!/usr/bin/env bash
-set -euo pipefail
-
-BASE_URL=&quot;https://192.168.1.123&quot;
-PASSWORD=&quot;your-admin-password&quot;
-
-TOKEN=$(curl -sk -X POST &quot;$BASE_URL/login&quot; --data &quot;$PASSWORD&quot;)
-
-echo &quot;Сводка:&quot;
-curl -sk &quot;$BASE_URL/api/stats&quot; \
-  -H &quot;X-Auth-Token: $TOKEN&quot;
-
-echo
-echo &quot;Тренд памяти:&quot;
-curl -sk &quot;$BASE_URL/api/stats?series=memory&quot; \
-  -H &quot;X-Auth-Token: $TOKEN&quot;
-
-echo
-echo &quot;Статус MQTT:&quot;
-curl -sk &quot;$BASE_URL/api/command&quot; \
-  -H &quot;X-Auth-Token: $TOKEN&quot; \
-  --data 'get mqtt.status'
-</code></pre>
-<h2 id="_7">Варианты ошибок</h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="ch">#!/usr/bin/env bash</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="nv">BASE_URL</span><span class="o">=</span><span class="s2">&quot;https://192.168.1.123&quot;</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="nv">PASSWORD</span><span class="o">=</span><span class="s2">&quot;your-admin-password&quot;</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>curl<span class="w"> </span>-sk<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/login&quot;</span><span class="w"> </span>--data<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$PASSWORD</span><span class="s2">&quot;</span><span class="k">)</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Сводка:&quot;</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/stats&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="nb">echo</span>
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Тренд памяти:&quot;</span>
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/stats?series=memory&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+</span><span id="__span-15-17"><a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a>
+</span><span id="__span-15-18"><a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="nb">echo</span>
+</span><span id="__span-15-19"><a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Статус MQTT:&quot;</span>
+</span><span id="__span-15-20"><a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a>curl<span class="w"> </span>-sk<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$BASE_URL</span><span class="s2">/api/command&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-21"><a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Auth-Token: </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-15-22"><a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a><span class="w">  </span>--data<span class="w"> </span><span class="s1">&#39;get mqtt.status&#39;</span>
+</span></code></pre></div>
+<h2 id="_7">Варианты ошибок<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>Типичные ответы:</p>
 <ul>
 <li><code>401 Unauthorized</code>: отсутствует или истёк токен</li>
@@ -1213,13 +1202,15 @@ curl -sk &quot;$BASE_URL/api/command&quot; \
 <li>убедитесь, что токен сессии всё ещё действителен</li>
 <li>уменьшите частоту опроса, если устройство испытывает нехватку памяти</li>
 </ol>
-<h2 id="_8">Практические рекомендации</h2>
+<h2 id="_8">Практические рекомендации<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
 <ul>
 <li>отдавайте предпочтение <code>/api/command</code>, когда нужно точное соответствие CLI</li>
 <li>отдавайте предпочтение <code>/api/stats</code> для панелей мониторинга и просмотра трендов</li>
 <li>делайте опрос консервативным, особенно на ретрансляторах с двумя активными MQTT-соединениями</li>
 <li>если вы закончили диагностику, рассмотрите отключение веб-панели командой <code>set web off</code>, чтобы максимизировать запас памяти на устройствах с ограниченными ресурсами</li>
 </ul>
+
+
 
 
 
@@ -1250,8 +1241,8 @@ curl -sk &quot;$BASE_URL/api/command&quot; \
   
   
     Made with
-    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-      Material for MkDocs
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
     </a>
   
 </div>
@@ -1269,10 +1260,10 @@ curl -sk &quot;$BASE_URL/api/command&quot; \
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.action.edit", "content.code.copy", "search.highlight", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.action.edit","content.code.copy","search.highlight","search.suggest"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Скопировано в буфер","clipboard.copy":"Копировать в буфер","search.result.more.one":"Ещё 1 на этой странице","search.result.more.other":"Ещё # на этой странице","search.result.none":"Совпадений не найдено","search.result.one":"Найдено 1 совпадение","search.result.other":"Найдено совпадений: #","search.result.placeholder":"Начните печатать для поиска","search.result.term.missing":"Отсутствует","select.version":"Выберите версию"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.91a19a9e.min.js"></script>
       
     
   </body>

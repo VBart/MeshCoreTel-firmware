@@ -23,18 +23,23 @@
       
       
       <link rel="icon" href="../_assets/vbart.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="zensical-0.0.32">
     
     
       
-        <title>CLI-команды - Документация MeshCoreTel-firmware</title>
+        <title>Пользовательские команды CLI - Документация MeshCoreTel-firmware</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.53a7feaf.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
       
       
 
@@ -48,14 +53,14 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
       
     
     
       <link rel="stylesheet" href="../_stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,a=__md_scope)=>JSON.parse(t.getItem(a.pathname+"."+e)),__md_set=(e,t,a=localStorage,_=__md_scope)=>{try{a.setItem(_.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
     
       
 
@@ -76,7 +81,7 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer"></label>
+    <label class="md-overlay" for="__drawer" aria-label="Навигация"></label>
     <div data-md-component="skip">
       
         
@@ -96,14 +101,14 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
-    <a href=".." title="Документация MeshCoreTel-firmware" class="md-header__button md-logo" aria-label="Документация MeshCoreTel-firmware" data-md-component="logo">
+    <a href="./.." title="Документация MeshCoreTel-firmware" class="md-header__button md-logo" aria-label="Документация MeshCoreTel-firmware" data-md-component="logo">
       
-  <img src="../_assets/vbart.svg" alt="logo">
+  <img src="../_assets/vbart.svg" alt="Документация MeshCoreTel-firmware">
 
     </a>
-    <label class="md-header__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Навигация">
       
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -115,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              CLI-команды
+              Пользовательские команды CLI
             
           </span>
         </div>
@@ -155,59 +160,30 @@
     
       
       
-        <label class="md-header__button md-icon" for="__search">
+        <label class="md-header__button md-icon" for="__search" aria-label="Поиск">
           
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
         </label>
-        <div class="md-search" data-md-component="search" role="dialog">
-  <label class="md-search__overlay" for="__search"></label>
-  <div class="md-search__inner" role="search">
-    <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Поиск" placeholder="Поиск" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
-      <label class="md-search__icon md-icon" for="__search">
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
-        
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
-      </label>
-      <nav class="md-search__options" aria-label="Поиск">
-        
-        <button type="reset" class="md-search__icon md-icon" title="Очистить" aria-label="Очистить" tabindex="-1">
-          
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-        </button>
-      </nav>
-      
-        <div class="md-search__suggest" data-md-component="search-suggest"></div>
-      
-    </form>
-    <div class="md-search__output">
-      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="search-result">
-          <div class="md-search-result__meta">
-            Инициализация поиска
-          </div>
-          <ol class="md-search-result__list" role="presentation"></ol>
-        </div>
-      </div>
-    </div>
-  </div>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Поиск">
+  <button type="button" class="md-search__button">
+    Поиск
+  </button>
 </div>
       
     
-    
-      <div class="md-header__source">
+    <div class="md-header__source">
+      
         <a href="https://github.com/VBart/MeshCoreTel-firmware" title="Перейти к репозиторию" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
     VBart/MeshCoreTel-firmware
   </div>
 </a>
-      </div>
-    
+      
+    </div>
   </nav>
   
 </header>
@@ -233,9 +209,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Навигация" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Документация MeshCoreTel-firmware" class="md-nav__button md-logo" aria-label="Документация MeshCoreTel-firmware" data-md-component="logo">
+    <a href="./.." title="Документация MeshCoreTel-firmware" class="md-nav__button md-logo" aria-label="Документация MeshCoreTel-firmware" data-md-component="logo">
       
-  <img src="../_assets/vbart.svg" alt="logo">
+  <img src="../_assets/vbart.svg" alt="Документация MeshCoreTel-firmware">
 
     </a>
     Документация MeshCoreTel-firmware
@@ -245,7 +221,7 @@
       <a href="https://github.com/VBart/MeshCoreTel-firmware" title="Перейти к репозиторию" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
     VBart/MeshCoreTel-firmware
@@ -262,7 +238,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="./.." class="md-nav__link">
         
   
   
@@ -346,7 +322,7 @@
   
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
       
       
         
@@ -370,7 +346,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="./" class="md-nav__link md-nav__link--active">
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -388,6 +364,7 @@
       </a>
       
         
+
 
 <nav class="md-nav md-nav--secondary" aria-label="Содержание">
   
@@ -628,8 +605,22 @@
               
               <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
                   <div class="md-sidebar__inner">
                     
+
 
 <nav class="md-nav md-nav--secondary" aria-label="Содержание">
   
@@ -785,25 +776,23 @@
               <article class="md-content__inner md-typeset">
                 
                   
-
-
   
     <a href="https://github.com/VBart/MeshCoreTel-firmware/edit/main/meshcoretel-docs/custom-cli.md" title="Редактировать страницу" class="md-content__button md-icon" rel="edit">
       
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-file-pen" viewBox="0 0 24 24"><path d="M12.659 22H18a2 2 0 0 0 2-2V8a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 14 2H6a2 2 0 0 0-2 2v9.34"/><path d="M14 2v5a1 1 0 0 0 1 1h5M10.378 12.622a1 1 0 0 1 3 3.003L8.36 20.637a2 2 0 0 1-.854.506l-2.867.837a.5.5 0 0 1-.62-.62l.836-2.869a2 2 0 0 1 .506-.853z"/></svg>
     </a>
   
   
 
 
-<h1 id="cli">Пользовательские команды CLI</h1>
+<h1 id="cli">Пользовательские команды CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h1>
 <p>На этой странице описаны толко специфичные для MeshCoreTel-firmware команды CLI, добавленные в этой прошивке.</p>
 <p>Она не пытается повторить весь интерфейс CLI оригинального MeshCore.  Документацией по остальным командам смотрите на официальном сайте MeshCore:</p>
 <ul>
 <li><a href="https://docs.meshcore.io/cli_commands/">https://docs.meshcore.io/cli_commands/</a></li>
 </ul>
-<h2 id="repeater-mqtt">Команды Repeater MQTT</h2>
-<h3 id="mqtt">Статус MQTT и маршрутизация</h3>
+<h2 id="repeater-mqtt">Команды Repeater MQTT<a class="headerlink" href="#repeater-mqtt" title="Permanent link">&para;</a></h2>
+<h3 id="mqtt">Статус MQTT и маршрутизация<a class="headerlink" href="#mqtt" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get mqtt.status</code>: показывает состояние Wi-Fi, NTP, код IATA, статус конечных точек, статус публикации состояния и статус отправки.</li>
 <li><code>get mqtt.statuscfg</code>: показывает, включена ли периодическая отправка сообщений о состоянии, в виде простого значения <code>on</code> или <code>off</code>. Большинству пользователей достаточно <code>get mqtt.status</code>.</li>
@@ -812,7 +801,7 @@
 <li><code>set mqtt.iata &lt;code&gt;</code>: устанавливает код IATA/локации, например <code>MOW</code>.</li>
 <li><code>set mqtt.iata UNSET</code>: помечает код IATA как ещё не настроенный. Пока он <code>UNSET</code>, включённые MQTT брокеры не подключаются, пока не будет сохранён реальный код.</li>
 </ul>
-<h3 id="mqtt_1">Идентификация в MQTT</h3>
+<h3 id="mqtt_1">Идентификация в MQTT<a class="headerlink" href="#mqtt_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get mqtt.owner</code>: показывает сохранённый публичный ключ владельца.</li>
 <li><code>set mqtt.owner &lt;64-символьный-шестнадцатеричный-публичный-ключ&gt;</code>: задаёт публичный ключ владельца, используемый в метаданных JWT.</li>
@@ -821,7 +810,7 @@
 <li><code>set mqtt.email &lt;email&gt;</code>: задаёт email владельца, используемый в метаданных JWT.</li>
 <li><code>mqtt.email &lt;email&gt;</code>: краткая форма для установки email владельца.</li>
 </ul>
-<h3 id="mqtt_2">Управление сообщениями MQTT</h3>
+<h3 id="mqtt_2">Управление сообщениями MQTT<a class="headerlink" href="#mqtt_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get mqtt.packets</code>: показывает, публикуются ли сообщения о пакетах.</li>
 <li><code>set mqtt.packets on|off</code>: включает или отключает публикацию пакетов.</li>
@@ -831,7 +820,7 @@
 <li><code>get mqtt.tx</code>: показывает, включены ли передаваемые (TX) пакеты.</li>
 <li><code>set mqtt.tx on|off</code>: включает или отключает публикацию переданных пакетов.</li>
 </ul>
-<h3 id="mqtt_3">Конечные точки MQTT</h3>
+<h3 id="mqtt_3">Конечные точки MQTT<a class="headerlink" href="#mqtt_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get mqtt.meshcoretel</code></li>
 <li><code>set mqtt.meshcoretel on|off</code></li>
@@ -851,7 +840,7 @@
 <li><code>mqtt.letsmesh.eu</code></li>
 <li><code>mqtt.letsmesh.us</code></li>
 </ul>
-<h3 id="wi-fi-mqtt">Настройки Wi-Fi для MQTT ретрансляторов</h3>
+<h3 id="wi-fi-mqtt">Настройки Wi-Fi для MQTT ретрансляторов<a class="headerlink" href="#wi-fi-mqtt" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get wifi.status</code>: показывает SSID, состояние подключения, код статуса Wi-Fi и IP-адрес при подключении.</li>
 <li><code>get wifi.ssid</code>: показывает настроенный SSID Wi-Fi.</li>
@@ -860,7 +849,7 @@
 <li><code>get wifi.powersaving</code>: показывает текущий режим энергосбережения Wi-Fi.</li>
 <li><code>set wifi.powersaving none|min|max</code>: задаёт режим энергосбережения Wi-Fi.</li>
 </ul>
-<h3 id="-">Управление веб-панелью</h3>
+<h3 id="-">Управление веб-панелью<a class="headerlink" href="#-" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>get web</code></li>
 <li><code>get web.status</code>: показывает, доступна ли локальная HTTPS панель.</li>
@@ -870,7 +859,7 @@
 <li><code>set web.stats on|off</code></li>
 <li><code>set.web.stats on|off</code>: включает или отключает страницу <code>/stats</code> и сбор исторической статистики.</li>
 </ul>
-<h3 id="_1">Диагностика времени выполнения</h3>
+<h3 id="_1">Диагностика времени выполнения<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>memory</code>: показывает использование heap и PSRAM.</li>
 <li><code>stats-core</code>: показывает батарею, время работы, число зафиксированных ошибок и глубину очереди исходящих сообщений.</li>
@@ -880,11 +869,11 @@
 <blockquote>
 <p>Если <code>noise_floor</code> сообщает <code>0</code>, проверьте <code>get agc.reset.interval</code>; если он не равен <code>0</code>, попробуйте выполнить <code>set agc.reset.interval 0</code> и проверьте снова.</p>
 </blockquote>
-<h3 id="_2">Отчёт о батарее устройства</h3>
+<h3 id="_2">Отчёт о батарее устройства<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li>В сборках repeater MQTT фоновый сбор данных о батарее, используемый для истории MQTT/статуса, ограничен примерно одним замером в минуту. Явные запросы статуса и телеметрии по-прежнему обновляют показания немедленно.</li>
 </ul>
-<h3 id="t-beam-1w">Управление вентилятором T-Beam 1W</h3>
+<h3 id="t-beam-1w">Управление вентилятором T-Beam 1W<a class="headerlink" href="#t-beam-1w" title="Permanent link">&para;</a></h3>
 <p>Эти команды доступны только в сборках <code>LilyGo_TBeam_1W_*</code> ретранслятора.</p>
 <ul>
 <li><code>get fan</code>: показывает текущий режим вентилятора, его состояние и последнюю температуру устройства с NTC-датчика, если доступна.</li>
@@ -908,7 +897,7 @@
 <li>только сборки <code>LilyGo_TBeam_1W_*</code> ретранслятора используют эти сохранённые настройки вентилятора</li>
 <li>допустимый диапазон: от <code>0s</code> до <code>600s</code></li>
 </ul>
-<h2 id="cli-">Доступ к CLI через веб-панель</h2>
+<h2 id="cli-">Доступ к CLI через веб-панель<a class="headerlink" href="#cli-" title="Permanent link">&para;</a></h2>
 <p>Когда веб-панель ретранслятора включена и вы аутентифицированы, CLI-панель в браузере может выполнять те же команды, которые принимает ретранслятор.</p>
 <p>Примечания:</p>
 <ul>
@@ -917,6 +906,8 @@
 <li>это предназначено для локального администрирования в доверенной сети</li>
 <li>команда <code>start ota</code> освобождает локальный HTTP-редирект на порту 80, чтобы HTTP-приёмник OTA мог занять порт, не останавливая остальные службы ретранслятора, независимо от того, выполняется ли команда из веб-панели, последовательного CLI или удалённого компаньона/приложения</li>
 </ul>
+
+
 
 
 
@@ -947,8 +938,8 @@
   
   
     Made with
-    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-      Material for MkDocs
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
     </a>
   
 </div>
@@ -966,10 +957,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.action.edit", "content.code.copy", "search.highlight", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.action.edit","content.code.copy","search.highlight","search.suggest"],"search":"../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Скопировано в буфер","clipboard.copy":"Копировать в буфер","search.result.more.one":"Ещё 1 на этой странице","search.result.more.other":"Ещё # на этой странице","search.result.none":"Совпадений не найдено","search.result.one":"Найдено 1 совпадение","search.result.other":"Найдено совпадений: #","search.result.placeholder":"Начните печатать для поиска","search.result.term.missing":"Отсутствует","select.version":"Выберите версию"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.91a19a9e.min.js"></script>
       
     
   </body>
