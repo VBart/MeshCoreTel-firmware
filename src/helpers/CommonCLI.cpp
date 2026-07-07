@@ -211,11 +211,11 @@ void CommonCLI::savePrefs(FILESYSTEM* fs) {
     file.write((uint8_t *)&_prefs->rx_boosted_gain, sizeof(_prefs->rx_boosted_gain));              // 291
     file.write((uint8_t *)&_prefs->fan_mode, sizeof(_prefs->fan_mode));                            // 292
     file.write((uint8_t *)&_prefs->fan_timeout_secs, sizeof(_prefs->fan_timeout_secs));            // 293
-    file.write((uint8_t *)&_prefs->cad_enabled, sizeof(_prefs->cad_enabled));                      // 294
     file.write((uint8_t *)&_prefs->flood_max_unscoped, sizeof(_prefs->flood_max_unscoped));        // 295
     file.write((uint8_t *)&_prefs->flood_max_advert, sizeof(_prefs->flood_max_advert));            // 296
     file.write((uint8_t *)&_prefs->radio_fem_rxgain, sizeof(_prefs->radio_fem_rxgain));            // 297
-    // next: 298
+    file.write((uint8_t *)&_prefs->cad_enabled, sizeof(_prefs->cad_enabled));                      // 298
+    // next: 299
 
     file.close();
   }
