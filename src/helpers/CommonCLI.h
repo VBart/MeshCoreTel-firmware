@@ -65,6 +65,7 @@ struct NodePrefs { // persisted to file
   uint8_t radio_fem_rxgain; // LoRa FEM RX gain setting
   uint8_t path_hash_mode;   // which path mode to use when sending
   uint8_t loop_detect;
+  uint8_t cad_enabled;      // hardware Channel Activity Detection before TX (boolean)
   uint8_t fan_mode;
   uint16_t fan_timeout_secs;
 };

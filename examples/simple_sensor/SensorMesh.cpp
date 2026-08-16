@@ -323,6 +323,9 @@ uint32_t SensorMesh::getDirectRetransmitDelay(const mesh::Packet* packet) {
 int SensorMesh::getInterferenceThreshold() const {
   return _prefs.interference_threshold;
 }
+bool SensorMesh::getCADEnabled() const {
+  return _prefs.cad_enabled;
+}
 int SensorMesh::getAGCResetInterval() const {
   return ((int)_prefs.agc_reset_interval) * 4000;   // milliseconds
 }
@@ -726,6 +729,7 @@ SensorMesh::SensorMesh(mesh::MainBoard& board, mesh::Radio& radio, mesh::Millise
   _prefs.disable_fwd = true;
   _prefs.flood_max = 64;
   _prefs.interference_threshold = 0;  // disabled
+  _prefs.cad_enabled = 0;             // hardware CAD before TX (off by default; 'set cad on')
 
   // GPS defaults
   _prefs.gps_enabled = 0;
