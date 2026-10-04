@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <cctype>
 #include <helpers/sensors/LPPDataHelpers.h>
 
 #if defined(TBEAM_1W)
@@ -10,6 +11,17 @@
 
 #if defined(ESP32) && WITH_WEB_PANEL
   #include <WiFi.h>
+#endif
+
+#if defined(ESP_PLATFORM) && defined(WITH_WIREGUARD)
+  #include <WireGuard-ESP32.h>
+  #include <Preferences.h>
+  #include <tcpip_adapter.h>
+extern "C" {
+  #include "lwip/netif.h"
+  #include "wireguard.h"
+  #include "wireguard-platform.h"
+}
 #endif
 
 #ifndef ARCHIVE_DEBUG
@@ -27,6 +39,130 @@
 #endif
 
 namespace {
+
+#if defined(ESP_PLATFORM) && defined(WITH_WIREGUARD)
+WireGuard wg_client;
+String wg_private_key;
+String wg_public_key;
+String wg_peer_public_key;
+String wg_endpoint;
+String wg_address;
+bool wg_started = false;
+unsigned long wg_last_attempt_ms = 0;
+constexpr uint16_t wg_endpoint_port = 51820;
+constexpr unsigned long wg_retry_ms = 10000UL;
+constexpr size_t wg_endpoint_max_len = 120;
+
+bool decodeWireGuardKey(const String& key, uint8_t* raw, size_t raw_size) {
+  size_t raw_len = raw_size;
+  return wireguard_base64_decode(key.c_str(), raw, &raw_len) && raw_len == raw_size;
+}
+
+bool deriveWireGuardPublic(const String& private_key, String& public_key) {
+  wireguard_platform_init();
+  wireguard_init();
+  uint8_t raw[WIREGUARD_PRIVATE_KEY_LEN] = {};
+  if (!decodeWireGuardKey(private_key, raw, sizeof(raw))) return false;
+  wireguard_device device{};
+  if (!wireguard_device_init(&device, raw)) return false;
+  char encoded[64] = {};
+  size_t encoded_len = sizeof(encoded);
+  if (!wireguard_base64_encode(device.public_key, WIREGUARD_PUBLIC_KEY_LEN,
+                               encoded, &encoded_len)) return false;
+  public_key = encoded;
+  return true;
+}
+
+bool validWireGuardPublicKey(const String& public_key) {
+  uint8_t raw[WIREGUARD_PUBLIC_KEY_LEN] = {};
+  return decodeWireGuardKey(public_key, raw, sizeof(raw));
+}
+
+bool saveWireGuardString(const char* key, const String& value) {
+  Preferences prefs;
+  if (!prefs.begin("wgmesh", false)) return false;
+  size_t written = prefs.putString(key, value);
+  prefs.end();
+  return written == value.length();
+}
+
+bool generateWireGuardKey() {
+  wireguard_platform_init();
+  uint8_t raw[WIREGUARD_PRIVATE_KEY_LEN] = {};
+  wireguard_random_bytes(raw, sizeof(raw));
+  char encoded[64] = {};
+  size_t encoded_len = sizeof(encoded);
+  if (!wireguard_base64_encode(raw, sizeof(raw), encoded, &encoded_len)) return false;
+  String candidate(encoded);
+  String candidate_public;
+  if (!deriveWireGuardPublic(candidate, candidate_public)) return false;
+  if (!saveWireGuardString("private", candidate)) return false;
+  wg_private_key = candidate;
+  wg_public_key = candidate_public;
+  return true;
+}
+
+bool ensureWireGuardKey() {
+  if (wg_private_key.length() > 0 &&
+      deriveWireGuardPublic(wg_private_key, wg_public_key)) return true;
+  return generateWireGuardKey();
+}
+
+bool parseWireGuardAddress(const String& value, IPAddress& address, IPAddress& netmask) {
+  const int slash = value.indexOf('/');
+  String address_text = slash >= 0 ? value.substring(0, slash) : value;
+  address_text.trim();
+  if (!address.fromString(address_text)) return false;
+
+  int prefix = 32;
+  if (slash >= 0) {
+    String prefix_text = value.substring(slash + 1);
+    prefix_text.trim();
+    if (prefix_text.length() == 0) return false;
+    char* parse_end = nullptr;
+    long parsed = strtol(prefix_text.c_str(), &parse_end, 10);
+    if (parse_end == nullptr || *parse_end != 0 || parsed < 0 || parsed > 32) return false;
+    prefix = static_cast<int>(parsed);
+  }
+
+  uint8_t bytes[4] = {};
+  for (int i = 0; i < 4; ++i) {
+    const int bits = std::max(0, std::min(8, prefix - i * 8));
+    bytes[i] = bits == 0 ? 0 : static_cast<uint8_t>(0xFFu << (8 - bits));
+  }
+  netmask = IPAddress(bytes[0], bytes[1], bytes[2], bytes[3]);
+  return true;
+}
+
+void loadWireGuardSettings() {
+  Preferences prefs;
+  if (prefs.begin("wgmesh", true)) {
+    wg_private_key = prefs.getString("private", "");
+    wg_peer_public_key = prefs.getString("peer", "");
+    wg_endpoint = prefs.getString("endpoint", "");
+    wg_address = prefs.getString("address", "");
+    prefs.end();
+  }
+  if (!ensureWireGuardKey()) {
+    wg_private_key = "";
+    wg_public_key = "";
+  }
+}
+
+void resetWireGuardClient() {
+  if (wg_client.is_initialized()) wg_client.end();
+  wg_started = false;
+  wg_last_attempt_ms = 0;
+}
+
+bool validWireGuardEndpoint(const String& value) {
+  if (value.length() == 0 || value.length() > wg_endpoint_max_len) return false;
+  for (size_t i = 0; i < value.length(); ++i) {
+    if (isspace(static_cast<unsigned char>(value[i]))) return false;
+  }
+  return true;
+}
+#endif
 
 int clampBatteryPercentFromRange(uint16_t battery_mv, uint16_t min_mv, uint16_t max_mv) {
   if (max_mv <= min_mv) {
@@ -1328,6 +1464,13 @@ void MyMesh::begin(FILESYSTEM *fs, ArchiveStorage* archive) {
 #endif
   network.begin(_fs, legacy_wifi_powersave, legacy_wifi_ssid, legacy_wifi_pwd);
 #endif
+#if defined(ESP_PLATFORM) && defined(WITH_WIREGUARD)
+  loadWireGuardSettings();
+  Serial.print("[WG] public: ");
+  Serial.println(wg_public_key.length() ? wg_public_key : "-");
+  Serial.print("[WG] endpoint: ");
+  Serial.println(wg_endpoint.length() ? wg_endpoint : "-");
+#endif
 #if defined(ESP_PLATFORM) && WITH_WEB_PANEL
   board.setInhibitSleep(true);
   web.setCommandRunner(this);
@@ -2228,6 +2371,118 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
       strcpy(reply, "Err - use auto|on|off|timeout <Ns>");
     }
 #endif
+#if defined(ESP_PLATFORM) && defined(WITH_WIREGUARD)
+  } else if (strcmp(command, "get wg.public") == 0) {
+    snprintf(reply, 160, "> %s", wg_public_key.length() ? wg_public_key.c_str() : "-");
+  } else if (strcmp(command, "get wg.private") == 0) {
+    snprintf(reply, 160, "> %s", wg_private_key.length() ? wg_private_key.c_str() : "-");
+  } else if (strcmp(command, "get wg.peer") == 0) {
+    snprintf(reply, 160, "> %s", wg_peer_public_key.length() ? wg_peer_public_key.c_str() : "-");
+  } else if (strcmp(command, "get wg.endpoint") == 0) {
+    snprintf(reply, 160, "> %s", wg_endpoint.length() ? wg_endpoint.c_str() : "-");
+  } else if (strcmp(command, "get wg.address") == 0) {
+    snprintf(reply, 160, "> %s", wg_address.length() ? wg_address.c_str() : "-");
+  } else if (strcmp(command, "get wg.status") == 0) {
+    uint32_t session_age_ms = 0xFFFFFFFFUL;
+    uint32_t last_rx_age_ms = 0xFFFFFFFFUL;
+    uint32_t last_tx_age_ms = 0xFFFFFFFFUL;
+    const bool peer_up = wg_started &&
+        wg_client.peer_is_up(&session_age_ms, &last_rx_age_ms, &last_tx_age_ms);
+    char handshake[24];
+    char rx[24];
+    char tx[24];
+    if (peer_up && session_age_ms != 0xFFFFFFFFUL) {
+      snprintf(handshake, sizeof(handshake), "%lus",
+               static_cast<unsigned long>(session_age_ms / 1000UL));
+    } else {
+      strcpy(handshake, "none");
+    }
+    if (peer_up && last_rx_age_ms != 0xFFFFFFFFUL) {
+      snprintf(rx, sizeof(rx), "%lus",
+               static_cast<unsigned long>(last_rx_age_ms / 1000UL));
+    } else {
+      strcpy(rx, "never");
+    }
+    if (peer_up && last_tx_age_ms != 0xFFFFFFFFUL) {
+      snprintf(tx, sizeof(tx), "%lus",
+               static_cast<unsigned long>(last_tx_age_ms / 1000UL));
+    } else {
+      strcpy(tx, "never");
+    }
+    snprintf(reply, 160,
+             "> init:%s peer:%s handshake:%s rx:%s tx:%s address:%s endpoint:%s port:%u",
+             wg_started ? "up" : "down",
+             peer_up ? "connected" : (wg_started ? "waiting" : "down"),
+             handshake, rx, tx,
+             wg_address.length() ? wg_address.c_str() : "-",
+             wg_endpoint.length() ? wg_endpoint.c_str() : "-",
+             static_cast<unsigned>(wg_endpoint_port));
+  } else if (memcmp(command, "set wg.endpoint ", 16) == 0) {
+    String value(&command[16]);
+    value.trim();
+    if (value == "-" || value == "clear") value = "";
+    if (value.length() > 0 && !validWireGuardEndpoint(value)) {
+      strcpy(reply, "Err - bad wg.endpoint");
+    } else if (!saveWireGuardString("endpoint", value)) {
+      strcpy(reply, "Err - unable to save wg.endpoint");
+    } else {
+      wg_endpoint = value;
+      resetWireGuardClient();
+      snprintf(reply, 160, "OK - wg.endpoint %s",
+               wg_endpoint.length() ? wg_endpoint.c_str() : "cleared");
+    }
+  } else if (memcmp(command, "set wg.peer ", 12) == 0) {
+    String value(&command[12]);
+    value.trim();
+    if (!validWireGuardPublicKey(value)) {
+      strcpy(reply, "Err - bad wg.peer");
+    } else if (!saveWireGuardString("peer", value)) {
+      strcpy(reply, "Err - unable to save wg.peer");
+    } else {
+      wg_peer_public_key = value;
+      resetWireGuardClient();
+      strcpy(reply, "OK - wg.peer saved");
+    }
+  } else if (memcmp(command, "set wg.address ", 15) == 0) {
+    String value(&command[15]);
+    value.trim();
+    IPAddress local_ip;
+    IPAddress netmask;
+    if (!parseWireGuardAddress(value, local_ip, netmask)) {
+      strcpy(reply, "Err - use wg.address <IPv4>/<prefix>");
+    } else if (!saveWireGuardString("address", value)) {
+      strcpy(reply, "Err - unable to save wg.address");
+    } else {
+      wg_address = value;
+      resetWireGuardClient();
+      snprintf(reply, 160, "OK - wg.address %s", wg_address.c_str());
+    }
+  } else if (memcmp(command, "set wg.private ", 15) == 0) {
+    String value(&command[15]);
+    value.trim();
+    if (value == "generate") {
+      if (generateWireGuardKey()) {
+        resetWireGuardClient();
+        snprintf(reply, 160, "OK - wg.public %s", wg_public_key.c_str());
+      } else {
+        strcpy(reply, "Err - unable to generate wg.private");
+      }
+    } else {
+      String candidate_public;
+      if (!deriveWireGuardPublic(value, candidate_public)) {
+        strcpy(reply, "Err - bad wg.private");
+      } else if (!saveWireGuardString("private", value)) {
+        strcpy(reply, "Err - unable to save wg.private");
+      } else {
+        wg_private_key = value;
+        wg_public_key = candidate_public;
+        resetWireGuardClient();
+        snprintf(reply, 160, "OK - wg.public %s", wg_public_key.c_str());
+      }
+    }
+  } else if (memcmp(command, "set wg.public", 13) == 0) {
+    strcpy(reply, "Err - wg.public is derived; use set wg.private <key>");
+#endif
 #if defined(ESP_PLATFORM)
   } else if (memcmp(command, "get wifi.status", 15) == 0) {
     network.formatWifiStatusReply(reply, 160);
@@ -2795,7 +3050,43 @@ void MyMesh::loop() {
 #ifdef WITH_MQTT_UPLINK
   network_required = network_required || mqtt.isActive();
 #endif
+#if defined(WITH_WIREGUARD)
+  network_required = network_required || wg_endpoint.length() > 0;
+#endif
   network.loop(network_required);
+#if defined(WITH_WIREGUARD)
+  if (wg_started && !network.isWifiConnected()) resetWireGuardClient();
+
+  IPAddress wg_local_ip;
+  IPAddress wg_netmask;
+  const bool wg_configured = wg_endpoint.length() > 0 &&
+      wg_peer_public_key.length() > 0 &&
+      parseWireGuardAddress(wg_address, wg_local_ip, wg_netmask);
+  if (!wg_started && wg_configured && network.isWifiConnected() &&
+      network.hasTimeSync() && ensureWireGuardKey()) {
+    if (wg_last_attempt_ms == 0 || (now - wg_last_attempt_ms) >= wg_retry_ms) {
+      wg_last_attempt_ms = now;
+      wg_started = wg_client.begin(wg_local_ip,
+                                   wg_netmask,
+                                   IPAddress(0, 0, 0, 0),
+                                   wg_private_key.c_str(),
+                                   wg_endpoint.c_str(),
+                                   wg_peer_public_key.c_str(),
+                                   wg_endpoint_port);
+      if (wg_started) {
+        void* sta_netif_raw = nullptr;
+        tcpip_adapter_get_netif(TCPIP_ADAPTER_IF_STA, &sta_netif_raw);
+        struct netif* sta_netif = static_cast<struct netif*>(sta_netif_raw);
+        if (sta_netif != nullptr) netif_set_default(sta_netif);
+        Serial.print("[WG] interface started; endpoint ");
+        Serial.println(wg_endpoint);
+      } else {
+        Serial.print("[WG] start failed; endpoint ");
+        Serial.println(wg_endpoint);
+      }
+    }
+  }
+#endif
 #if WITH_WEB_PANEL
   web.loop();
 #endif
